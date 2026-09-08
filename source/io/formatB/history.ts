@@ -4,13 +4,19 @@ import { EntryPropertyType, FormatBValue, FormatBValueHistoryItem } from "../../
 export const MAX_ATTRIBUTE_HISTORY = 3;
 export const MAX_PROPERTY_HISTORY = 5;
 
-export function cloneValue(value: FormatBValue) {
-    return {
+export function cloneValue(value: FormatBValue): FormatBValue {
+    const cloned: FormatBValue = {
         value: value.value,
         created: value.created,
         updated: value.updated,
         history: value.history.map((item) => Object.assign({}, item))
     };
+    if (typeof value.deleted === "number") {
+        // Preserve the deletion tombstone, otherwise a merge resurrects the
+        // property/attribute (buttercup/buttercup-desktop#1342).
+        cloned.deleted = value.deleted;
+    }
+    return cloned;
 }
 
 function filterDuplicateHistoryItems(
@@ -39,12 +45,22 @@ export function mergeValues(
             ...value2.history
         ])
     );
-    return {
+    const merged: FormatBValue = {
         value: mostRecentValue.value,
         created: mostRecentValue.created,
         updated: mostRecentValue.updated,
         history: trimValueHistory(newHistory, type)
     };
+    // Resolve deletion state: the property/attribute stays deleted unless it was
+    // (re)written more recently than it was deleted on either side. Dropping this
+    // entirely made a merge resurrect deleted custom fields
+    // (buttercup/buttercup-desktop#1342).
+    const latestDeleted = Math.max(value1.deleted ?? 0, value2.deleted ?? 0);
+    const latestUpdated = Math.max(value1.updated, value2.updated);
+    if (latestDeleted > 0 && latestDeleted >= latestUpdated) {
+        merged.deleted = latestDeleted;
+    }
+    return merged;
 }
 
 export function newRawValue(value: string): FormatBValue {
