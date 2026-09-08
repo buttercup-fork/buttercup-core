@@ -64,6 +64,30 @@ describe("merging", function () {
         expect(this.vault.getAttribute("later")).to.equal("test");
     });
 
+    it("keeps a deleted entry property deleted across later merges", async function () {
+        // buttercup/buttercup-desktop#1342: deleting a custom field appeared to
+        // work but the field reappeared after a subsequent save, because the
+        // merge dropped the property's deletion tombstone.
+        this.entry.deleteProperty("URL");
+        await this.source.save();
+        expect(this.entry.getProperty("URL")).to.be.undefined;
+        // Make an unrelated change and save again - the deletion must survive.
+        this.entry.setProperty("username", "test2");
+        await this.source.save();
+        expect(this.entry.getProperty("URL")).to.be.undefined;
+        expect(this.entry.getProperty("username")).to.equal("test2");
+    });
+
+    it("does not duplicate a renamed entry property after a merge", async function () {
+        this.entry.setProperty("renamed", this.entry.getProperty("URL"));
+        this.entry.deleteProperty("URL");
+        await this.source.save();
+        this.entry.setProperty("username", "test2");
+        await this.source.save();
+        expect(this.entry.getProperty("URL")).to.be.undefined;
+        expect(this.entry.getProperty("renamed")).to.equal("testing");
+    });
+
     it("handles large amounts of divergence", async function () {
         const count = 300;
         for (let i = 0; i < count; i += 1) {

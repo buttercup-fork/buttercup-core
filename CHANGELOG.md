@@ -1,5 +1,10 @@
 # Core library changelog
 
+## Unreleased (codekunde fork)
+
+ * **Bugfix**:
+   * Format B vault merge (`mergeValues` / `cloneValue`) discarded each property/attribute's deletion tombstone, so a delete was undone by the next save's merge - deleted entry fields reappeared and renamed fields were duplicated (buttercup/buttercup-desktop#1342)
+
 ## v7.7.1
 _2024-05-12_
 
