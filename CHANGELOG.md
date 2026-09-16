@@ -4,6 +4,8 @@
 
  * **Bugfix**:
    * Format B vault merge (`mergeValues` / `cloneValue`) discarded each property/attribute's deletion tombstone, so a delete was undone by the next save's merge - deleted entry fields reappeared and renamed fields were duplicated (buttercup/buttercup-desktop#1342)
+   * `findGroupsByTitle` threw if a group's title was `undefined` (e.g. a legacy nameless group) (buttercup/buttercup-mobile#153)
+   * `VaultFormatB#deleteEntry`/`#deleteGroup` threw when permanently deleting an item (e.g. from Trash) on a vault persisted before deletion tombstones existed, since `execute()` can replace `this.source` wholesale and drop the `del` key (buttercup/buttercup-mobile#334)
 
 ## v7.7.1
 _2024-05-12_
