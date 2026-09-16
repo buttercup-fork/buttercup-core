@@ -108,5 +108,14 @@ describe("Format B", function () {
             expect(this.group1.getEntries()).to.have.lengthOf(1);
             expect(this.trash.getEntries()).to.have.lengthOf(1);
         });
+
+        it("can be permanently deleted from the trash even without a deletion register", function () {
+            // Simulate a vault persisted by an older version of Buttercup, before
+            // deletion tombstones existed: `del` is entirely absent from the source.
+            delete this.vault.format.source.del;
+            this.entry1.delete(); // move to trash
+            expect(() => this.entry1.delete()).to.not.throw(); // permanent delete
+            expect(this.trash.getEntries()).to.have.lengthOf(0);
+        });
     });
 });

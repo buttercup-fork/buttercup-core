@@ -159,7 +159,7 @@ export class VaultFormatB extends VaultFormat {
         const ind = this.source.e.findIndex((entry) => entry.id === entryID);
         if (ind >= 0) {
             this.source.e.splice(ind, 1);
-            this.source.del.e[entryID] = Date.now();
+            this.ensureDeletionRegister().e[entryID] = Date.now();
             this.emit("commandsExecuted");
         }
     }
@@ -182,7 +182,7 @@ export class VaultFormatB extends VaultFormat {
         const ind = this.source.g.findIndex((group) => group.id === groupID);
         if (ind >= 0) {
             this.source.g.splice(ind, 1);
-            this.source.del.g[groupID] = Date.now();
+            this.ensureDeletionRegister().g[groupID] = Date.now();
             this.emit("commandsExecuted");
         }
     }
@@ -204,6 +204,27 @@ export class VaultFormatB extends VaultFormat {
         super.erase();
         Object.assign(this.source, emptyVault());
         this.emit("erased");
+    }
+
+    /**
+     * Ensure the deletion-tombstone register exists on the source.
+     * Vaults persisted by older versions of Buttercup (before deletion
+     * tombstones were introduced) can have their `del` key replaced
+     * entirely by `execute()`, which overwrites `this.source` wholesale
+     * with the parsed, persisted history - bypassing `initialise()`.
+     * @returns The deletion register
+     */
+    private ensureDeletionRegister(): { e: Record<EntryID, number>; g: Record<GroupID, number> } {
+        if (!this.source.del) {
+            this.source.del = { e: {}, g: {} };
+        }
+        if (!this.source.del.e) {
+            this.source.del.e = {};
+        }
+        if (!this.source.del.g) {
+            this.source.del.g = {};
+        }
+        return this.source.del;
     }
 
     execute(commandOrCommands: string | Array<string>) {
