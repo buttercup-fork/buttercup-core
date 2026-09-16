@@ -9,10 +9,11 @@ import { GroupID } from "../types.js";
  */
 export function findGroupsByTitle(groups: Array<Group>, title: string | RegExp): Array<Group> {
     return groups.filter((group) => {
+        const groupTitle = group.getTitle() || "";
         if (title instanceof RegExp) {
-            return title.test(group.getTitle());
+            return title.test(groupTitle);
         }
-        return group.getTitle().indexOf(title) >= 0;
+        return groupTitle.indexOf(title) >= 0;
     });
 }
 
