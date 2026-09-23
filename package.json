@@ -104,6 +104,14 @@
     "uuid": "^9.0.1",
     "webdav": "^5.5.0"
   },
+  "overrides": {
+    "pbkdf2": "^3.1.6",
+    "sha.js": "^2.4.12",
+    "min-document": "^2.19.2",
+    "webdav": {
+      "minimatch": "^10.2.6"
+    }
+  },
   "devDependencies": {
     "@babel/cli": "^7.23.4",
     "@babel/core": "^7.23.5",

@@ -2,6 +2,8 @@
 
 ## Unreleased (codekunde fork)
 
+ * **Security**:
+   * Cleared 9 of 10 `npm audit` findings (5 critical, 2 high, 2 moderate, 1 low) via `overrides`: `pbkdf2` (used by `iocane` for vault key derivation), `sha.js`, `min-document`, and a nested `webdav > minimatch` override. The remaining `uuid` finding needs a breaking v9→v14 bump and is tracked separately (internal ID generation only, not part of the public API).
  * **Bugfix**:
    * Format B vault merge (`mergeValues` / `cloneValue`) discarded each property/attribute's deletion tombstone, so a delete was undone by the next save's merge - deleted entry fields reappeared and renamed fields were duplicated (buttercup/buttercup-desktop#1342)
    * `findGroupsByTitle` threw if a group's title was `undefined` (e.g. a legacy nameless group) (buttercup/buttercup-mobile#153)
