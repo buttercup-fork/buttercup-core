@@ -35,7 +35,6 @@ export class TextDatasource extends EventEmitter {
     constructor(credentials: Credentials) {
         super();
         this._credentials = credentials;
-        this._credentials.restrictPurposes([Credentials.PURPOSE_SECURE_EXPORT]);
         this._content = "";
         try {
             const { data: credentialData } = getCredentials(credentials.id);

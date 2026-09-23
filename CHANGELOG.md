@@ -10,6 +10,8 @@
    * Format B vault merge (`mergeValues` / `cloneValue`) discarded each property/attribute's deletion tombstone, so a delete was undone by the next save's merge - deleted entry fields reappeared and renamed fields were duplicated (buttercup/buttercup-desktop#1342)
    * `findGroupsByTitle` threw if a group's title was `undefined` (e.g. a legacy nameless group) (buttercup/buttercup-mobile#153)
    * `VaultFormatB#deleteEntry`/`#deleteGroup` threw when permanently deleting an item (e.g. from Trash) on a vault persisted before deletion tombstones existed, since `execute()` can replace `this.source` wholesale and drop the `del` key (buttercup/buttercup-mobile#334)
+   * `isOTPURI` rejected valid `otpauth://` URIs containing a literal space in the label (e.g. `"Slack (workspace)"`) - some real-world OTP QR generators don't percent-encode spaces. Now only rejects newlines (buttercup/buttercup-core#278)
+   * `TextDatasource`'s constructor called `restrictPurposes()` on the caller's own `Credentials` instance, silently stripping `PURPOSE_DECRYPT_VAULT`/`PURPOSE_ENCRYPT_VAULT` from it - breaking a later `.load()`/`.save()` call reusing that same instance (exactly the pattern the README's own usage example follows) with `"Provided credentials don't allow vault decryption"`. The call was dead weight (checked nowhere else in the codebase) and has been removed. Also fixed the README's `.then(Vault.createFromHistory)` example, which didn't match `.load()`'s actual `{ Format, history }` return shape (buttercup/buttercup-core#326)
 
 ## v7.7.1
 _2024-05-12_

@@ -148,7 +148,7 @@ const fileDatasource = new FileDatasource(datasourceCredentials);
 
 fileDatasource
     .load(datasourceCredentials)
-    .then(Vault.createFromHistory)
+    .then(({ history, Format }) => Vault.createFromHistory(history, Format))
     .then(vault => {
         // ...
     });

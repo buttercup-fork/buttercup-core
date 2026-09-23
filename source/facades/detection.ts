@@ -1,4 +1,8 @@
-const OTPURI_PATTERN = /^otpauth:\/\/[ht]otp\/[^\s]+$/i;
+// The label/query portion after `otpauth://totp/` can legitimately contain
+// spaces (e.g. "Slack (workspace)") - some real-world OTP QR generators
+// don't percent-encode them. Only reject newlines, as a cheap guard against
+// multi-line garbage being misidentified as a single OTP URI.
+const OTPURI_PATTERN = /^otpauth:\/\/[ht]otp\/[^\r\n]+$/i;
 
 /**
  * Check if a string is an OTP URI
