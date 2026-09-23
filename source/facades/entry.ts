@@ -17,6 +17,10 @@ import {
     VaultFacade
 } from "../types.js";
 
+export interface ConsumeEntryFacadeOptions {
+    mergeMode?: boolean;
+}
+
 export interface CreateEntryFacadeOptions {
     type?: EntryType;
 }
@@ -85,9 +89,15 @@ function applyFieldDescriptor(entry: Entry, descriptor: EntryFacadeField) {
  * Process a modified entry facade
  * @param entry The entry to apply processed data on
  * @param facade The facade object
+ * @param options Options for the consumption
  * @memberof module:Buttercup
  */
-export function consumeEntryFacade(entry: Entry, facade: EntryFacade) {
+export function consumeEntryFacade(
+    entry: Entry,
+    facade: EntryFacade,
+    options: ConsumeEntryFacadeOptions = {}
+) {
+    const { mergeMode = false } = options;
     const facadeType = getEntryFacadeType(entry);
     if (facade && facade.type) {
         const properties = entry.getProperty();
@@ -97,11 +107,24 @@ export function consumeEntryFacade(entry: Entry, facade: EntryFacade) {
                 `Failed consuming entry data: Expected type "${facadeType}" but received "${facade.type}"`
             );
         }
+        // Attachments aren't transferred as part of a facade (only their
+        // metadata is), so applying attachment attribute fields during a
+        // merge/import would leave dangling references to attachment data
+        // that doesn't actually exist in the target vault.
+        const fields = mergeMode
+            ? (facade.fields || []).filter(
+                  (field) =>
+                      !(
+                          field.propertyType === "attribute" &&
+                          field.property.indexOf(Entry.Attributes.AttachmentPrefix) === 0
+                      )
+              )
+            : facade.fields || [];
         // update data
-        (facade.fields || []).forEach((field) => applyFieldDescriptor(entry, field));
+        fields.forEach((field) => applyFieldDescriptor(entry, field));
         // remove missing properties
         Object.keys(properties).forEach((propKey) => {
-            const correspondingField = facade.fields.find(
+            const correspondingField = fields.find(
                 ({ propertyType, property }) => propertyType === "property" && property === propKey
             );
             if (typeof correspondingField === "undefined") {
@@ -110,7 +133,12 @@ export function consumeEntryFacade(entry: Entry, facade: EntryFacade) {
         });
         // remove missing attributes
         Object.keys(attributes).forEach((attrKey) => {
-            const correspondingField = facade.fields.find(
+            if (mergeMode && attrKey.indexOf(Entry.Attributes.AttachmentPrefix) === 0) {
+                // Never touch existing attachment attributes on the target
+                // entry during a merge - they weren't part of the merge input.
+                return;
+            }
+            const correspondingField = fields.find(
                 ({ propertyType, property }) => propertyType === "attribute" && property === attrKey
             );
             if (typeof correspondingField === "undefined") {

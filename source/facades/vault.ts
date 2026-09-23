@@ -225,7 +225,7 @@ export function consumeVaultFacade(
             }
         }
         const entryToUpdate = vault.findEntryByID(entryFacade.id);
-        consumeEntryFacade(entryToUpdate, entryFacade);
+        consumeEntryFacade(entryToUpdate, entryFacade, { mergeMode });
         return false; // done - remove
     });
     // Check attributes
