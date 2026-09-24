@@ -340,6 +340,11 @@ export class Vault extends EventEmitter {
             this._format.removeAllListeners();
         }
         this._format = format;
+        // Drop items the new format no longer contains (eg. permanently
+        // deleted on another device and removed by a merge) - otherwise they
+        // keep a null reference and break anything reading them
+        this._groups = this._groups.filter((group) => !!format.findGroupByID(group.id));
+        this._entries = this._entries.filter((entry) => !!format.findEntryByID(entry.id));
         this._groups.forEach((group) => {
             group._updateRefs();
         });
