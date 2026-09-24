@@ -2,6 +2,8 @@
 
 ## Unreleased (codekunde fork)
 
+ * **Breaking**:
+   * Requires NodeJS 20 or newer (was 14+). NodeJS 14, 16 and 18 are end-of-life and no longer receive security fixes, and the test tooling already needed 18+. CI now tests on NodeJS 20, 22 and 24
  * **Security**:
    * Cleared 9 of 10 `npm audit` findings (5 critical, 2 high, 2 moderate, 1 low) via `overrides`: `pbkdf2` (used by `iocane` for vault key derivation), `sha.js`, `min-document`, and a nested `webdav > minimatch` override. The remaining `uuid` finding needs a breaking v9→v14 bump and is tracked separately (internal ID generation only, not part of the public API).
    * Raised the PBKDF2 derivation round count from 125,000 to 250,000 (`CRYPTO_PBKDF2_ROUNDS`), matching `iocane`'s own built-in default and OWASP's compromise range. Fully backwards compatible - the round count is stored per-vault in the encrypted blob's own header, so existing vaults keep decrypting exactly as before; only new saves pick up the higher count (buttercup/buttercup-core#325).

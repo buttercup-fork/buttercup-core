@@ -7,10 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # 14.x dropped: package-lock.json is lockfileVersion 3 (npm 7+), which
-        # npm 6 (bundled with Node 14.x) cannot parse and crashes on `npm ci`.
-        # 14.x is EOL upstream anyway.
-        node-version: [16.x, 18.x, 20.x]
+        # Supported Node versions: see "engines" in package.json
+        node-version: [20.x, 22.x, 24.x]
     steps:
       - uses: actions/checkout@v2
       - name: Node.js specs ${{ matrix.node-version }}
@@ -23,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [22.x]
     steps:
       - uses: actions/checkout@v2
       # Needed before Setup Firefox, which runs `firefox --version`.

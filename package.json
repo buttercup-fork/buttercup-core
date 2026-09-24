@@ -52,7 +52,7 @@
     "*.md"
   ],
   "engines": {
-    "node": ">=14"
+    "node": ">=20"
   },
   "lint-staged": {
     "{source,test}/**/*.{js,ts}": [
