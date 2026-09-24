@@ -24,18 +24,18 @@ jobs:
         node-version: [22.x]
     steps:
       - uses: actions/checkout@v2
-      # Needed before Setup Firefox, which runs `firefox --version`.
-      # Package names are for the runner image's Ubuntu 24.04 (t64 renames)
-      - name: Install Firefox dependencies
-        run: apt-get update && apt-get install -y --no-install-recommends libgtk-3-0t64 libdbus-glib-1-2 libasound2t64 libxtst6
-      # Full GitHub URLs: this Forgejo instance's default action source
-      # (data.forgejo.org) doesn't mirror browser-actions/*. The browser
-      # steps run before setup-node so they use the image's newer Node.
-      - name: Setup Firefox
-        id: setup-firefox
-        uses: https://github.com/browser-actions/setup-firefox@v1
-        with:
-          firefox-version: latest
+      # Firefox from Mozilla's APT repository, so apt installs everything it
+      # depends on (the runner image has no desktop libraries)
+      - name: Install Firefox
+        run: |
+          install -d -m 0755 /etc/apt/keyrings
+          curl -fsSL https://packages.mozilla.org/apt/repo-signing-key.gpg -o /etc/apt/keyrings/packages.mozilla.org.asc
+          echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main" > /etc/apt/sources.list.d/mozilla.list
+          printf 'Package: *\nPin: origin packages.mozilla.org\nPin-Priority: 1000\n' > /etc/apt/preferences.d/mozilla
+          apt-get update && apt-get install -y firefox
+      # Full GitHub URL: this Forgejo instance's default action source
+      # (data.forgejo.org) doesn't mirror browser-actions/*. Runs before
+      # setup-node so it uses the image's newer Node.
       - name: Setup Chrome
         id: setup-chrome
         uses: https://github.com/browser-actions/setup-chrome@v1
@@ -52,4 +52,3 @@ jobs:
           CI: true
           MOZ_HEADLESS: 1
           CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
-          FIREFOX_BIN: ${{ steps.setup-firefox.outputs.firefox-path }}
