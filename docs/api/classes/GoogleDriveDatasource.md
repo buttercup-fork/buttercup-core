@@ -39,6 +39,12 @@ The credentials instance with which to
 
 ## Properties
 
+### attachments
+
+> **attachments**: `GoogleDriveAttachments`
+
+***
+
 ### authManager
 
 > **authManager**: [`DatasourceAuthManager`](DatasourceAuthManager.md)
@@ -165,8 +171,7 @@ True/False if in preflight, as to whether or not the password change
 
 > **getAttachment**(`vaultID`, `attachmentID`): `Promise`\<[`BufferLike`](../type-aliases/BufferLike.md)\>
 
-Get attachment buffer
-- Downloads the attachment contents into a buffer
+Get encrypted attachment data
 
 #### Parameters
 
@@ -186,7 +191,7 @@ The ID of the attachment
 
 `Promise`\<[`BufferLike`](../type-aliases/BufferLike.md)\>
 
-#### Inherited from
+#### Overrides
 
 [`TextDatasource`](TextDatasource.md).[`getAttachment`](TextDatasource.md#getattachment)
 
@@ -299,7 +304,7 @@ A promise that resolves archive history
 
 > **putAttachment**(`vaultID`, `attachmentID`, `buffer`, `details`): `Promise`\<`void`\>
 
-Put attachment data
+Put encrypted attachment data
 
 #### Parameters
 
@@ -319,19 +324,19 @@ The ID of the attachment
 
 [`BufferLike`](../type-aliases/BufferLike.md)
 
-The attachment data
+The encrypted attachment data
 
 ##### details
 
 [`AttachmentDetails`](../interfaces/AttachmentDetails.md)
 
-Attachment details object
+The attachment details
 
 #### Returns
 
 `Promise`\<`void`\>
 
-#### Inherited from
+#### Overrides
 
 [`TextDatasource`](TextDatasource.md).[`putAttachment`](TextDatasource.md#putattachment)
 
@@ -361,7 +366,7 @@ The ID of the attachment
 
 `Promise`\<`void`\>
 
-#### Inherited from
+#### Overrides
 
 [`TextDatasource`](TextDatasource.md).[`removeAttachment`](TextDatasource.md#removeattachment)
 
@@ -439,7 +444,7 @@ Whether or not the datasource supports attachments
 
 `boolean`
 
-#### Inherited from
+#### Overrides
 
 [`TextDatasource`](TextDatasource.md).[`supportsAttachments`](TextDatasource.md#supportsattachments)
 

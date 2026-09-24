@@ -26,6 +26,8 @@ function encodeTextToBase64(text: string): string {
 
 export function getEncodingResources() {
     return {
+        // Binary data is handled as ArrayBuffers in the browser
+        "encoding/v1/arrayBufferToBufferLike": (data: ArrayBuffer) => data,
         "encoding/v1/base64ToBytes": (input: string) => decodeBase64(input, true),
         "encoding/v1/base64ToText": decodeBase64,
         "encoding/v1/bytesToBase64": encodeBytesToBase64,
