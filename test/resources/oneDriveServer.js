@@ -1,5 +1,9 @@
 import http from "node:http";
 
+// An explicit IPv4 address: "localhost" can resolve to ::1 for the server
+// but 127.0.0.1 for the client (eg. Node 18+ in Docker), refusing connections
+const HOST = "127.0.0.1";
+
 /**
  * Minimal mock of the Microsoft Graph endpoints OneDriveDatasource uses:
  *  - GET/PUT /v1.0/me/drive/root:/{path}:/content
@@ -18,7 +22,7 @@ export function createOneDriveServer({ validTokens = ["valid-token"] } = {}) {
         req.on("data", (chunk) => chunks.push(chunk));
         req.on("end", () => {
             const body = Buffer.concat(chunks).toString("utf8");
-            const url = new URL(req.url, `http://localhost:${port}`);
+            const url = new URL(req.url, `http://${HOST}:${port}`);
             requests.push({
                 method: req.method,
                 path: url.pathname,
@@ -50,7 +54,7 @@ export function createOneDriveServer({ validTokens = ["valid-token"] } = {}) {
             if (req.method === "GET") {
                 if (!files.has(key)) return send(res, 404);
                 res.writeHead(302, {
-                    Location: `http://localhost:${port}/download/${encodeURIComponent(key)}`
+                    Location: `http://${HOST}:${port}/download/${encodeURIComponent(key)}`
                 });
                 return res.end();
             }
@@ -69,7 +73,7 @@ export function createOneDriveServer({ validTokens = ["valid-token"] } = {}) {
         files,
         requests,
         get endpoint() {
-            return `http://localhost:${port}/v1.0`;
+            return `http://${HOST}:${port}/v1.0`;
         },
         get validTokens() {
             return validTokens;
@@ -77,7 +81,7 @@ export function createOneDriveServer({ validTokens = ["valid-token"] } = {}) {
         start: () =>
             new Promise((resolve) => {
                 server = http.createServer(handler);
-                server.listen(0, "localhost", () => {
+                server.listen(0, HOST, () => {
                     port = server.address().port;
                     resolve();
                 });
