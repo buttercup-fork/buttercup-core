@@ -28,7 +28,11 @@ export function generateVaultInsights(vault: Vault): VaultInsights {
         groupCount += 1;
         entryCount += entries.length;
         entries.forEach((entry) => {
-            const password = entry.getProperty("password");
+            // A linked password belongs to another entry, which counts it
+            const password =
+                entry.getPropertyLink("password") && !entry.isPropertyLinkBroken("password")
+                    ? undefined
+                    : entry.getProperty("password");
             if (typeof password === "string") {
                 entryPasswordLengths.push(password.length);
                 if (longestPasswordLength === null || password.length > longestPasswordLength) {

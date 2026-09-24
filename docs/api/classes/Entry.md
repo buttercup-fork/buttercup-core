@@ -47,7 +47,7 @@ Remote source object reference
 
 ### Attributes
 
-> `static` **Attributes**: `Readonly`\<\{ `AttachmentPrefix`: `"BC_ENTRY_ATTACHMENT:"`; `FacadeType`: `"BC_ENTRY_FACADE_TYPE"`; `FieldTypePrefix`: `"BC_ENTRY_FIELD_TYPE:"`; `Tags`: `"BC_ENTRY_TAGS"`; \}\>
+> `static` **Attributes**: `Readonly`\<\{ `AttachmentPrefix`: `"BC_ENTRY_ATTACHMENT:"`; `FacadeType`: `"BC_ENTRY_FACADE_TYPE"`; `FieldTypePrefix`: `"BC_ENTRY_FIELD_TYPE:"`; `PropertyLinkPrefix`: `"BC_ENTRY_PROPERTY_LINK:"`; `Tags`: `"BC_ENTRY_TAGS"`; \}\>
 
 ## Accessors
 
@@ -362,6 +362,31 @@ The property value or an object with all
 
 ***
 
+### getPropertyLink()
+
+> **getPropertyLink**(`property`): [`EntryPropertyLink`](../interfaces/EntryPropertyLink.md)
+
+Get the link of a linked property
+A linked property shows the current value of a property on another
+entry (see [Entry.linkProperty](#linkproperty)).
+
+#### Parameters
+
+##### property
+
+`string`
+
+The property name
+
+#### Returns
+
+[`EntryPropertyLink`](../interfaces/EntryPropertyLink.md)
+
+The linked entry ID and property, or `null` if the property
+ isn't linked
+
+***
+
 ### getPropertyValueType()
 
 > **getPropertyValueType**(`property`): [`EntryPropertyValueType`](../enumerations/EntryPropertyValueType.md)
@@ -499,6 +524,76 @@ Check if the entry is in the trash
 `boolean`
 
 Whether or not the entry is in the trash
+
+***
+
+### isPropertyLinkBroken()
+
+> **isPropertyLinkBroken**(`property`): `boolean`
+
+Check if a linked property's link is broken
+A link is broken when the linked entry was deleted or is in Trash, or
+no longer has the linked property. A broken link shows the value the
+property had when it was last in sync.
+
+#### Parameters
+
+##### property
+
+`string`
+
+The property name
+
+#### Returns
+
+`boolean`
+
+True if the property is linked and the link is broken
+
+***
+
+### linkProperty()
+
+> **linkProperty**(`property`, `target`, `targetProperty?`): `this`
+
+Link a property to a property on another entry
+The property then shows the current value of the other entry's
+property, eg. several logins sharing one account's password. A copy
+of the value is stored too, so that apps without link support still
+show a real value. Setting the property later replaces the link with
+its own value.
+
+#### Parameters
+
+##### property
+
+`string`
+
+The property to link (created if it doesn't exist)
+
+##### target
+
+`Entry`
+
+The entry to link to, in the same vault
+
+##### targetProperty?
+
+`string` = `property`
+
+The property on the target entry to link to.
+ Defaults to the same property name.
+
+#### Returns
+
+`this`
+
+Self
+
+#### Throws
+
+Throws if the target is in another vault or in Trash,
+ doesn't have the property, or the link would create a loop
 
 ***
 
@@ -667,3 +762,35 @@ The new value type to set, or `null` to remove
 `this`
 
 Returns self
+
+***
+
+### unlinkProperty()
+
+> **unlinkProperty**(`property`, `options?`): `this`
+
+Remove the link from a linked property
+
+#### Parameters
+
+##### property
+
+`string`
+
+The linked property
+
+##### options?
+
+Unlink options. `keepValue` (default `true`) keeps the
+ current linked value as the property's own value, `false` deletes
+ the property.
+
+###### keepValue?
+
+`boolean`
+
+#### Returns
+
+`this`
+
+Self

@@ -167,6 +167,11 @@ export enum EntryPropertyType {
     Property = "property"
 }
 
+export interface EntryPropertyLink {
+    entryID: EntryID;
+    property: string;
+}
+
 export enum EntryPropertyValueType {
     Note = "note",
     OTP = "otp",

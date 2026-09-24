@@ -111,7 +111,7 @@ export function consumeEntryFacade(
         // metadata is), so applying attachment attribute fields during a
         // merge/import would leave dangling references to attachment data
         // that doesn't actually exist in the target vault.
-        const fields = mergeMode
+        const facadeFields = mergeMode
             ? (facade.fields || []).filter(
                   (field) =>
                       !(
@@ -120,6 +120,19 @@ export function consumeEntryFacade(
                       )
               )
             : facade.fields || [];
+        // Editing a linked property replaces the link with its own value, so
+        // drop the link attributes of edited linked properties
+        const editedLinks = facadeFields
+            .filter(
+                (field) =>
+                    field.propertyType === "property" &&
+                    !!entry.getPropertyLink(field.property) &&
+                    field.value !== properties[field.property]
+            )
+            .map((field) => `${Entry.Attributes.PropertyLinkPrefix}${field.property}`);
+        const fields = facadeFields.filter(
+            (field) => !(field.propertyType === "attribute" && editedLinks.includes(field.property))
+        );
         // update data
         fields.forEach((field) => applyFieldDescriptor(entry, field));
         // remove missing properties

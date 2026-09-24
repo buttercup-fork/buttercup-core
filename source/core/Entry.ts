@@ -6,6 +6,8 @@ import { Vault } from "./Vault.js";
 import { isValidTag } from "../tools/tag.js";
 import {
     EntryChange,
+    EntryID,
+    EntryPropertyLink,
     EntryPropertyValueType,
     EntryType,
     GroupID,
@@ -22,6 +24,7 @@ export class Entry extends VaultItem {
         AttachmentPrefix: "BC_ENTRY_ATTACHMENT:",
         FacadeType: "BC_ENTRY_FACADE_TYPE",
         FieldTypePrefix: "BC_ENTRY_FIELD_TYPE:",
+        PropertyLinkPrefix: "BC_ENTRY_PROPERTY_LINK:",
         Tags: "BC_ENTRY_TAGS"
     });
 
@@ -116,6 +119,7 @@ export class Entry extends VaultItem {
      */
     deleteProperty(property: string): this {
         this.vault.format.deleteEntryProperty(this.id, property);
+        this._deletePropertyLink(property);
         return this;
     }
 
@@ -169,11 +173,33 @@ export class Entry extends VaultItem {
      *  values if no property specified
      */
     getProperty(property?: string): PropertyKeyValueObject | string | undefined {
-        const raw = this.vault.format.getEntryProperties(this._source);
         if (typeof property === "undefined") {
-            return Object.assign({}, raw);
+            return this._getResolvedProperties();
         }
-        return raw.hasOwnProperty(property) ? raw[property] : undefined;
+        const raw = this.vault.format.getEntryProperties(this._source);
+        if (!raw.hasOwnProperty(property)) return undefined;
+        const linkedValue = this._followPropertyLink(property);
+        return linkedValue !== null ? linkedValue : raw[property];
+    }
+
+    /**
+     * Get the link of a linked property
+     * A linked property shows the current value of a property on another
+     * entry (see {@link Entry.linkProperty}).
+     * @param property The property name
+     * @returns The linked entry ID and property, or `null` if the property
+     *  isn't linked
+     */
+    getPropertyLink(property: string): EntryPropertyLink | null {
+        const value = this.getAttribute(`${Entry.Attributes.PropertyLinkPrefix}${property}`);
+        if (typeof value !== "string") return null;
+        // Entry IDs contain no colons, property names may
+        const separator = value.indexOf(":");
+        if (separator <= 0 || separator === value.length - 1) return null;
+        return {
+            entryID: value.slice(0, separator),
+            property: value.slice(separator + 1)
+        };
     }
 
     /**
@@ -198,9 +224,9 @@ export class Entry extends VaultItem {
      * @returns A key-value object of the matching properties
      */
     getProperties(propertyExpression?: RegExp | string): PropertyKeyValueObject {
-        const raw = this.vault.format.getEntryProperties(this._source);
+        const raw = this._getResolvedProperties();
         if (typeof propertyExpression === "undefined") {
-            return Object.assign({}, raw);
+            return raw;
         }
         const isRexp = propertyExpression instanceof RegExp;
         return Object.keys(raw).reduce((aggr, key) => {
@@ -259,6 +285,67 @@ export class Entry extends VaultItem {
     }
 
     /**
+     * Check if a linked property's link is broken
+     * A link is broken when the linked entry was deleted or is in Trash, or
+     * no longer has the linked property. A broken link shows the value the
+     * property had when it was last in sync.
+     * @param property The property name
+     * @returns True if the property is linked and the link is broken
+     */
+    isPropertyLinkBroken(property: string): boolean {
+        return !!this.getPropertyLink(property) && this._followPropertyLink(property) === null;
+    }
+
+    /**
+     * Link a property to a property on another entry
+     * The property then shows the current value of the other entry's
+     * property, eg. several logins sharing one account's password. A copy
+     * of the value is stored too, so that apps without link support still
+     * show a real value. Setting the property later replaces the link with
+     * its own value.
+     * @param property The property to link (created if it doesn't exist)
+     * @param target The entry to link to, in the same vault
+     * @param targetProperty The property on the target entry to link to.
+     *  Defaults to the same property name.
+     * @returns Self
+     * @throws {Error} Throws if the target is in another vault or in Trash,
+     *  doesn't have the property, or the link would create a loop
+     */
+    linkProperty(property: string, target: Entry, targetProperty: string = property): this {
+        if (target.vault !== this.vault) {
+            throw new Error("Cannot link property: Target entry is in another vault");
+        }
+        if (target.isInTrash()) {
+            throw new Error("Cannot link property: Target entry is in Trash");
+        }
+        if (typeof target.getProperty(targetProperty) !== "string") {
+            throw new Error(
+                `Cannot link property: Target entry has no property: ${targetProperty}`
+            );
+        }
+        // Walk the target's links, checking they don't lead back here
+        let linkedEntry: Entry = target,
+            linkedProperty = targetProperty;
+        const visited = new Set<string>();
+        while (linkedEntry) {
+            const key = `${linkedEntry.id}:${linkedProperty}`;
+            if ((linkedEntry.id === this.id && linkedProperty === property) || visited.has(key)) {
+                throw new Error("Cannot link property: Link would create a loop");
+            }
+            visited.add(key);
+            const link = linkedEntry.getPropertyLink(linkedProperty);
+            linkedEntry = link ? this.vault.findEntryByID(link.entryID) : null;
+            linkedProperty = link ? link.property : null;
+        }
+        this.setAttribute(
+            `${Entry.Attributes.PropertyLinkPrefix}${property}`,
+            `${target.id}:${targetProperty}`
+        );
+        this._storePropertyLinkCopy(property, target.getProperty(targetProperty) as string);
+        return this;
+    }
+
+    /**
      * Move the entry to another group
      * @returns Returns self
      * @param group The target group
@@ -301,6 +388,8 @@ export class Entry extends VaultItem {
      * @returns Returns self
      */
     setProperty(property: string, value: string): this {
+        // Setting a linked property replaces the link with its own value
+        this._deletePropertyLink(property);
         this.vault.format.setEntryProperty(this.id, property, value);
         return this;
     }
@@ -318,6 +407,96 @@ export class Entry extends VaultItem {
             this.setAttribute(`${Entry.Attributes.FieldTypePrefix}${property}`, valueType);
         }
         return this;
+    }
+
+    /**
+     * Remove the link from a linked property
+     * @param property The linked property
+     * @param options Unlink options. `keepValue` (default `true`) keeps the
+     *  current linked value as the property's own value, `false` deletes
+     *  the property.
+     * @returns Self
+     */
+    unlinkProperty(property: string, options: { keepValue?: boolean } = {}): this {
+        const { keepValue = true } = options;
+        if (!this.getPropertyLink(property)) return this;
+        const value = this.getProperty(property) as string;
+        this._deletePropertyLink(property);
+        if (keepValue) {
+            this._storePropertyLinkCopy(property, value);
+        } else {
+            this.deleteProperty(property);
+        }
+        return this;
+    }
+
+    _deletePropertyLink(property: string) {
+        const attribute = `${Entry.Attributes.PropertyLinkPrefix}${property}`;
+        if (typeof this.getAttribute(attribute) === "string") {
+            this.deleteAttribute(attribute);
+        }
+    }
+
+    /**
+     * Follow a property's link to the value it shows
+     * @returns The linked value, or `null` if the property isn't linked or
+     *  the link is broken
+     */
+    _followPropertyLink(property: string, visited: Set<string> = new Set()): string | null {
+        const link = this.getPropertyLink(property);
+        if (!link) return null;
+        visited.add(`${this.id}:${property}`);
+        if (visited.has(`${link.entryID}:${link.property}`)) return null;
+        const target = this.vault.findEntryByID(link.entryID);
+        if (!target || target.isInTrash()) return null;
+        const targetRaw = this.vault.format.getEntryProperties(target._source);
+        if (!targetRaw.hasOwnProperty(link.property)) return null;
+        // The target may itself be linked: if its link is broken, it shows
+        // its own stored value
+        const next = target._followPropertyLink(link.property, visited);
+        return next !== null ? next : targetRaw[link.property];
+    }
+
+    _getLinkedPropertyValues(): PropertyKeyValueObject {
+        const raw = this.vault.format.getEntryProperties(this._source);
+        const attributes = this.getAttribute() as { [key: string]: string };
+        const linkedValues: PropertyKeyValueObject = {};
+        for (const attribute of Object.keys(attributes)) {
+            if (attribute.indexOf(Entry.Attributes.PropertyLinkPrefix) !== 0) continue;
+            const property = attribute.slice(Entry.Attributes.PropertyLinkPrefix.length);
+            if (!raw.hasOwnProperty(property)) continue;
+            const linkedValue = this._followPropertyLink(property);
+            if (linkedValue !== null) {
+                linkedValues[property] = linkedValue;
+            }
+        }
+        return linkedValues;
+    }
+
+    _getResolvedProperties(): PropertyKeyValueObject {
+        return Object.assign(
+            {},
+            this.vault.format.getEntryProperties(this._source),
+            this._getLinkedPropertyValues()
+        );
+    }
+
+    /**
+     * Store a copy of a linked value as the property's own value, for apps
+     * that don't support links
+     */
+    _storePropertyLinkCopy(property: string, value: string) {
+        const raw = this.vault.format.getEntryProperties(this._source);
+        if (raw[property] !== value) {
+            this.vault.format.setEntryProperty(this.id, property, value);
+        }
+    }
+
+    _updatePropertyLinkCopies() {
+        const linkedValues = this._getLinkedPropertyValues();
+        for (const property of Object.keys(linkedValues)) {
+            this._storePropertyLinkCopy(property, linkedValues[property]);
+        }
     }
 
     _updateRefs() {

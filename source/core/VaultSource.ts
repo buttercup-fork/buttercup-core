@@ -647,6 +647,8 @@ export class VaultSource extends EventEmitter {
             if (await this.localDiffersFromRemote()) {
                 await this.mergeFromRemote();
             }
+            // Linked values may have changed since their copies were stored
+            this._vault._updatePropertyLinkCopies();
             // Capture encrypted content
             let encryptedContent: string = null;
             const encryptedCallback = ({ content }) => {

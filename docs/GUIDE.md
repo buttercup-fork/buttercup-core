@@ -214,6 +214,28 @@ await source.save();
 
 Buttercup keeps a history of changed property values, which the apps show as "entry history". See `entry.getChanges()`.
 
+### Linking a field to another entry
+
+A field can show the value of a field on another entry in the same vault, so that one change updates every entry using it. For example, several sites you sign in to with one Google account:
+
+```javascript
+youtube.linkProperty("password", google); // Same property name
+youtube.linkProperty("Google login", google, "username"); // Another property
+
+google.setProperty("password", "n3wG00gle");
+youtube.getProperty("password"); // "n3wG00gle"
+youtube.getPropertyLink("password"); // { entryID: google.id, property: "password" }
+```
+
+Linked values are read everywhere a value is: `getProperty()`, `getProperties()`, `getURLs()`, entry facades and search.
+
+- **Editing** a linked field, with `setProperty()` or through a facade, replaces the link with its own value. The other entry is never changed.
+- **Unlinking**: `youtube.unlinkProperty("password")` keeps the current value, and `{ keepValue: false }` removes the field.
+- **Broken links**: if the other entry is moved to Trash or deleted, or its field is removed, the link is broken (`isPropertyLinkBroken()`). The field then shows the value it had when it was last in sync, and works again if the entry is restored from Trash.
+- **Stored copy**: each linked field also stores a copy of its value, which saving keeps up to date. Apps without link support show that copy.
+
+`linkProperty()` throws if the other entry is in another vault or in Trash, doesn't have the field, or the link would loop back to itself.
+
 ### Deleting an entry
 
 ```javascript

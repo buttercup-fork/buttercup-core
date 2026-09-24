@@ -340,6 +340,14 @@ export class Vault extends EventEmitter {
         return this;
     }
 
+    /**
+     * Refresh the stored copies of linked property values, so that apps
+     * without link support see current values
+     */
+    _updatePropertyLinkCopies() {
+        this._entries.forEach((entry) => entry._updatePropertyLinkCopies());
+    }
+
     _rebuild(clear: boolean = false) {
         if (clear) {
             this._groups = [];
