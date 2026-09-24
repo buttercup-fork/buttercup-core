@@ -320,6 +320,44 @@ An array of groups
 
 ***
 
+### getAllEntries()
+
+> **getAllEntries**(): [`Entry`](Entry.md)[]
+
+Get all entries within the group, including those in its sub-groups
+at any depth
+
+#### Returns
+
+[`Entry`](Entry.md)[]
+
+An array of entries
+
+#### See
+
+getEntries
+
+***
+
+### getAllGroups()
+
+> **getAllGroups**(): `Group`[]
+
+Get all groups within the group, including their sub-groups at any
+depth
+
+#### Returns
+
+`Group`[]
+
+An array of groups
+
+#### See
+
+getGroups
+
+***
+
 ### getAttribute()
 
 > **getAttribute**(`attribute?`): `string` \| `Object`

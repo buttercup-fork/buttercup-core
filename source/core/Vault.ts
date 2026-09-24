@@ -256,8 +256,9 @@ export class Vault extends EventEmitter {
     }
 
     /**
-     * Get all entries in the vault
+     * Get all entries in the vault, including those in Trash
      * @returns An array of entry instances
+     * @see Group.getAllEntries
      * @memberof Vault
      */
     getAllEntries(): Array<Entry> {
@@ -265,8 +266,9 @@ export class Vault extends EventEmitter {
     }
 
     /**
-     * Get al groups in the vault
+     * Get all groups in the vault, including Trash and the groups in it
      * @returns An array of group instances
+     * @see Group.getAllGroups
      * @memberof Vault
      */
     getAllGroups(): Array<Group> {

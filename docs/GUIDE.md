@@ -124,6 +124,10 @@ for (const entry of vault.getAllEntries()) {
 // Entries directly inside one group
 const general = vault.findGroupsByTitle("General")[0];
 const generalEntries = general.getEntries();
+
+// Entries inside a group and all of its sub-groups, at any depth
+const allGeneralEntries = general.getAllEntries();
+const allSubGroups = general.getAllGroups();
 ```
 
 ### Reading an entry

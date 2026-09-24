@@ -185,6 +185,28 @@ export class Group extends VaultItem {
     }
 
     /**
+     * Get all entries within the group, including those in its sub-groups
+     * at any depth
+     * @returns An array of entries
+     * @see getEntries
+     * @memberof Group
+     */
+    getAllEntries(): Array<Entry> {
+        return getAllChildEntries(this.vault._entries, this.id);
+    }
+
+    /**
+     * Get all groups within the group, including their sub-groups at any
+     * depth
+     * @returns An array of groups
+     * @see getGroups
+     * @memberof Group
+     */
+    getAllGroups(): Array<Group> {
+        return getAllChildGroups(this.vault._groups, this.id);
+    }
+
+    /**
      * Get the entries within the group
      * @returns An array of entries
      * @memberof Group

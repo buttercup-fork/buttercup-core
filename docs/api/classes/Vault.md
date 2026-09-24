@@ -356,13 +356,17 @@ An array of groups
 
 > **getAllEntries**(): [`Entry`](Entry.md)[]
 
-Get all entries in the vault
+Get all entries in the vault, including those in Trash
 
 #### Returns
 
 [`Entry`](Entry.md)[]
 
 An array of entry instances
+
+#### See
+
+Group.getAllEntries
 
 ***
 
@@ -385,13 +389,17 @@ An array of entry types, in `EntryType` order
 
 > **getAllGroups**(): [`Group`](Group.md)[]
 
-Get al groups in the vault
+Get all groups in the vault, including Trash and the groups in it
 
 #### Returns
 
 [`Group`](Group.md)[]
 
 An array of group instances
+
+#### See
+
+Group.getAllGroups
 
 ***
 
