@@ -1,5 +1,11 @@
 import { expect } from "chai";
-import { cloneValue, mergeValues } from "../../../../dist/node/io/formatB/history.js";
+import sinon from "sinon";
+import {
+    cloneValue,
+    mergeValues,
+    nextDeleteTimestamp,
+    nextUpdateTimestamp
+} from "../../../../dist/node/io/formatB/history.js";
 
 function value(overrides = {}) {
     return {
@@ -52,6 +58,42 @@ describe("io/formatB/history", function () {
 
         it("does not add `deleted` when neither side is deleted", function () {
             expect(mergeValues(value(), value(), "property")).to.not.have.property("deleted");
+        });
+    });
+    describe("nextUpdateTimestamp", function () {
+        afterEach(function () {
+            if (this.clock) this.clock.restore();
+        });
+
+        it("uses the current time when it is later", function () {
+            this.clock = sinon.useFakeTimers(5000);
+            expect(nextUpdateTimestamp(value({ updated: 1000 }))).to.equal(5000);
+        });
+
+        it("is later than the previous update if the clock went backwards", function () {
+            this.clock = sinon.useFakeTimers(500);
+            expect(nextUpdateTimestamp(value({ updated: 1000 }))).to.equal(1001);
+        });
+
+        it("is later than a deletion if the clock went backwards", function () {
+            this.clock = sinon.useFakeTimers(500);
+            expect(nextUpdateTimestamp(value({ updated: 1000, deleted: 2000 }))).to.equal(2001);
+        });
+    });
+
+    describe("nextDeleteTimestamp", function () {
+        afterEach(function () {
+            if (this.clock) this.clock.restore();
+        });
+
+        it("uses the current time when it is later", function () {
+            this.clock = sinon.useFakeTimers(5000);
+            expect(nextDeleteTimestamp(value({ updated: 1000 }))).to.equal(5000);
+        });
+
+        it("is not earlier than the last update if the clock went backwards", function () {
+            this.clock = sinon.useFakeTimers(500);
+            expect(nextDeleteTimestamp(value({ updated: 1000 }))).to.equal(1000);
         });
     });
 });
