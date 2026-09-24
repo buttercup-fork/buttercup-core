@@ -141,23 +141,31 @@ The newly created group
 
 ### createWithDefaults()
 
-> `static` **createWithDefaults**(`format?`): `Vault`
+> `static` **createWithDefaults**(`formatOrOptions?`): `Vault`
 
-Create a Vault with the default template
+Create a Vault with the default template: a "General" group and a
+"Trash" group
 
 #### Parameters
 
-##### format?
+##### formatOrOptions?
 
 `any` = `...`
 
-Optional vault format override
+Optional vault format override, or options:
+ `format` and `groupTitles` (eg. translated group titles)
 
 #### Returns
 
 `Vault`
 
 The new vault
+
+#### Example
+
+```ts
+Vault.createWithDefaults({ groupTitles: { general: "Allgemein", trash: "Papierkorb" } });
+```
 
 ***
 

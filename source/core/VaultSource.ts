@@ -20,7 +20,13 @@ import { VaultManager } from "./VaultManager.js";
 import { convertFormatAVault } from "../io/formatB/conversion.js";
 import { VaultFormatB } from "../index.common.js";
 import { getFormatForID } from "../io/formatRouter.js";
-import { VaultFormatID, VaultLiveSnapshot, VaultSourceID, VaultSourceStatus } from "../types.js";
+import {
+    DefaultGroupTitles,
+    VaultFormatID,
+    VaultLiveSnapshot,
+    VaultSourceID,
+    VaultSourceStatus
+} from "../types.js";
 
 interface StateChangeEnqueuedFunction {
     (): void | Promise<any>;
@@ -38,6 +44,11 @@ export interface VaultSourceSaveOptions {
 }
 
 export interface VaultSourceUnlockOptions {
+    /**
+     * Titles for the default groups when creating a new vault with
+     * `initialiseRemote`, eg. translated for the user's language
+     */
+    defaultGroupTitles?: DefaultGroupTitles;
     initialiseRemote?: boolean;
     loadOfflineCopy?: boolean;
     storeOfflineCopy?: boolean;
@@ -703,6 +714,7 @@ export class VaultSource extends EventEmitter {
             );
         }
         const {
+            defaultGroupTitles = {},
             initialiseRemote = false,
             loadOfflineCopy = false,
             storeOfflineCopy = true
@@ -746,7 +758,9 @@ export class VaultSource extends EventEmitter {
             });
             // Perform pre-save or load
             if (initialiseRemote) {
-                const defaultVault = Vault.createWithDefaults();
+                const defaultVault = Vault.createWithDefaults({
+                    groupTitles: defaultGroupTitles
+                });
                 await datasource.save(defaultVault.format.history, credentials);
                 this._vault = defaultVault;
             } else {

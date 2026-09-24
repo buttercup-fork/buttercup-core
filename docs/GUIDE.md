@@ -74,6 +74,17 @@ await source.unlock(Credentials.fromPassword(MASTER_PASSWORD), {
 await source.save();
 ```
 
+To create the two groups with titles in the user's language, pass `defaultGroupTitles`. Buttercup finds the Trash group by a role attribute rather than its title, so any title works:
+
+```javascript
+await source.unlock(Credentials.fromPassword(MASTER_PASSWORD), {
+    initialiseRemote: true,
+    defaultGroupTitles: { general: "Allgemein", trash: "Papierkorb" }
+});
+```
+
+`Vault.createWithDefaults({ groupTitles: { general, trash } })` does the same for a `Vault` created without a `VaultSource`. Titles left out, or empty, stay `General` and `Trash`. Existing vaults are not changed.
+
 ## Opening an existing vault
 
 The same as creating, without `initialiseRemote`:

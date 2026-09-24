@@ -1,6 +1,12 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import { Group, Vault, VaultFormatA, setDefaultFormat } from "../../../dist/node/index.js";
+import {
+    Group,
+    Vault,
+    VaultFormatA,
+    VaultFormatB,
+    setDefaultFormat
+} from "../../../dist/node/index.js";
 
 describe("core/Vault", function () {
     it("can be instantiated", function () {
@@ -55,6 +61,68 @@ describe("core/Vault", function () {
             const vault = Vault.createWithDefaults();
             const trashGroup = vault.getGroups().find((group) => group.getTitle() === "Trash");
             expect(trashGroup).to.be.an.instanceof(Group);
+        });
+
+        it("supports translated group titles", function () {
+            const vault = Vault.createWithDefaults({
+                groupTitles: { general: "Allgemein", trash: "Papierkorb" }
+            });
+            expect(vault.getGroups().map((group) => group.getTitle())).to.deep.equal([
+                "Allgemein",
+                "Papierkorb"
+            ]);
+        });
+
+        it("uses the translated Trash group as the trash", function () {
+            const vault = Vault.createWithDefaults({
+                groupTitles: { general: "Allgemein", trash: "Papierkorb" }
+            });
+            const trash = vault.getTrashGroup();
+            expect(trash.getTitle()).to.equal("Papierkorb");
+            expect(trash.isTrash()).to.be.true;
+            const entry = vault.findGroupsByTitle("Allgemein")[0].createEntry("Login");
+            entry.delete();
+            expect(entry.isInTrash()).to.be.true;
+            expect(trash.getEntries().map((item) => item.id)).to.deep.equal([entry.id]);
+        });
+
+        it("translates only the titles given", function () {
+            const vault = Vault.createWithDefaults({ groupTitles: { trash: "Corbeille" } });
+            expect(vault.getGroups().map((group) => group.getTitle())).to.deep.equal([
+                "General",
+                "Corbeille"
+            ]);
+        });
+
+        it("falls back to the default titles for empty ones", function () {
+            const vault = Vault.createWithDefaults({ groupTitles: { general: "  ", trash: "" } });
+            expect(vault.getGroups().map((group) => group.getTitle())).to.deep.equal([
+                "General",
+                "Trash"
+            ]);
+        });
+
+        it("trims titles", function () {
+            const vault = Vault.createWithDefaults({ groupTitles: { general: " Général " } });
+            expect(vault.getGroups()[0].getTitle()).to.equal("Général");
+        });
+
+        it("still accepts a format as the only argument", function () {
+            const vault = Vault.createWithDefaults(VaultFormatA);
+            expect(vault.format).to.be.an.instanceof(VaultFormatA);
+            expect(vault.getGroups().map((group) => group.getTitle())).to.deep.equal([
+                "General",
+                "Trash"
+            ]);
+        });
+
+        it("accepts a format with translated titles", function () {
+            const vault = Vault.createWithDefaults({
+                format: VaultFormatB,
+                groupTitles: { general: "一般", trash: "ゴミ箱" }
+            });
+            expect(vault.format).to.be.an.instanceof(VaultFormatB);
+            expect(vault.getTrashGroup().getTitle()).to.equal("ゴミ箱");
         });
     });
 

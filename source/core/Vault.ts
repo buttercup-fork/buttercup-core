@@ -5,7 +5,22 @@ import { findEntriesByProperty } from "../search/entries.js";
 import { Group } from "./Group.js";
 import { Entry } from "./Entry.js";
 import { VaultFormat } from "../io/VaultFormat.js";
-import { EntryID, GroupID, History } from "../types.js";
+import { DefaultGroupTitles, EntryID, GroupID, History } from "../types.js";
+
+export interface VaultDefaultsOptions {
+    /**
+     * Vault format override
+     */
+    format?: any;
+    /**
+     * Titles for the default groups, eg. translated
+     */
+    groupTitles?: DefaultGroupTitles;
+}
+
+function getGroupTitle(title: string | undefined, fallback: string): string {
+    return typeof title === "string" && title.trim().length > 0 ? title.trim() : fallback;
+}
 
 /**
  * Vault class - Contains Groups and Entrys
@@ -38,16 +53,29 @@ export class Vault extends EventEmitter {
     }
 
     /**
-     * Create a Vault with the default template
-     * @param format Optional vault format override
+     * Create a Vault with the default template: a "General" group and a
+     * "Trash" group
+     * @param formatOrOptions Optional vault format override, or options:
+     *  `format` and `groupTitles` (eg. translated group titles)
      * @returns The new vault
      * @memberof Vault
      * @static
+     * @example
+     *  Vault.createWithDefaults({ groupTitles: { general: "Allgemein", trash: "Papierkorb" } });
      */
-    static createWithDefaults(format: any = getDefaultFormat()): Vault {
+    static createWithDefaults(
+        formatOrOptions: any | VaultDefaultsOptions = getDefaultFormat()
+    ): Vault {
+        // Format classes are functions; anything else is an options object
+        const { format = getDefaultFormat(), groupTitles = {} }: VaultDefaultsOptions =
+            typeof formatOrOptions === "function"
+                ? { format: formatOrOptions }
+                : formatOrOptions || {};
         const vault = new Vault(format);
-        vault.createGroup("General");
-        vault.createGroup("Trash").setAttribute(Group.Attribute.Role, "trash");
+        vault.createGroup(getGroupTitle(groupTitles.general, "General"));
+        vault
+            .createGroup(getGroupTitle(groupTitles.trash, "Trash"))
+            .setAttribute(Group.Attribute.Role, "trash");
         return vault;
     }
 

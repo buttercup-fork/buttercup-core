@@ -10,6 +10,22 @@ export interface AttachmentDetails {
 
 export type BufferLike = Buffer | ArrayBuffer;
 
+/**
+ * Titles for the groups a new vault is created with - eg. translated for
+ * the user's language. The Trash group is identified by its role
+ * attribute, not its title, so any title works
+ */
+export interface DefaultGroupTitles {
+    /**
+     * Title of the general-purpose group (default: "General")
+     */
+    general?: string;
+    /**
+     * Title of the Trash group (default: "Trash")
+     */
+    trash?: string;
+}
+
 export interface CredentialsData {
     datasource?: DatasourceConfiguration;
     [key: string]: any;

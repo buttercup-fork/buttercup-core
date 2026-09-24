@@ -8,6 +8,15 @@
 
 ## Properties
 
+### defaultGroupTitles?
+
+> `optional` **defaultGroupTitles?**: [`DefaultGroupTitles`](DefaultGroupTitles.md)
+
+Titles for the default groups when creating a new vault with
+`initialiseRemote`, eg. translated for the user's language
+
+***
+
 ### initialiseRemote?
 
 > `optional` **initialiseRemote?**: `boolean`

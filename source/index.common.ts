@@ -11,7 +11,7 @@ export {
     VaultSourceSaveOptions,
     VaultSourceUnlockOptions
 } from "./core/VaultSource.js";
-export { Vault } from "./core/Vault.js";
+export { Vault, VaultDefaultsOptions } from "./core/Vault.js";
 export { Group } from "./core/Group.js";
 export { Entry } from "./core/Entry.js";
 export { AttachmentManager } from "./attachments/AttachmentManager.js";
