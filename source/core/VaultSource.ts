@@ -6,6 +6,7 @@ import { Credentials } from "../credentials/Credentials.js";
 import { getCredentials, setCredentials } from "../credentials/memory/credentials.js";
 import { getMasterPassword, setMasterPassword } from "../credentials/memory/password.js";
 import { getUniqueID } from "../tools/encoding.js";
+import { ErrorCode } from "../tools/error.js";
 import {
     getSourceOfflineArchive,
     sourceHasOfflineCopy,
@@ -521,6 +522,62 @@ export class VaultSource extends EventEmitter {
         }
         const newVault = Format.vaultFromMergedHistories(history, this._vault.format.history);
         this._vault._updateFormat(newVault.format);
+        return this._vault;
+    }
+
+    /**
+     * Merge another copy of this vault into it - typically a conflict copy
+     * left by a sync service (see `findConflictCopies`). The copy is loaded
+     * from the given credentials and merged in the same way as remote
+     * changes are on save. The merge is not saved: call `save()` afterwards,
+     * and only then remove the conflict copy.
+     * Throws with `ErrorCode.VaultMismatch` if the copy is a different vault,
+     * `ErrorCode.VaultFormatMismatch` if it's in a different vault format
+     * and `ErrorCode.DecryptionFailed` if its password is wrong.
+     * @param credentials Datasource credentials for the copy, including its
+     *  master password (eg. `Credentials.fromDatasource({ type: "file", path }, password)`)
+     * @returns A promise that resolves with the merged vault
+     * @memberof VaultSource
+     */
+    async mergeFromCredentials(credentials: Credentials): Promise<Vault> {
+        if (!Credentials.isCredentials(credentials)) {
+            throw new Layerr(`Failed merging into source: Invalid credentials: ${this.id}`);
+        }
+        if (this.status !== VaultSource.STATUS_UNLOCKED) {
+            throw new Layerr(
+                `Failed merging into source: Source not unlocked (${this.status}): ${this.id}`
+            );
+        }
+        await this._enqueueStateChange(async () => {
+            const masterPassword = getMasterPassword(credentials.id);
+            const datasource = credentialsToDatasource(
+                Credentials.fromCredentials(credentials, masterPassword)
+            );
+            const { Format, history } = await datasource.load(
+                prepareDatasourceCredentials(credentials, datasource.type)
+            );
+            const currentFormat = this._vault.format.getFormat();
+            if (Format !== currentFormat) {
+                // Converting would give every value in the copy a new
+                // timestamp, letting its stale values win the merge
+                throw new Layerr(
+                    { info: { code: ErrorCode.VaultFormatMismatch } },
+                    `Failed merging into source: Vault formats differ (${Format.getFormatID()} into ${currentFormat.getFormatID()}): ${this.id}`
+                );
+            }
+            const incoming = Vault.createFromHistory(history, Format);
+            if (incoming.id !== this._vault.id) {
+                throw new Layerr(
+                    { info: { code: ErrorCode.VaultMismatch } },
+                    `Failed merging into source: Not a copy of this vault (${incoming.id}): ${this.id}`
+                );
+            }
+            const newVault = Format.vaultFromMergedHistories(this._vault.format.history, history);
+            this._vault._updateFormat(newVault.format);
+            this._vault.format.dirty = true;
+            await this._updateInsights();
+        }, /* stack */ "merging");
+        this.emit("updated");
         return this._vault;
     }
 

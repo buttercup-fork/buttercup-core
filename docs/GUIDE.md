@@ -14,6 +14,7 @@ A task-oriented guide to using `buttercup` as a library: opening a vault, and li
     - [Updating an entry](#updating-an-entry)
     - [Deleting an entry](#deleting-an-entry)
 - [Saving and locking](#saving-and-locking)
+- [Merging conflict copies](#merging-conflict-copies)
 - [Other storage backends](#other-storage-backends)
 - [Low-level access without a VaultSource](#low-level-access-without-a-vaultsource)
 
@@ -207,6 +208,36 @@ await source.lock(); // Discard the decrypted vault from memory
 ```
 
 `lock()` does **not** save. Save first if you have made changes.
+
+## Merging conflict copies
+
+When two devices change a synced vault file at the same time, sync services keep both versions by saving one under a new name next to the original, eg. `vault (Jane's conflicted copy 2026-09-24).bcup`. `findConflictCopies()` picks these out of a directory listing (Dropbox, Nextcloud, ownCloud, Syncthing and Seafile naming is recognised). Merge each one into the unlocked vault, save, and only then remove the copy:
+
+```javascript
+import { readdirSync, rmSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { Credentials, findConflictCopies } from "buttercup";
+
+const vaultPath = "/home/jane/Dropbox/vault.bcup";
+const dir = dirname(vaultPath);
+const copies = findConflictCopies(
+    vaultPath,
+    readdirSync(dir).map((file) => join(dir, file))
+);
+for (const copyPath of copies) {
+    await source.mergeFromCredentials(
+        Credentials.fromDatasource({ type: "file", path: copyPath }, "my master password")
+    );
+}
+if (copies.length > 0) {
+    await source.save();
+    copies.forEach((copyPath) => rmSync(copyPath));
+}
+```
+
+Changes from both copies are kept. Where the same field was changed in both, the later change wins in Format B vaults. `mergeFromCredentials()` refuses files that aren't copies of the same vault, giving an error with the code `ErrorCode.VaultMismatch` (read it with `getErrorCode(err)`). It gives `ErrorCode.VaultFormatMismatch` for a copy in the other vault format, and `ErrorCode.DecryptionFailed` for a wrong password. A copy saved after a password change on the other device needs that device's password.
+
+Services that add only a number or device name (iCloud's `vault 2.bcup`, OneDrive's `vault-LAPTOP.bcup`) aren't detected, as those names can't be told apart from other files. Ask the user to pick the file instead. `mergeFromCredentials()` still checks it's the same vault.
 
 ## Other storage backends
 

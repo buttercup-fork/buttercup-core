@@ -356,6 +356,36 @@ Lock the source
 
 ***
 
+### mergeFromCredentials()
+
+> **mergeFromCredentials**(`credentials`): `Promise`\<[`Vault`](Vault.md)\>
+
+Merge another copy of this vault into it - typically a conflict copy
+left by a sync service (see `findConflictCopies`). The copy is loaded
+from the given credentials and merged in the same way as remote
+changes are on save. The merge is not saved: call `save()` afterwards,
+and only then remove the conflict copy.
+Throws with `ErrorCode.VaultMismatch` if the copy is a different vault,
+`ErrorCode.VaultFormatMismatch` if it's in a different vault format
+and `ErrorCode.DecryptionFailed` if its password is wrong.
+
+#### Parameters
+
+##### credentials
+
+[`Credentials`](Credentials.md)
+
+Datasource credentials for the copy, including its
+ master password (eg. `Credentials.fromDatasource({ type: "file", path }, password)`)
+
+#### Returns
+
+`Promise`\<[`Vault`](Vault.md)\>
+
+A promise that resolves with the merged vault
+
+***
+
 ### mergeFromRemote()
 
 > **mergeFromRemote**(): `Promise`\<[`Vault`](Vault.md)\>

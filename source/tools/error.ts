@@ -14,7 +14,16 @@ export enum ErrorCode {
     /**
      * Content is not a Buttercup vault (missing/invalid signature)
      */
-    InvalidVaultSignature = "INVALID_VAULT_SIGNATURE"
+    InvalidVaultSignature = "INVALID_VAULT_SIGNATURE",
+    /**
+     * Vaults can't be merged: they are in different formats (A and B)
+     */
+    VaultFormatMismatch = "VAULT_FORMAT_MISMATCH",
+    /**
+     * Vaults can't be merged: they are different vaults (their IDs differ),
+     * not copies of the same one
+     */
+    VaultMismatch = "VAULT_MISMATCH"
 }
 
 // What a wrong password looks like, per algorithm/environment:
