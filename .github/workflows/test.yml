@@ -21,29 +21,35 @@ jobs:
       - run: npm run test:node
   web-specs:
     runs-on: ubuntu-latest
-    # TODO: remove continue-on-error once GitHub is restored / off Forgejo.
-    # This Forgejo instance's action source (data.forgejo.org) doesn't mirror
-    # browser-actions/*, so Setup Firefox/Chrome fail immediately with
-    # "repository not found" - not a real test failure.
-    continue-on-error: true
     strategy:
       matrix:
         node-version: [18.x]
     steps:
       - uses: actions/checkout@v2
+      # Full GitHub URLs: this Forgejo instance's default action source
+      # (data.forgejo.org) doesn't mirror browser-actions/*. The browser
+      # steps run before setup-node so they use the image's newer Node.
+      - name: Setup Firefox
+        id: setup-firefox
+        uses: https://github.com/browser-actions/setup-firefox@v1
+        with:
+          firefox-version: latest
+      - name: Setup Chrome
+        id: setup-chrome
+        uses: https://github.com/browser-actions/setup-chrome@v1
+        with:
+          install-dependencies: true
+          no-sudo: true
+      - name: Install Firefox dependencies
+        run: apt-get update && apt-get install -y --no-install-recommends libgtk-3-0 libdbus-glib-1-2 libasound2 libxtst6
       - name: Node.js web specs ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-        env:
-          MOZ_HEADLESS: 1
-          CI: travis
-      - name: Setup Firefox
-        uses: browser-actions/setup-firefox@latest
-        with:
-          firefox-version: latest
-      - name: Setup Chrome
-        uses: browser-actions/setup-chrome@latest
-      - run: google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://localhost &
       - run: npm ci
       - run: npm run test:web
+        env:
+          CI: true
+          MOZ_HEADLESS: 1
+          CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
+          FIREFOX_BIN: ${{ steps.setup-firefox.outputs.firefox-path }}
