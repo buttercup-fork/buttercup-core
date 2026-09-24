@@ -91,6 +91,7 @@ export { getSharedAppEnv } from "./env/appEnv.js";
 
 export { generateUUID } from "./tools/uuid.js";
 export { EntryURLType, getEntryPath, getEntryURLs } from "./tools/entry.js";
+export { ErrorCode, getErrorCode } from "./tools/error.js";
 export {
     base64ToBytes,
     bytesToBase64,

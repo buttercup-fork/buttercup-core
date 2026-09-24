@@ -2,6 +2,8 @@ import { ORPHANS_GROUP_TITLE, VaultFormat } from "./VaultFormat.js";
 import { Vault } from "../core/Vault.js";
 import { generateUUID } from "../tools/uuid.js";
 import { getSharedAppEnv } from "../env/appEnv.js";
+import { Layerr } from "layerr";
+import { ErrorCode, withDecryptionErrorCode } from "../tools/error.js";
 import { getMasterPassword } from "../credentials/memory/password.js";
 import { Credentials } from "../credentials/Credentials.js";
 import { historyArrayToString, historyStringToArray } from "./common.js";
@@ -82,11 +84,16 @@ export class VaultFormatB extends VaultFormat {
         return Promise.resolve()
             .then(() => {
                 if (!hasValidSignature(encryptedContent)) {
-                    throw new Error("No valid signature in vault");
+                    throw new Layerr(
+                        { info: { code: ErrorCode.InvalidVaultSignature } },
+                        "No valid signature in vault"
+                    );
                 }
                 return stripSignature(encryptedContent);
             })
-            .then((encryptedData) => decrypt(encryptedData, masterPassword))
+            .then((encryptedData) =>
+                withDecryptionErrorCode<string>(decrypt(encryptedData, masterPassword), "vault")
+            )
             .then(async (decrypted) => {
                 const decompressed = await decompress(decrypted);
                 return historyStringToArray(decompressed, VaultFormatID.B);

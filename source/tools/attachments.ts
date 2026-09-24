@@ -2,13 +2,14 @@ import { getSharedAppEnv } from "../env/appEnv.js";
 import { getMasterPassword } from "../credentials/memory/password.js";
 import { Credentials } from "../credentials/Credentials.js";
 import { BufferLike } from "../types.js";
+import { withDecryptionErrorCode } from "./error.js";
 
 export const ATTACHMENT_EXT = "bcatt";
 
 export function decryptAttachment(buff: BufferLike, credentials: Credentials): Promise<BufferLike> {
     const masterPassword = getMasterPassword(credentials.id);
     const decrypt = getSharedAppEnv().getProperty("crypto/v2/decryptBuffer");
-    return decrypt(buff, masterPassword);
+    return withDecryptionErrorCode(decrypt(buff, masterPassword), "attachment");
 }
 
 export function encryptAttachment(buff: BufferLike, credentials: Credentials): Promise<BufferLike> {
