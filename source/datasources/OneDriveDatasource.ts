@@ -1,10 +1,11 @@
 import { Layerr } from "layerr";
 import DatasourceAuthManager from "./DatasourceAuthManager.js";
-import { OneDriveClient } from "./OneDriveClient.js";
+import type { OneDriveClient } from "@buttercup/onedrive-client";
 import { TextDatasource } from "./TextDatasource.js";
 import { fireInstantiationHandlers, registerDatasource } from "./register.js";
 import { Credentials } from "../credentials/Credentials.js";
 import { getCredentials } from "../credentials/memory/credentials.js";
+import { getSharedAppEnv } from "../env/appEnv.js";
 import {
     DatasourceConfigurationOneDrive,
     DatasourceLoadedData,
@@ -55,7 +56,7 @@ export default class OneDriveDatasource extends TextDatasource {
         this.path = path;
         this.refreshToken = refreshToken;
         this.token = token;
-        this.client = new OneDriveClient(token, endpoint);
+        this.client = this._createClient(token);
         this.authManager = DatasourceAuthManager.getSharedManager();
         this.type = DATASOURCE_TYPE;
         fireInstantiationHandlers(DATASOURCE_TYPE, this);
@@ -144,11 +145,16 @@ export default class OneDriveDatasource extends TextDatasource {
     updateTokens(accessToken: string, refreshToken?: string) {
         this.token = accessToken;
         if (refreshToken) this.refreshToken = refreshToken;
-        this.client = new OneDriveClient(accessToken, this.endpoint);
+        this.client = this._createClient(accessToken);
         const { data: credentialData } = getCredentials(this.credentials.id);
         credentialData.datasource.token = accessToken;
         if (refreshToken) credentialData.datasource.refreshToken = refreshToken;
         this.emit("updated");
+    }
+
+    _createClient(token: string): OneDriveClient {
+        const createClient = getSharedAppEnv().getProperty("net/onedrive/v1/newClient");
+        return createClient(token, this.endpoint);
     }
 
     get _target() {
