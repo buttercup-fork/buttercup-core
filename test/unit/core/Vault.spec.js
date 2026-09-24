@@ -1,6 +1,8 @@
 import { expect } from "chai";
 import sinon from "sinon";
 import {
+    Entry,
+    EntryType,
     Group,
     Vault,
     VaultFormatA,
@@ -123,6 +125,56 @@ describe("core/Vault", function () {
             });
             expect(vault.format).to.be.an.instanceof(VaultFormatB);
             expect(vault.getTrashGroup().getTitle()).to.equal("ゴミ箱");
+        });
+    });
+
+    describe("findEntriesByType", function () {
+        beforeEach(function () {
+            this.vault = Vault.createWithDefaults();
+            const general = this.vault.findGroupsByTitle("General")[0];
+            this.login = general.createEntry("Login");
+            this.card = general
+                .createEntry("Card")
+                .setAttribute(Entry.Attributes.FacadeType, EntryType.CreditCard);
+            this.note = general
+                .createEntry("Note")
+                .setAttribute(Entry.Attributes.FacadeType, EntryType.Note);
+        });
+
+        it("returns entries of the type", function () {
+            expect(this.vault.findEntriesByType(EntryType.CreditCard)).to.deep.equal([this.card]);
+        });
+
+        it("treats entries without a type as logins", function () {
+            expect(this.vault.findEntriesByType(EntryType.Login)).to.deep.equal([this.login]);
+        });
+
+        it("returns an empty array for unused types", function () {
+            expect(this.vault.findEntriesByType(EntryType.SSHKey)).to.deep.equal([]);
+        });
+    });
+
+    describe("getAllEntryTypes", function () {
+        it("returns an empty array for a vault without entries", function () {
+            expect(Vault.createWithDefaults().getAllEntryTypes()).to.deep.equal([]);
+        });
+
+        it("returns each used type once, in EntryType order", function () {
+            const vault = Vault.createWithDefaults();
+            const general = vault.findGroupsByTitle("General")[0];
+            general.createEntry("Note").setAttribute(Entry.Attributes.FacadeType, EntryType.Note);
+            general.createEntry("Login");
+            general
+                .createEntry("Card 1")
+                .setAttribute(Entry.Attributes.FacadeType, EntryType.CreditCard);
+            general
+                .createEntry("Card 2")
+                .setAttribute(Entry.Attributes.FacadeType, EntryType.CreditCard);
+            expect(vault.getAllEntryTypes()).to.deep.equal([
+                EntryType.CreditCard,
+                EntryType.Login,
+                EntryType.Note
+            ]);
         });
     });
 

@@ -142,6 +142,10 @@ entries
 > **searchByTerm**(`term`): [`SearchResult`](../interfaces/SearchResult.md)[]
 
 Search for entries by term
+The term can include filters: `#tag` (entries must have every tag
+given) and `type:<entry type>`, eg. `type:login` or `type:ssh_key`
+(entries must be one of the types given). A term with only filters
+returns every matching entry.
 
 #### Parameters
 

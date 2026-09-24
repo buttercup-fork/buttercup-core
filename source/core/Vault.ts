@@ -5,7 +5,7 @@ import { findEntriesByProperty } from "../search/entries.js";
 import { Group } from "./Group.js";
 import { Entry } from "./Entry.js";
 import { VaultFormat } from "../io/VaultFormat.js";
-import { DefaultGroupTitles, EntryID, GroupID, History } from "../types.js";
+import { DefaultGroupTitles, EntryID, EntryType, GroupID, History } from "../types.js";
 
 export interface VaultDefaultsOptions {
     /**
@@ -202,6 +202,16 @@ export class Vault extends EventEmitter {
     }
 
     /**
+     * Find entries of a certain type (eg. logins, credit cards). Entries
+     * without a type set are logins.
+     * @param type The entry type
+     * @returns An array of entries
+     */
+    findEntriesByType(type: EntryType): Array<Entry> {
+        return this._entries.filter((entry) => entry.getType() === type);
+    }
+
+    /**
      * Find entries by a certain tag
      * @param tag The case-insensitive tag name
      * @param exact Whether to match exact tag names or use partial
@@ -261,6 +271,16 @@ export class Vault extends EventEmitter {
      */
     getAllGroups(): Array<Group> {
         return [...this._groups];
+    }
+
+    /**
+     * Get the entry types used in the vault, eg. for offering filters
+     * alongside tags. Like `getAllTags`, this includes entries in Trash.
+     * @returns An array of entry types, in `EntryType` order
+     */
+    getAllEntryTypes(): Array<EntryType> {
+        const used = new Set(this._entries.map((entry) => entry.getType()));
+        return Object.values(EntryType).filter((type) => used.has(type));
     }
 
     /**

@@ -263,6 +263,29 @@ An array of entries
 
 ***
 
+### findEntriesByType()
+
+> **findEntriesByType**(`type`): [`Entry`](Entry.md)[]
+
+Find entries of a certain type (eg. logins, credit cards). Entries
+without a type set are logins.
+
+#### Parameters
+
+##### type
+
+[`EntryType`](../enumerations/EntryType.md)
+
+The entry type
+
+#### Returns
+
+[`Entry`](Entry.md)[]
+
+An array of entries
+
+***
+
 ### findEntryByID()
 
 > **findEntryByID**(`id`): [`Entry`](Entry.md)
@@ -340,6 +363,21 @@ Get all entries in the vault
 [`Entry`](Entry.md)[]
 
 An array of entry instances
+
+***
+
+### getAllEntryTypes()
+
+> **getAllEntryTypes**(): [`EntryType`](../enumerations/EntryType.md)[]
+
+Get the entry types used in the vault, eg. for offering filters
+alongside tags. Like `getAllTags`, this includes entries in Trash.
+
+#### Returns
+
+[`EntryType`](../enumerations/EntryType.md)[]
+
+An array of entry types, in `EntryType` order
 
 ***
 

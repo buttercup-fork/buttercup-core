@@ -148,6 +148,14 @@ vault.findEntriesByProperty("title", /bank/i);
 
 // By tag
 vault.findEntriesByTag("work");
+
+// By type (entries without a type set are logins)
+import { EntryType } from "buttercup";
+vault.findEntriesByType(EntryType.CreditCard);
+
+// The tags and entry types in use, eg. for offering filters
+vault.getAllTags(); // ["finance", "work"]
+vault.getAllEntryTypes(); // ["credit_card", "login"]
 ```
 
 For fuzzy, user-facing search (the kind the Buttercup apps use), use [`VaultEntrySearch`](api/classes/VaultEntrySearch.md). It returns plain [`SearchResult`](api/interfaces/SearchResult.md) objects rather than `Entry` instances. Use `vault.findEntryByID(result.id)` to get the entry back.
@@ -162,7 +170,15 @@ search.searchByTerm("bank"); // Fuzzy match on title/username/URL
 search.searchByURL("https://bank.example.com/login"); // Entries for a website
 ```
 
-Call `prepare()` again after the vault changes.
+Search terms can include filters. `#tag` keeps entries that have the tag, and `type:<entry type>` keeps entries of that type, eg. `type:login`, `type:credit_card` or `type:ssh_key`. Several tags must all match, while several types match any of them. A term with only filters returns every matching entry:
+
+```javascript
+search.searchByTerm("type:credit_card"); // All credit cards
+search.searchByTerm("type:credit_card #work"); // Credit cards tagged "work"
+search.searchByTerm("type:login bank"); // Logins matching "bank"
+```
+
+Search results never include entries in Trash. Call `prepare()` again after the vault changes.
 
 ### Creating an entry
 
