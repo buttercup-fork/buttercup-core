@@ -8,6 +8,7 @@ export {
     VaultSource,
     VaultSourceConfig,
     VaultSourceMetadata,
+    VaultSourceSaveOptions,
     VaultSourceUnlockOptions
 } from "./core/VaultSource.js";
 export { Vault } from "./core/Vault.js";
@@ -48,6 +49,7 @@ export {
 } from "./facades/vault.js";
 export { isOTPURI, isVaultFacade } from "./facades/detection.js";
 export {
+    ConsumeEntryFacadeOptions,
     CreateEntryFacadeOptions,
     consumeEntryFacade,
     createEntryFacade,
@@ -77,13 +79,14 @@ export { StorageInterface } from "./storage/StorageInterface.js";
 export { MemoryStorageInterface } from "./storage/MemoryStorageInterface.js";
 
 export { SearchResult } from "./search/BaseSearch.js";
-export { VaultEntrySearch as Search } from "./search/VaultEntrySearch.js"; // compat @todo remove
 export { VaultEntrySearch } from "./search/VaultEntrySearch.js";
+export { VaultEntrySearch as Search } from "./search/VaultEntrySearch.js"; // compat @todo remove
 export { VaultFacadeEntrySearch } from "./search/VaultFacadeEntrySearch.js";
 export { VaultSourceEntrySearch } from "./search/VaultSourceEntrySearch.js";
 export { SearchKey, buildSearcher } from "./search/searcher.js";
 
 export { AppEnv, AppEnvGetPropertyOptions } from "./env/core/appEnv.js";
+export { AppEnvMapper } from "./env/appEnv.js";
 export { getSharedAppEnv } from "./env/appEnv.js";
 
 export { generateUUID } from "./tools/uuid.js";

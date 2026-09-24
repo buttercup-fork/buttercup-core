@@ -1,0 +1,669 @@
+[**Buttercup Core API**](../README.md)
+
+***
+
+[Buttercup Core API](../README.md) / Entry
+
+# Class: Entry
+
+Entry class - some secret item, login or perhaps
+even a credit card
+
+## Extends
+
+- `VaultItem`
+
+## Constructors
+
+### Constructor
+
+> **new Entry**(`vault`, `source`): `Entry`
+
+Constructor for the vault member base class
+
+#### Parameters
+
+##### vault
+
+[`Vault`](Vault.md)
+
+Vault reference
+
+##### source
+
+`any`
+
+Remote source object reference
+
+#### Returns
+
+`Entry`
+
+#### Inherited from
+
+`VaultItem.constructor`
+
+## Properties
+
+### Attributes
+
+> `static` **Attributes**: `Readonly`\<\{ `AttachmentPrefix`: `"BC_ENTRY_ATTACHMENT:"`; `FacadeType`: `"BC_ENTRY_FACADE_TYPE"`; `FieldTypePrefix`: `"BC_ENTRY_FIELD_TYPE:"`; `Tags`: `"BC_ENTRY_TAGS"`; \}\>
+
+## Accessors
+
+### id
+
+#### Get Signature
+
+> **get** **id**(): `string`
+
+The ID of the entry or group
+
+##### Returns
+
+`string`
+
+#### Inherited from
+
+`VaultItem.id`
+
+***
+
+### permissions
+
+#### Get Signature
+
+> **get** **permissions**(): `string`[]
+
+The current granted permissions
+
+##### Returns
+
+`string`[]
+
+#### Inherited from
+
+`VaultItem.permissions`
+
+***
+
+### vault
+
+#### Get Signature
+
+> **get** **vault**(): [`Vault`](Vault.md)
+
+The vault this item belongs to
+
+##### Returns
+
+[`Vault`](Vault.md)
+
+#### Inherited from
+
+`VaultItem.vault`
+
+## Methods
+
+### addTags()
+
+> **addTags**(...`tags`): `this`
+
+Add one or more tags to the entry
+
+#### Parameters
+
+##### tags
+
+...`string`[]
+
+A collection of tag strings
+
+#### Returns
+
+`this`
+
+Self
+
+***
+
+### createNew()
+
+> `static` **createNew**(`vault`, `parentGroupID`): `Entry`
+
+Create a new Entry instance within a vault
+ and group
+
+#### Parameters
+
+##### vault
+
+[`Vault`](Vault.md)
+
+The target vault instance
+
+##### parentGroupID
+
+`string`
+
+The target group to
+ create the entry in (cannot be vault-level)
+
+#### Returns
+
+`Entry`
+
+***
+
+### delete()
+
+> **delete**(`skipTrash?`): `boolean`
+
+Delete the entry - either trashes the entry, or removes it completely.
+If the entry is in the trash already, it is removed (including if there is no
+   trash group). If the entry is in a normal group and a trash group exists, it
+ is moved there instead of being deleted.
+
+#### Parameters
+
+##### skipTrash?
+
+`boolean` = `false`
+
+Skip the trash and force-delete the entry
+
+#### Returns
+
+`boolean`
+
+Whether or not the item was deleted
+
+#### See
+
+ - moveToGroup
+ - Vault.getTrashGroup
+
+***
+
+### deleteAttribute()
+
+> **deleteAttribute**(`attribute`): `this`
+
+Delete an attribute
+
+#### Parameters
+
+##### attribute
+
+`string`
+
+The attribute name
+
+#### Returns
+
+`this`
+
+Self
+
+#### Throws
+
+Throws if the attribute doesn't exist, or cannot be deleted
+
+***
+
+### deleteProperty()
+
+> **deleteProperty**(`property`): `this`
+
+Delete a property
+
+#### Parameters
+
+##### property
+
+`string`
+
+The property to delete
+
+#### Returns
+
+`this`
+
+Self
+
+#### Throws
+
+Throws if property doesn't exist, or cannot be deleted
+
+***
+
+### getAttribute()
+
+#### Call Signature
+
+> **getAttribute**(): [`PropertyKeyValueObject`](../interfaces/PropertyKeyValueObject.md)
+
+Get an attribute
+If no attribute name is specified, an object with all attributes and their
+values is returned.
+
+##### Returns
+
+[`PropertyKeyValueObject`](../interfaces/PropertyKeyValueObject.md)
+
+The attribute value or an object
+ containing all attribute keys and their values if no attribute name
+ is provided
+
+#### Call Signature
+
+> **getAttribute**(`attribute`): `string`
+
+Get an attribute
+If no attribute name is specified, an object with all attributes and their
+values is returned.
+
+##### Parameters
+
+###### attribute
+
+`string`
+
+The name of the attribute to fetch
+
+##### Returns
+
+`string`
+
+The attribute value or an object
+ containing all attribute keys and their values if no attribute name
+ is provided
+
+***
+
+### getChanges()
+
+> **getChanges**(): [`EntryChange`](../interfaces/EntryChange.md)[]
+
+Get an array of all history changes made to the entry
+
+#### Returns
+
+[`EntryChange`](../interfaces/EntryChange.md)[]
+
+***
+
+### getGroup()
+
+> **getGroup**(): [`Group`](Group.md)
+
+Get the containing group for the entry
+
+#### Returns
+
+[`Group`](Group.md)
+
+The parent group
+
+#### Throws
+
+Throws if no parent group found
+
+***
+
+### getProperties()
+
+> **getProperties**(`propertyExpression?`): [`PropertyKeyValueObject`](../interfaces/PropertyKeyValueObject.md)
+
+Get property values via RegExp expressions.
+If no property expression is specified, it returns the empty behavior of
+Entry.getProperty.
+
+#### Parameters
+
+##### propertyExpression?
+
+`string` \| `RegExp`
+
+The expression to use to fetch properties. If
+ a regular expression, it is then tested against all property keys. If a
+ string, it's compared exactly.
+
+#### Returns
+
+[`PropertyKeyValueObject`](../interfaces/PropertyKeyValueObject.md)
+
+A key-value object of the matching properties
+
+***
+
+### getProperty()
+
+> **getProperty**(`property?`): `string` \| [`PropertyKeyValueObject`](../interfaces/PropertyKeyValueObject.md)
+
+Get a property value
+If no property name is specified, an object with all properties and their
+values is returned.
+
+#### Parameters
+
+##### property?
+
+`string`
+
+The name of the property to fetch
+
+#### Returns
+
+`string` \| [`PropertyKeyValueObject`](../interfaces/PropertyKeyValueObject.md)
+
+The property value or an object with all
+ values if no property specified
+
+***
+
+### getPropertyValueType()
+
+> **getPropertyValueType**(`property`): [`EntryPropertyValueType`](../enumerations/EntryPropertyValueType.md)
+
+Set the value type of an entry property
+
+#### Parameters
+
+##### property
+
+`string`
+
+The property to get the value type of
+
+#### Returns
+
+[`EntryPropertyValueType`](../enumerations/EntryPropertyValueType.md)
+
+The property value type
+
+***
+
+### getTags()
+
+> **getTags**(): `string`[]
+
+Get entry tags
+
+#### Returns
+
+`string`[]
+
+An array of tag strings
+
+***
+
+### getType()
+
+> **getType**(): [`EntryType`](../enumerations/EntryType.md)
+
+Get the entry type
+
+#### Returns
+
+[`EntryType`](../enumerations/EntryType.md)
+
+The entry type
+
+***
+
+### getURLs()
+
+> **getURLs**(`urlTypePreference`): `string`[]
+
+Get an array of URLs from the Entry
+Returns an array of detected URL values in the Entry's properties. The
+types of URLs can be configured by providing a preference:
+ - "general" - General URLs (of any type, preferring "URL" named props)
+ - "login" - Prefer URLs whose key has "login" in it
+ - "icon" - Return only icon-like URLs
+ - "any" - Return all found URLs
+
+#### Parameters
+
+##### urlTypePreference
+
+[`EntryURLType`](../enumerations/EntryURLType.md)
+
+The URL type preference
+
+#### Returns
+
+`string`[]
+
+An array of URLs
+
+***
+
+### grantPermission()
+
+> **grantPermission**(`perm`): `void`
+
+Grant a new permission to the member
+
+#### Parameters
+
+##### perm
+
+`string`
+
+The permission to grant
+
+#### Returns
+
+`void`
+
+#### Inherited from
+
+`VaultItem.grantPermission`
+
+***
+
+### hasPermission()
+
+> **hasPermission**(`perm`): `boolean`
+
+Check if the member has a permission
+
+#### Parameters
+
+##### perm
+
+`string`
+
+The permission to check for
+
+#### Returns
+
+`boolean`
+
+#### Inherited from
+
+`VaultItem.hasPermission`
+
+***
+
+### isInTrash()
+
+> **isInTrash**(): `boolean`
+
+Check if the entry is in the trash
+
+#### Returns
+
+`boolean`
+
+Whether or not the entry is in the trash
+
+***
+
+### moveToGroup()
+
+> **moveToGroup**(`group`): `this`
+
+Move the entry to another group
+
+#### Parameters
+
+##### group
+
+[`Group`](Group.md)
+
+The target group
+
+#### Returns
+
+`this`
+
+Returns self
+
+***
+
+### removeTags()
+
+> **removeTags**(...`tags`): `this`
+
+Remove one or more tags
+
+#### Parameters
+
+##### tags
+
+...`string`[]
+
+Collection of tags to remove
+
+#### Returns
+
+`this`
+
+Self
+
+***
+
+### revokeAllPermissions()
+
+> **revokeAllPermissions**(): `void`
+
+Revoke all permissions
+
+#### Returns
+
+`void`
+
+#### Inherited from
+
+`VaultItem.revokeAllPermissions`
+
+***
+
+### revokePermission()
+
+> **revokePermission**(`perm`): `void`
+
+Revoke a single permission
+
+#### Parameters
+
+##### perm
+
+`string`
+
+The permission to revoke
+
+#### Returns
+
+`void`
+
+#### Inherited from
+
+`VaultItem.revokePermission`
+
+***
+
+### setAttribute()
+
+> **setAttribute**(`attribute`, `value`): `this`
+
+Set an attribute on the entry
+
+#### Parameters
+
+##### attribute
+
+`string`
+
+The name of the attribute
+
+##### value
+
+`string`
+
+The value to set
+
+#### Returns
+
+`this`
+
+Returns self
+
+***
+
+### setProperty()
+
+> **setProperty**(`property`, `value`): `this`
+
+Set a property on the entry
+
+#### Parameters
+
+##### property
+
+`string`
+
+The property name
+
+##### value
+
+`string`
+
+The property value
+
+#### Returns
+
+`this`
+
+Returns self
+
+***
+
+### setPropertyValueType()
+
+> **setPropertyValueType**(`property`, `valueType`): `this`
+
+Set the value type of an entry property
+
+#### Parameters
+
+##### property
+
+`string`
+
+The property to set the value type for
+
+##### valueType
+
+[`EntryPropertyValueType`](../enumerations/EntryPropertyValueType.md)
+
+The new value type to set, or `null` to remove
+
+#### Returns
+
+`this`
+
+Returns self

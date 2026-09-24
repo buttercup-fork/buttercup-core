@@ -91,7 +91,7 @@ export class Vault extends EventEmitter {
 
     /**
      * Create a new Vault instance
-     * @param Format Optional vault format specification.
+     * @param format Optional vault format specification.
      *  Will use the default system format (recommended) if not
      *  specified.
      */
@@ -194,7 +194,6 @@ export class Vault extends EventEmitter {
             return [...entryIDs].map((id) => this.findEntryByID(id));
         }
         const entryIDs = this._tagMap.has(tagLower) ? this._tagMap.get(tagLower) : [];
-        console.log("SEARCHING", entryIDs, this._tagMap);
         return entryIDs.map((id) => this.findEntryByID(id));
     }
 
