@@ -10,6 +10,7 @@
 
 - [`DatasourceConfigurationDropbox`](DatasourceConfigurationDropbox.md)
 - [`DatasourceConfigurationGoogleDrive`](DatasourceConfigurationGoogleDrive.md)
+- [`DatasourceConfigurationOneDrive`](DatasourceConfigurationOneDrive.md)
 - [`DatasourceConfigurationFile`](DatasourceConfigurationFile.md)
 - [`DatasourceConfigurationMemory`](DatasourceConfigurationMemory.md)
 - [`DatasourceConfigurationWebDAV`](DatasourceConfigurationWebDAV.md)

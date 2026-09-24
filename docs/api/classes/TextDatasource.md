@@ -19,6 +19,7 @@ Datasource for text input and output
 - [`WebDAVDatasource`](WebDAVDatasource.md)
 - [`DropboxDatasource`](DropboxDatasource.md)
 - [`GoogleDriveDatasource`](GoogleDriveDatasource.md)
+- [`OneDriveDatasource`](OneDriveDatasource.md)
 
 ## Constructors
 

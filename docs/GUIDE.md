@@ -218,9 +218,19 @@ Only the datasource credentials change - everything after `unlock()` is identica
 | `"webdav"` | [`DatasourceConfigurationWebDAV`](api/interfaces/DatasourceConfigurationWebDAV.md) |
 | `"dropbox"` | [`DatasourceConfigurationDropbox`](api/interfaces/DatasourceConfigurationDropbox.md) |
 | `"googledrive"` | [`DatasourceConfigurationGoogleDrive`](api/interfaces/DatasourceConfigurationGoogleDrive.md) |
+| `"onedrive"` | [`DatasourceConfigurationOneDrive`](api/interfaces/DatasourceConfigurationOneDrive.md) - by `fileID` or by `path` (saving to a new path creates the file) |
 | `"memory"` | [`DatasourceConfigurationMemory`](api/interfaces/DatasourceConfigurationMemory.md) (testing) |
 
-Dropbox and Google Drive need OAuth tokens that your application obtains itself. Buttercup Core doesn't perform the OAuth flow.
+Dropbox, Google Drive and OneDrive need OAuth tokens that your application obtains itself. Buttercup Core doesn't perform the OAuth flow. For Google Drive and OneDrive, register a handler to refresh expired tokens. It runs when a request fails authentication, and the request is then retried once:
+
+```javascript
+import { DatasourceAuthManager } from "buttercup";
+
+DatasourceAuthManager.getSharedManager().registerHandler("onedrive", async (datasource) => {
+    const { accessToken, refreshToken } = await myRefreshFunction(datasource.refreshToken);
+    datasource.updateTokens(accessToken, refreshToken);
+});
+```
 
 ## Low-level access without a VaultSource
 

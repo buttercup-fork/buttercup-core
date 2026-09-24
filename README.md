@@ -37,7 +37,7 @@ The core of the system, this **Buttercup Core**, boasts a few awesome features:
  * Merge-able vault contents
  * History for back-tracking to previous passwords etc.
  * File attachments (encrypted)
- * AES CBC encryption
+ * AES-GCM encryption (older AES-CBC vaults remain readable)
  * GZip compression
  * NodeJS and Browser support
 
@@ -46,6 +46,7 @@ This library also supports a variety of datasources for loading from and saving 
  * WebDAV
  * [Dropbox](https://www.dropbox.com/)
  * [Google Drive](https://www.google.com/drive/)
+ * [OneDrive](https://www.microsoft.com/microsoft-365/onedrive/) (via Microsoft Graph)
  * Local files
  * In-memory (testing, prototyping)
 

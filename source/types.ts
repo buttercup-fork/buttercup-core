@@ -40,6 +40,30 @@ export interface DatasourceConfigurationGoogleDrive extends DatasourceConfigurat
     token: string;
 }
 
+export interface DatasourceConfigurationOneDrive extends DatasourceConfiguration {
+    type: "onedrive";
+    /**
+     * Microsoft Graph OAuth2 access token (needs the `Files.ReadWrite`
+     * scope, or `Files.ReadWrite.AppFolder` for an app-folder-only vault)
+     */
+    token: string;
+    refreshToken?: string;
+    /**
+     * Drive item ID of the vault file. Takes precedence over `path`.
+     */
+    fileID?: string;
+    /**
+     * Path of the vault file relative to the drive root, eg.
+     * "Vaults/my.bcup". Saving to a path that doesn't exist creates it.
+     */
+    path?: string;
+    /**
+     * Microsoft Graph API base URL - only needed for national clouds.
+     * Defaults to "https://graph.microsoft.com/v1.0".
+     */
+    endpoint?: string;
+}
+
 export interface DatasourceConfigurationFile extends DatasourceConfiguration {
     type: "file";
     path: string;
