@@ -68,6 +68,7 @@
 - [EntryFacadeFieldFormatting](interfaces/EntryFacadeFieldFormatting.md)
 - [EntryFacadeFieldFormattingSegment](interfaces/EntryFacadeFieldFormattingSegment.md)
 - [EntryLegacyHistoryItem](interfaces/EntryLegacyHistoryItem.md)
+- [EntryLoginLink](interfaces/EntryLoginLink.md)
 - [EntryPropertyLink](interfaces/EntryPropertyLink.md)
 - [EntryRecoveryCode](interfaces/EntryRecoveryCode.md)
 - [FormatAEntry](interfaces/FormatAEntry.md)

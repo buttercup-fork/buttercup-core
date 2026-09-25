@@ -167,6 +167,11 @@ export enum EntryPropertyType {
     Property = "property"
 }
 
+export interface EntryLoginLink {
+    entryID: EntryID;
+    title: string;
+}
+
 export interface EntryPropertyLink {
     entryID: EntryID;
     property: string;

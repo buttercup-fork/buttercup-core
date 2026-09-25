@@ -18,6 +18,7 @@ A task-oriented guide to using `buttercup` as a library: opening a vault, and li
     - [Password expiry](#password-expiry)
     - [Ordering fields](#ordering-fields)
     - [Linking a field to another entry](#linking-a-field-to-another-entry)
+    - [Signing in with another entry](#signing-in-with-another-entry)
     - [Deleting an entry](#deleting-an-entry)
 - [Saving and locking](#saving-and-locking)
 - [Merging conflict copies](#merging-conflict-copies)
@@ -338,6 +339,27 @@ Linked values are read everywhere a value is: `getProperty()`, `getProperties()`
 - **Stored copy**: each linked field also stores a copy of its value, which saving keeps up to date. Apps without link support show that copy.
 
 `linkProperty()` throws if the other entry is in another vault or in Trash, doesn't have the field, or the link would loop back to itself.
+
+### Signing in with another entry
+
+Some accounts have no password of their own because you sign in to them with another account, eg. "Sign in with Google". Such an entry can point to the entry it signs in with:
+
+```javascript
+dndBeyond.setLoginEntry(google);
+dndBeyond.getLoginEntry(); // the Google entry
+
+// Entries that sign in with Google, outside of Trash:
+vault.findEntriesUsingLogin(google); // [dndBeyond]
+
+// If the Google entry is trashed or deleted, the link is broken but still
+// remembers its title:
+dndBeyond.isLoginEntryBroken(); // true
+dndBeyond.getLoginEntryLink(); // { entryID: "…", title: "Google" }
+```
+
+The link is stored in a `BC_ENTRY_LOGIN_ENTRY` attribute as `<entry ID>:<title>`, and the title is refreshed when the vault is saved. `setLoginEntry(null)` removes the link. Links to the entry itself, to another vault, to Trash, or that would loop (Google signing in with D&D Beyond) are refused.
+
+`vault.findEntriesLinkingTo(entry)` finds every entry that depends on an entry: those that sign in with it, and those with fields linked to its fields (see [Linking a field to another entry](#linking-a-field-to-another-entry)). Apps can use it to warn before an entry is deleted.
 
 ### Deleting an entry
 

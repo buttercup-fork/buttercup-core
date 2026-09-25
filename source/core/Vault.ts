@@ -215,6 +215,42 @@ export class Vault extends EventEmitter {
     }
 
     /**
+     * Find entries that link to an entry, outside of Trash: entries that
+     * sign in with it ({@link Entry.setLoginEntry}) or have fields linked to
+     * its fields ({@link Entry.linkProperty}). Useful for warning before the
+     * entry is deleted.
+     * @param entry The linked entry
+     * @returns An array of entries
+     */
+    findEntriesLinkingTo(entry: Entry): Array<Entry> {
+        return this.getAllEntries().filter((other) => {
+            if (other.id === entry.id || other.isInTrash()) return false;
+            const login = other.getLoginEntryLink();
+            if (login && login.entryID === entry.id) return true;
+            return Object.keys(other.getAttribute()).some((attribute) => {
+                if (attribute.indexOf(Entry.Attributes.PropertyLinkPrefix) !== 0) return false;
+                const link = other.getPropertyLink(
+                    attribute.slice(Entry.Attributes.PropertyLinkPrefix.length)
+                );
+                return !!link && link.entryID === entry.id;
+            });
+        });
+    }
+
+    /**
+     * Find entries that sign in with an entry, outside of Trash
+     * @param entry The entry used to sign in, eg. a Google account entry
+     * @returns An array of entries
+     * @see Entry.setLoginEntry
+     */
+    findEntriesUsingLogin(entry: Entry): Array<Entry> {
+        return this.getAllEntries().filter((other) => {
+            const link = other.getLoginEntryLink();
+            return !!link && link.entryID === entry.id && !other.isInTrash();
+        });
+    }
+
+    /**
      * Find entries of a certain type (eg. logins, credit cards). Entries
      * without a type set are logins.
      * @param type The entry type

@@ -47,7 +47,7 @@ Remote source object reference
 
 ### Attributes
 
-> `static` **Attributes**: `Readonly`\<\{ `AttachmentPrefix`: `"BC_ENTRY_ATTACHMENT:"`; `FacadeType`: `"BC_ENTRY_FACADE_TYPE"`; `FieldOrderPrefix`: `"BC_ENTRY_FIELD_ORDER:"`; `FieldTypePrefix`: `"BC_ENTRY_FIELD_TYPE:"`; `PasswordChanged`: `"BC_ENTRY_PASSWORD_CHANGED"`; `PasswordExpiry`: `"BC_ENTRY_PASSWORD_EXPIRY"`; `PropertyLinkPrefix`: `"BC_ENTRY_PROPERTY_LINK:"`; `RecoveryCodesPrefix`: `"BC_ENTRY_RECOVERY_CODES:"`; `SingleUsePasswords`: `"BC_ENTRY_SINGLE_USE_PASSWORDS"`; `Tags`: `"BC_ENTRY_TAGS"`; \}\>
+> `static` **Attributes**: `Readonly`\<\{ `AttachmentPrefix`: `"BC_ENTRY_ATTACHMENT:"`; `FacadeType`: `"BC_ENTRY_FACADE_TYPE"`; `FieldOrderPrefix`: `"BC_ENTRY_FIELD_ORDER:"`; `FieldTypePrefix`: `"BC_ENTRY_FIELD_TYPE:"`; `LoginEntry`: `"BC_ENTRY_LOGIN_ENTRY"`; `PasswordChanged`: `"BC_ENTRY_PASSWORD_CHANGED"`; `PasswordExpiry`: `"BC_ENTRY_PASSWORD_EXPIRY"`; `PropertyLinkPrefix`: `"BC_ENTRY_PROPERTY_LINK:"`; `RecoveryCodesPrefix`: `"BC_ENTRY_RECOVERY_CODES:"`; `SingleUsePasswords`: `"BC_ENTRY_SINGLE_USE_PASSWORDS"`; `Tags`: `"BC_ENTRY_TAGS"`; \}\>
 
 ***
 
@@ -321,6 +321,45 @@ The parent group
 #### Throws
 
 Throws if no parent group found
+
+***
+
+### getLoginEntry()
+
+> **getLoginEntry**(): `Entry`
+
+Get the entry used to sign in to this entry's account
+
+#### Returns
+
+`Entry`
+
+The entry, or `null` if none is set or the link is broken
+ (the entry is in Trash or was deleted)
+
+#### See
+
+Entry.setLoginEntry
+
+***
+
+### getLoginEntryLink()
+
+> **getLoginEntryLink**(): [`EntryLoginLink`](../interfaces/EntryLoginLink.md)
+
+Get the stored link to the entry used to sign in to this entry's
+account, even if the link is broken
+
+#### Returns
+
+[`EntryLoginLink`](../interfaces/EntryLoginLink.md)
+
+The linked entry's ID and its title when last in sync, or
+ `null` if none is set
+
+#### See
+
+Entry.setLoginEntry
 
 ***
 
@@ -742,6 +781,21 @@ Whether or not the entry is in the trash
 
 ***
 
+### isLoginEntryBroken()
+
+> **isLoginEntryBroken**(): `boolean`
+
+Check if the link to the entry used to sign in is broken
+A link is broken when the linked entry is in Trash or was deleted.
+
+#### Returns
+
+`boolean`
+
+True if a sign-in entry is set and the link is broken
+
+***
+
 ### isPropertyLinkBroken()
 
 > **isPropertyLinkBroken**(`property`): `boolean`
@@ -1019,6 +1073,38 @@ The value to set
 `this`
 
 Returns self
+
+***
+
+### setLoginEntry()
+
+> **setLoginEntry**(`target`): `this`
+
+Set the entry used to sign in to this entry's account, eg. a site you
+sign in to with your Google account links to your Google entry
+The link and a copy of the linked entry's title are stored in a
+`BC_ENTRY_LOGIN_ENTRY` attribute. The title is refreshed when the
+vault is saved, so a broken link can still name the entry.
+
+#### Parameters
+
+##### target
+
+`Entry`
+
+The entry, in the same vault, or `null` to remove the
+ link
+
+#### Returns
+
+`this`
+
+Self
+
+#### Throws
+
+Throws if the target is this entry, in another vault or
+ in Trash, or signs in with this entry itself
 
 ***
 

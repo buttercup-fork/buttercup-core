@@ -313,6 +313,57 @@ An array of entries
 
 ***
 
+### findEntriesLinkingTo()
+
+> **findEntriesLinkingTo**(`entry`): [`Entry`](Entry.md)[]
+
+Find entries that link to an entry, outside of Trash: entries that
+sign in with it ([Entry.setLoginEntry](Entry.md#setloginentry)) or have fields linked to
+its fields ([Entry.linkProperty](Entry.md#linkproperty)). Useful for warning before the
+entry is deleted.
+
+#### Parameters
+
+##### entry
+
+[`Entry`](Entry.md)
+
+The linked entry
+
+#### Returns
+
+[`Entry`](Entry.md)[]
+
+An array of entries
+
+***
+
+### findEntriesUsingLogin()
+
+> **findEntriesUsingLogin**(`entry`): [`Entry`](Entry.md)[]
+
+Find entries that sign in with an entry, outside of Trash
+
+#### Parameters
+
+##### entry
+
+[`Entry`](Entry.md)
+
+The entry used to sign in, eg. a Google account entry
+
+#### Returns
+
+[`Entry`](Entry.md)[]
+
+An array of entries
+
+#### See
+
+Entry.setLoginEntry
+
+***
+
 ### findEntryByID()
 
 > **findEntryByID**(`id`): [`Entry`](Entry.md)

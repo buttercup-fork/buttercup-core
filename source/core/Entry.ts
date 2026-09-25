@@ -7,6 +7,7 @@ import { isValidTag } from "../tools/tag.js";
 import {
     EntryChange,
     EntryID,
+    EntryLoginLink,
     EntryPropertyLink,
     EntryPropertyValueType,
     EntryRecoveryCode,
@@ -26,6 +27,7 @@ export class Entry extends VaultItem {
         FacadeType: "BC_ENTRY_FACADE_TYPE",
         FieldOrderPrefix: "BC_ENTRY_FIELD_ORDER:",
         FieldTypePrefix: "BC_ENTRY_FIELD_TYPE:",
+        LoginEntry: "BC_ENTRY_LOGIN_ENTRY",
         PasswordChanged: "BC_ENTRY_PASSWORD_CHANGED",
         PasswordExpiry: "BC_ENTRY_PASSWORD_EXPIRY",
         PropertyLinkPrefix: "BC_ENTRY_PROPERTY_LINK:",
@@ -217,6 +219,39 @@ export class Entry extends VaultItem {
         return {
             entryID: value.slice(0, separator),
             property: value.slice(separator + 1)
+        };
+    }
+
+    /**
+     * Get the entry used to sign in to this entry's account
+     * @returns The entry, or `null` if none is set or the link is broken
+     *  (the entry is in Trash or was deleted)
+     * @see Entry.setLoginEntry
+     */
+    getLoginEntry(): Entry | null {
+        const link = this.getLoginEntryLink();
+        if (!link) return null;
+        const target = this.vault.findEntryByID(link.entryID);
+        return target && !target.isInTrash() ? target : null;
+    }
+
+    /**
+     * Get the stored link to the entry used to sign in to this entry's
+     * account, even if the link is broken
+     * @returns The linked entry's ID and its title when last in sync, or
+     *  `null` if none is set
+     * @see Entry.setLoginEntry
+     */
+    getLoginEntryLink(): EntryLoginLink | null {
+        const value = this.getAttribute(Entry.Attributes.LoginEntry);
+        if (typeof value !== "string") return null;
+        // Entry IDs contain no colons, titles may
+        const separator = value.indexOf(":");
+        const entryID = separator >= 0 ? value.slice(0, separator) : value;
+        if (!entryID) return null;
+        return {
+            entryID,
+            title: separator >= 0 ? value.slice(separator + 1) : ""
         };
     }
 
@@ -432,6 +467,15 @@ export class Entry extends VaultItem {
     }
 
     /**
+     * Check if the link to the entry used to sign in is broken
+     * A link is broken when the linked entry is in Trash or was deleted.
+     * @returns True if a sign-in entry is set and the link is broken
+     */
+    isLoginEntryBroken(): boolean {
+        return !!this.getLoginEntryLink() && this.getLoginEntry() === null;
+    }
+
+    /**
      * Check if a property holds recovery codes
      * @param property The property name
      * @returns True if the property was made a recovery codes property with
@@ -567,6 +611,49 @@ export class Entry extends VaultItem {
      */
     setAttribute(attribute: string, value: string): this {
         this.vault.format.setEntryAttribute(this.id, attribute, value);
+        return this;
+    }
+
+    /**
+     * Set the entry used to sign in to this entry's account, eg. a site you
+     * sign in to with your Google account links to your Google entry
+     * The link and a copy of the linked entry's title are stored in a
+     * `BC_ENTRY_LOGIN_ENTRY` attribute. The title is refreshed when the
+     * vault is saved, so a broken link can still name the entry.
+     * @param target The entry, in the same vault, or `null` to remove the
+     *  link
+     * @returns Self
+     * @throws {Error} Throws if the target is this entry, in another vault or
+     *  in Trash, or signs in with this entry itself
+     */
+    setLoginEntry(target: Entry | null): this {
+        if (target === null) {
+            if (typeof this.getAttribute(Entry.Attributes.LoginEntry) === "string") {
+                this.deleteAttribute(Entry.Attributes.LoginEntry);
+            }
+            return this;
+        }
+        if (target.vault !== this.vault) {
+            throw new Error("Cannot set login entry: Target entry is in another vault");
+        }
+        if (target.id === this.id) {
+            throw new Error("Cannot set login entry: Entry cannot sign in with itself");
+        }
+        if (target.isInTrash()) {
+            throw new Error("Cannot set login entry: Target entry is in Trash");
+        }
+        // Walk the target's sign-in entries, checking they don't lead back here
+        const visited = new Set<string>();
+        let current: Entry | null = target;
+        while (current && !visited.has(current.id)) {
+            if (current.id === this.id) {
+                throw new Error("Cannot set login entry: Link would create a loop");
+            }
+            visited.add(current.id);
+            const link = current.getLoginEntryLink();
+            current = link ? this.vault.findEntryByID(link.entryID) : null;
+        }
+        this._storeLoginEntryLink(target);
         return this;
     }
 
@@ -909,6 +996,18 @@ export class Entry extends VaultItem {
         const linkedValues = this._getLinkedPropertyValues();
         for (const property of Object.keys(linkedValues)) {
             this._storePropertyLinkCopy(property, linkedValues[property]);
+        }
+        const loginEntry = this.getLoginEntry();
+        if (loginEntry) {
+            this._storeLoginEntryLink(loginEntry);
+        }
+    }
+
+    _storeLoginEntryLink(target: Entry) {
+        const title = target.getProperty("title");
+        const value = `${target.id}:${typeof title === "string" ? title : ""}`;
+        if (this.getAttribute(Entry.Attributes.LoginEntry) !== value) {
+            this.setAttribute(Entry.Attributes.LoginEntry, value);
         }
     }
 
