@@ -190,6 +190,51 @@ describe("Vault facades", function () {
                         expect(existingEntry).to.be.an.instanceOf(Entry);
                     });
                 });
+
+                describe("in merge mode, with attachments", function () {
+                    // buttercup/buttercup-core#283: attachment data isn't part
+                    // of a facade (only metadata is), so merging one vault's
+                    // entry into another must not carry over attachment
+                    // attributes - the referenced attachment doesn't actually
+                    // exist in the target vault's storage.
+                    const attachmentAttrKey = `${Entry.Attributes.AttachmentPrefix}fake-attachment-id`;
+                    const attachmentPayload = JSON.stringify({
+                        id: "fake-attachment-id",
+                        name: "photo.png",
+                        type: "image/png",
+                        sizeOriginal: 100,
+                        sizeEncrypted: 120,
+                        created: "some-date",
+                        updated: "some-date"
+                    });
+
+                    it("strips attachment attributes from newly merged-in entries", function () {
+                        const newVault = new Vault();
+                        newVault
+                            .createGroup("merged")
+                            .createEntry("merged")
+                            .setProperty("username", "merge")
+                            .setAttribute(attachmentAttrKey, attachmentPayload);
+                        const newFacade = createVaultFacade(newVault);
+                        consumeVaultFacade(this.vault, newFacade, { mergeMode: true });
+                        const [mergeEntry] = this.vault.findEntriesByProperty("title", "merged");
+                        expect(mergeEntry.getAttribute(attachmentAttrKey)).to.be.undefined;
+                    });
+
+                    it("does not remove an existing entry's real attachment attributes when merging", function () {
+                        this.entryA.setAttribute(attachmentAttrKey, attachmentPayload);
+                        const newVault = new Vault();
+                        newVault
+                            .createGroup("merged")
+                            .createEntry("merged")
+                            .setProperty("username", "merge");
+                        const newFacade = createVaultFacade(newVault);
+                        consumeVaultFacade(this.vault, newFacade, { mergeMode: true });
+                        expect(this.entryA.getAttribute(attachmentAttrKey)).to.equal(
+                            attachmentPayload
+                        );
+                    });
+                });
             });
 
             describe("createVaultFacade", function () {

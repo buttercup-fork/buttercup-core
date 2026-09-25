@@ -25,6 +25,6 @@ export function buildSearcher(items: Array<any>, keys: Array<SearchKey> = SEARCH
         includeScore: true,
         keys,
         shouldSort: true,
-        threshold: 0.5
+        threshold: 0.4
     });
 }

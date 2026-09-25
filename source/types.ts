@@ -10,6 +10,22 @@ export interface AttachmentDetails {
 
 export type BufferLike = Buffer | ArrayBuffer;
 
+/**
+ * Titles for the groups a new vault is created with - eg. translated for
+ * the user's language. The Trash group is identified by its role
+ * attribute, not its title, so any title works
+ */
+export interface DefaultGroupTitles {
+    /**
+     * Title of the general-purpose group (default: "General")
+     */
+    general?: string;
+    /**
+     * Title of the Trash group (default: "Trash")
+     */
+    trash?: string;
+}
+
 export interface CredentialsData {
     datasource?: DatasourceConfiguration;
     [key: string]: any;
@@ -38,6 +54,30 @@ export interface DatasourceConfigurationGoogleDrive extends DatasourceConfigurat
     fileID: string;
     refreshToken: string;
     token: string;
+}
+
+export interface DatasourceConfigurationOneDrive extends DatasourceConfiguration {
+    type: "onedrive";
+    /**
+     * Microsoft Graph OAuth2 access token (needs the `Files.ReadWrite`
+     * scope, or `Files.ReadWrite.AppFolder` for an app-folder-only vault)
+     */
+    token: string;
+    refreshToken?: string;
+    /**
+     * Drive item ID of the vault file. Takes precedence over `path`.
+     */
+    fileID?: string;
+    /**
+     * Path of the vault file relative to the drive root, eg.
+     * "Vaults/my.bcup". Saving to a path that doesn't exist creates it.
+     */
+    path?: string;
+    /**
+     * Microsoft Graph API base URL - only needed for national clouds.
+     * Defaults to "https://graph.microsoft.com/v1.0".
+     */
+    endpoint?: string;
 }
 
 export interface DatasourceConfigurationFile extends DatasourceConfiguration {
@@ -125,6 +165,21 @@ export type EntryID = string;
 export enum EntryPropertyType {
     Attribute = "attribute",
     Property = "property"
+}
+
+export interface EntryLoginLink {
+    entryID: EntryID;
+    title: string;
+}
+
+export interface EntryPropertyLink {
+    entryID: EntryID;
+    property: string;
+}
+
+export interface EntryRecoveryCode {
+    code: string;
+    used: boolean;
 }
 
 export enum EntryPropertyValueType {
@@ -284,6 +339,7 @@ export interface VaultInsights {
     avgPassLen: number; // Average password length
     duplicatePasswords: number; // Number of duplicate passwords
     entries: number; // Number of entries in the vault
+    expiredPasswords: number; // Number of expired passwords (see Entry#setPasswordExpiry)
     groups: number; // Number of groups in the vault
     longPassLen: number; // Longest password length
     shortPassLen: number; // Shortest password length

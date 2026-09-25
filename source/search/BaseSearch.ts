@@ -3,6 +3,7 @@ import { StorageInterface } from "../storage/StorageInterface.js";
 import { buildSearcher } from "./searcher.js";
 import { Vault } from "../core/Vault.js";
 import { extractTagsFromSearchTerm, tagsMatchSearch } from "./tags.js";
+import { extractEntryTypesFromSearchTerm } from "./entryTypes.js";
 import { EntryID, EntryType, GroupID, VaultFacade, VaultID, VaultSourceID } from "../types.js";
 
 interface DomainScores {
@@ -142,6 +143,10 @@ export class BaseSearch {
 
     /**
      * Search for entries by term
+     * The term can include filters: `#tag` (entries must have every tag
+     * given) and `type:<entry type>`, eg. `type:login` or `type:ssh_key`
+     * (entries must be one of the types given). A term with only filters
+     * returns every matching entry.
      * @param term The term to search for
      * @returns An array of search results
      */
@@ -149,12 +154,19 @@ export class BaseSearch {
         if (!this._fuse) {
             throw new Error("Searching interface not prepared");
         }
-        const { tags, term: searchTerm } = extractTagsFromSearchTerm(term);
-        if (tags.length > 0) {
-            // Instantiate new searcher based on a subset of entries
-            const subset = this._entries.filter((entry) => tagsMatchSearch(tags, entry.tags));
+        const { entryTypes, term: termWithoutTypes } = extractEntryTypesFromSearchTerm(term);
+        const { tags, term: searchTerm } = extractTagsFromSearchTerm(termWithoutTypes);
+        if (tags.length > 0 || entryTypes.length > 0) {
+            // Instantiate new searcher based on a subset of entries: every
+            // tag must match, and the entry must be one of the types (an
+            // entry has only one type)
+            const subset = this._entries.filter(
+                (entry) =>
+                    (tags.length === 0 || tagsMatchSearch(tags, entry.tags)) &&
+                    (entryTypes.length === 0 || entryTypes.includes(entry.entryType))
+            );
             if (searchTerm.trim().length === 0) {
-                // Tags only, return all entries
+                // Filters only, return all matching entries
                 return subset;
             }
             this._fuse = this._searcherFactory(subset);

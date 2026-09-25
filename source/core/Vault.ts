@@ -5,7 +5,22 @@ import { findEntriesByProperty } from "../search/entries.js";
 import { Group } from "./Group.js";
 import { Entry } from "./Entry.js";
 import { VaultFormat } from "../io/VaultFormat.js";
-import { EntryID, GroupID, History } from "../types.js";
+import { DefaultGroupTitles, EntryID, EntryType, GroupID, History } from "../types.js";
+
+export interface VaultDefaultsOptions {
+    /**
+     * Vault format override
+     */
+    format?: any;
+    /**
+     * Titles for the default groups, eg. translated
+     */
+    groupTitles?: DefaultGroupTitles;
+}
+
+function getGroupTitle(title: string | undefined, fallback: string): string {
+    return typeof title === "string" && title.trim().length > 0 ? title.trim() : fallback;
+}
 
 /**
  * Vault class - Contains Groups and Entrys
@@ -38,16 +53,29 @@ export class Vault extends EventEmitter {
     }
 
     /**
-     * Create a Vault with the default template
-     * @param format Optional vault format override
+     * Create a Vault with the default template: a "General" group and a
+     * "Trash" group
+     * @param formatOrOptions Optional vault format override, or options:
+     *  `format` and `groupTitles` (eg. translated group titles)
      * @returns The new vault
      * @memberof Vault
      * @static
+     * @example
+     *  Vault.createWithDefaults({ groupTitles: { general: "Allgemein", trash: "Papierkorb" } });
      */
-    static createWithDefaults(format: any = getDefaultFormat()): Vault {
+    static createWithDefaults(
+        formatOrOptions: any | VaultDefaultsOptions = getDefaultFormat()
+    ): Vault {
+        // Format classes are functions; anything else is an options object
+        const { format = getDefaultFormat(), groupTitles = {} }: VaultDefaultsOptions =
+            typeof formatOrOptions === "function"
+                ? { format: formatOrOptions }
+                : formatOrOptions || {};
         const vault = new Vault(format);
-        vault.createGroup("General");
-        vault.createGroup("Trash").setAttribute(Group.Attribute.Role, "trash");
+        vault.createGroup(getGroupTitle(groupTitles.general, "General"));
+        vault
+            .createGroup(getGroupTitle(groupTitles.trash, "Trash"))
+            .setAttribute(Group.Attribute.Role, "trash");
         return vault;
     }
 
@@ -91,7 +119,7 @@ export class Vault extends EventEmitter {
 
     /**
      * Create a new Vault instance
-     * @param Format Optional vault format specification.
+     * @param format Optional vault format specification.
      *  Will use the default system format (recommended) if not
      *  specified.
      */
@@ -174,6 +202,65 @@ export class Vault extends EventEmitter {
     }
 
     /**
+     * Find entries whose password has expired, outside of Trash
+     * @param at The time to check at, as a UTC timestamp in milliseconds.
+     *  Defaults to now. Pass a later time to find passwords that expire soon.
+     * @returns An array of entries
+     * @see Entry.setPasswordExpiry
+     */
+    findEntriesByExpiredPassword(at: number = Date.now()): Array<Entry> {
+        return this.getAllEntries().filter(
+            (entry) => entry.hasExpiredPassword(at) && !entry.isInTrash()
+        );
+    }
+
+    /**
+     * Find entries that link to an entry, outside of Trash: entries that
+     * sign in with it ({@link Entry.setLoginEntry}) or have fields linked to
+     * its fields ({@link Entry.linkProperty}). Useful for warning before the
+     * entry is deleted.
+     * @param entry The linked entry
+     * @returns An array of entries
+     */
+    findEntriesLinkingTo(entry: Entry): Array<Entry> {
+        return this.getAllEntries().filter((other) => {
+            if (other.id === entry.id || other.isInTrash()) return false;
+            const login = other.getLoginEntryLink();
+            if (login && login.entryID === entry.id) return true;
+            return Object.keys(other.getAttribute()).some((attribute) => {
+                if (attribute.indexOf(Entry.Attributes.PropertyLinkPrefix) !== 0) return false;
+                const link = other.getPropertyLink(
+                    attribute.slice(Entry.Attributes.PropertyLinkPrefix.length)
+                );
+                return !!link && link.entryID === entry.id;
+            });
+        });
+    }
+
+    /**
+     * Find entries that sign in with an entry, outside of Trash
+     * @param entry The entry used to sign in, eg. a Google account entry
+     * @returns An array of entries
+     * @see Entry.setLoginEntry
+     */
+    findEntriesUsingLogin(entry: Entry): Array<Entry> {
+        return this.getAllEntries().filter((other) => {
+            const link = other.getLoginEntryLink();
+            return !!link && link.entryID === entry.id && !other.isInTrash();
+        });
+    }
+
+    /**
+     * Find entries of a certain type (eg. logins, credit cards). Entries
+     * without a type set are logins.
+     * @param type The entry type
+     * @returns An array of entries
+     */
+    findEntriesByType(type: EntryType): Array<Entry> {
+        return this._entries.filter((entry) => entry.getType() === type);
+    }
+
+    /**
      * Find entries by a certain tag
      * @param tag The case-insensitive tag name
      * @param exact Whether to match exact tag names or use partial
@@ -194,7 +281,6 @@ export class Vault extends EventEmitter {
             return [...entryIDs].map((id) => this.findEntryByID(id));
         }
         const entryIDs = this._tagMap.has(tagLower) ? this._tagMap.get(tagLower) : [];
-        console.log("SEARCHING", entryIDs, this._tagMap);
         return entryIDs.map((id) => this.findEntryByID(id));
     }
 
@@ -219,8 +305,9 @@ export class Vault extends EventEmitter {
     }
 
     /**
-     * Get all entries in the vault
+     * Get all entries in the vault, including those in Trash
      * @returns An array of entry instances
+     * @see Group.getAllEntries
      * @memberof Vault
      */
     getAllEntries(): Array<Entry> {
@@ -228,12 +315,23 @@ export class Vault extends EventEmitter {
     }
 
     /**
-     * Get al groups in the vault
+     * Get all groups in the vault, including Trash and the groups in it
      * @returns An array of group instances
+     * @see Group.getAllGroups
      * @memberof Vault
      */
     getAllGroups(): Array<Group> {
         return [...this._groups];
+    }
+
+    /**
+     * Get the entry types used in the vault, eg. for offering filters
+     * alongside tags. Like `getAllTags`, this includes entries in Trash.
+     * @returns An array of entry types, in `EntryType` order
+     */
+    getAllEntryTypes(): Array<EntryType> {
+        const used = new Set(this._entries.map((entry) => entry.getType()));
+        return Object.values(EntryType).filter((type) => used.has(type));
     }
 
     /**
@@ -293,6 +391,14 @@ export class Vault extends EventEmitter {
         return this;
     }
 
+    /**
+     * Refresh the stored copies of linked property values, so that apps
+     * without link support see current values
+     */
+    _updatePropertyLinkCopies() {
+        this._entries.forEach((entry) => entry._updatePropertyLinkCopies());
+    }
+
     _rebuild(clear: boolean = false) {
         if (clear) {
             this._groups = [];
@@ -341,6 +447,11 @@ export class Vault extends EventEmitter {
             this._format.removeAllListeners();
         }
         this._format = format;
+        // Drop items the new format no longer contains (eg. permanently
+        // deleted on another device and removed by a merge) - otherwise they
+        // keep a null reference and break anything reading them
+        this._groups = this._groups.filter((group) => !!format.findGroupByID(group.id));
+        this._entries = this._entries.filter((entry) => !!format.findEntryByID(entry.id));
         this._groups.forEach((group) => {
             group._updateRefs();
         });

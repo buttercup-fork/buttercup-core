@@ -140,7 +140,7 @@ export class VaultManager extends EventEmitter {
 
     /**
      * Dehydrate a single vault source
-     * @param sourceID The ID of the source
+     * @param sourceOrSourceID The source, or the ID of the source
      * @returns A promise that resolves once the source has been dehydrated
      * @memberof VaultManager
      */

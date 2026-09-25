@@ -32,7 +32,7 @@
     "dev:web": "webpack --mode=development --watch",
     "docs": "npm run generate:docs",
     "format": "prettier --write '{source,test}/**/*.{js,ts}'",
-    "generate:docs": "jsdoc2md 'source/**/*.js' > API.md",
+    "generate:docs": "typedoc",
     "generate:vault": "npm run build:node && node scripts/gen_vault_format_a.js && node scripts/gen_vault_format_b.js",
     "prepare": "run-s build",
     "prepublishOnly": "run-s build",
@@ -52,7 +52,7 @@
     "*.md"
   ],
   "engines": {
-    "node": ">=14"
+    "node": ">=20"
   },
   "lint-staged": {
     "{source,test}/**/*.{js,ts}": [
@@ -86,6 +86,7 @@
     "@buttercup/channel-queue": "^1.4.0",
     "@buttercup/dropbox-client": "^2.2.0",
     "@buttercup/googledrive-client": "^2.3.0",
+    "@buttercup/onedrive-client": "git+http://192.168.168.6:3050/buttercup.codekunde/onedrive-client.git#master",
     "crypto-random-string": "^5.0.0",
     "eventemitter3": "^5.0.0",
     "fast-levenshtein": "^3.0.0",
@@ -104,6 +105,14 @@
     "uuid": "^9.0.1",
     "webdav": "^5.5.0"
   },
+  "overrides": {
+    "pbkdf2": "^3.1.6",
+    "sha.js": "^2.4.12",
+    "min-document": "^2.19.2",
+    "webdav": {
+      "minimatch": "^10.2.6"
+    }
+  },
   "devDependencies": {
     "@babel/cli": "^7.23.4",
     "@babel/core": "^7.23.5",
@@ -117,7 +126,6 @@
     "chai": "^4.3.10",
     "concurrently": "^8.2.2",
     "husky": "^4.3.8",
-    "jsdoc-to-markdown": "^8.0.0",
     "karma": "^6.4.2",
     "karma-chrome-launcher": "^3.2.0",
     "karma-firefox-launcher": "^2.1.2",
@@ -139,6 +147,8 @@
     "sleep-promise": "^9.1.0",
     "tmp": "^0.2.1",
     "ts-loader": "^9.5.1",
+    "typedoc": "^0.28.20",
+    "typedoc-plugin-markdown": "^4.13.1",
     "typescript": "^5.3.3",
     "webdav-server": "^2.6.2",
     "webpack": "^5.89.0",

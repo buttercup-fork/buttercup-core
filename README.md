@@ -1,6 +1,6 @@
 <h1 align="center">
   <br/>
-  <img src="https://cdn.rawgit.com/buttercup-pw/buttercup-assets/054fc0fa/badge/core.svg" alt="Buttercup Core">
+  <img src="images/core.svg" alt="Buttercup Core">
   <br/>
   <br/>
   <br/>
@@ -10,21 +10,17 @@
 
 A NodeJS secrets vault.
 
-[![Buttercup](https://cdn.rawgit.com/buttercup-pw/buttercup-assets/6582a033/badge/buttercup-slim.svg)](https://buttercup.pw) [![npm](https://img.shields.io/npm/dt/buttercup.svg)](https://www.npmjs.com/package/buttercup) [![npm version](https://badge.fury.io/js/buttercup.svg)](https://badge.fury.io/js/buttercup) ![node min version](https://img.shields.io/badge/node-%3E%3D%2014.x-lightgrey.svg) [![security](https://img.shields.io/badge/Security-As%20you%20wish-green.svg)](https://en.wikipedia.org/wiki/The_Princess_Bride_(film)) [![encryption](https://img.shields.io/badge/Encryption-AES%20256%20CBC%2FGCM-red.svg)](https://tools.ietf.org/html/rfc3602)
+> This is [codekunde](https://github.com/codekunde)'s self-hosted fork of the archived [buttercup/buttercup-core](https://github.com/buttercup/buttercup-core), maintained after upstream's project closure (see below). Issues and PRs on the upstream repo are still ignored; this fork tracks and fixes them independently - see `CHANGELOG.md` for what's changed here.
 
-![Tests status](https://github.com/buttercup/buttercup-core/actions/workflows/test.yml/badge.svg)
+[![Buttercup](images/buttercup-slim.svg)](https://buttercup.pw) [![npm](https://img.shields.io/npm/dt/buttercup.svg)](https://www.npmjs.com/package/buttercup) [![npm version](https://badge.fury.io/js/buttercup.svg)](https://badge.fury.io/js/buttercup) ![node min version](https://img.shields.io/badge/node-%3E%3D%2014.x-lightgrey.svg) [![security](https://img.shields.io/badge/Security-As%20you%20wish-green.svg)](https://en.wikipedia.org/wiki/The_Princess_Bride_(film)) [![encryption](https://img.shields.io/badge/Encryption-AES%20256%20CBC%2FGCM-red.svg)](https://tools.ietf.org/html/rfc3602)
 
 [![NPM](https://nodei.co/npm/buttercup.png)](https://www.npmjs.com/package/buttercup)
 
----
-
-⚠️ **Project Closure** ⚠️
-
-The Buttercup project has come to an end, and these repositories are in transition to becoming public archives. No public-facing resources will be removed, wherever possible. Please do not create issues or PRs - they will unfortunately be ignored. Discussion can be found [here](https://github.com/buttercup/buttercup-desktop/discussions/1395), and explanation [here](https://gist.github.com/perry-mitchell/43ebfcec4d874b77a704be1d4f2262e6).
-
----
+_The npm/version badges above track the upstream `buttercup` package this fork is based on (this fork isn't published to npm separately). The upstream GitHub Actions test-status badge was removed since it reflected upstream's own CI runs, not this fork's - see `CHANGELOG.md` for this fork's test status/history._
 
 ## About
+
+⚠️ Upstream's Buttercup project [came to an end](https://gist.github.com/perry-mitchell/43ebfcec4d874b77a704be1d4f2262e6) and its repositories became public archives (discussion [here](https://github.com/buttercup/buttercup-desktop/discussions/1395)). This fork exists to keep the library maintained; upstream itself no longer accepts issues or PRs.
 
 Buttercup is a JavaScript password manager for NodeJS and the browser (though you can also see it used on platforms like [React Native](https://github.com/buttercup/buttercup-mobile)). It's based around the concept of a **Vault** and its secret **Entry** items (a login, credit card etc.). Entries are then separated into **Group** containers that make organising vaults a little easier.
 
@@ -41,7 +37,7 @@ The core of the system, this **Buttercup Core**, boasts a few awesome features:
  * Merge-able vault contents
  * History for back-tracking to previous passwords etc.
  * File attachments (encrypted)
- * AES CBC encryption
+ * AES-GCM encryption (older AES-CBC vaults remain readable)
  * GZip compression
  * NodeJS and Browser support
 
@@ -50,12 +46,15 @@ This library also supports a variety of datasources for loading from and saving 
  * WebDAV
  * [Dropbox](https://www.dropbox.com/)
  * [Google Drive](https://www.google.com/drive/)
+ * [OneDrive](https://www.microsoft.com/microsoft-365/onedrive/) (via Microsoft Graph)
  * Local files
  * In-memory (testing, prototyping)
 
 Check out the [changelog](https://github.com/buttercup/buttercup-core/blob/master/CHANGELOG.md).
 
 ## Installation
+
+> ⚠️ **The `buttercup` package on npm is upstream's, not this fork's.** `npm install buttercup` installs upstream's last-published code and does **not** include this fork's fixes (security hardening, `#278`/`#326`/`#305` bugfixes - see `CHANGELOG.md`). This fork isn't published to npm. Until GitHub access is restored, install from source (clone this repo / the forgejo mirror) if you need this fork's fixes. Getting this fork properly installable (its own package name, or a git-based install) is high priority once GitHub is back.
 
 To use Buttercup in a NodeJS environment, you can simply install and require it:
 
@@ -86,6 +85,8 @@ Buttercup core is ESM - you must either import it in a project that is also ESM,
 _Buttercup core supports Node version 14 and up. For older Node versions use v6 and earlier._
 
 ## Usage
+
+> 📖 **[Usage guide](docs/GUIDE.md)** - opening a vault and listing, reading, creating, updating and deleting entries. **[API reference](docs/api/README.md)** - every exported class and function (generated from the source with `npm run docs`).
 
 Buttercup uses `Vault`s, `Group`s and `Entry`s to manipulate data in a _workspace_-like environment. These 3 constructs have no knowledge of encryption or storage, and simply provide interfaces for working with the data structures.
 
@@ -148,7 +149,7 @@ const fileDatasource = new FileDatasource(datasourceCredentials);
 
 fileDatasource
     .load(datasourceCredentials)
-    .then(Vault.createFromHistory)
+    .then(({ history, Format }) => Vault.createFromHistory(history, Format))
     .then(vault => {
         // ...
     });

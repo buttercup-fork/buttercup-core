@@ -1,6 +1,14 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import { Group, Vault, VaultFormatA, setDefaultFormat } from "../../../dist/node/index.js";
+import {
+    Entry,
+    EntryType,
+    Group,
+    Vault,
+    VaultFormatA,
+    VaultFormatB,
+    setDefaultFormat
+} from "../../../dist/node/index.js";
 
 describe("core/Vault", function () {
     it("can be instantiated", function () {
@@ -55,6 +63,118 @@ describe("core/Vault", function () {
             const vault = Vault.createWithDefaults();
             const trashGroup = vault.getGroups().find((group) => group.getTitle() === "Trash");
             expect(trashGroup).to.be.an.instanceof(Group);
+        });
+
+        it("supports translated group titles", function () {
+            const vault = Vault.createWithDefaults({
+                groupTitles: { general: "Allgemein", trash: "Papierkorb" }
+            });
+            expect(vault.getGroups().map((group) => group.getTitle())).to.deep.equal([
+                "Allgemein",
+                "Papierkorb"
+            ]);
+        });
+
+        it("uses the translated Trash group as the trash", function () {
+            const vault = Vault.createWithDefaults({
+                groupTitles: { general: "Allgemein", trash: "Papierkorb" }
+            });
+            const trash = vault.getTrashGroup();
+            expect(trash.getTitle()).to.equal("Papierkorb");
+            expect(trash.isTrash()).to.be.true;
+            const entry = vault.findGroupsByTitle("Allgemein")[0].createEntry("Login");
+            entry.delete();
+            expect(entry.isInTrash()).to.be.true;
+            expect(trash.getEntries().map((item) => item.id)).to.deep.equal([entry.id]);
+        });
+
+        it("translates only the titles given", function () {
+            const vault = Vault.createWithDefaults({ groupTitles: { trash: "Corbeille" } });
+            expect(vault.getGroups().map((group) => group.getTitle())).to.deep.equal([
+                "General",
+                "Corbeille"
+            ]);
+        });
+
+        it("falls back to the default titles for empty ones", function () {
+            const vault = Vault.createWithDefaults({ groupTitles: { general: "  ", trash: "" } });
+            expect(vault.getGroups().map((group) => group.getTitle())).to.deep.equal([
+                "General",
+                "Trash"
+            ]);
+        });
+
+        it("trims titles", function () {
+            const vault = Vault.createWithDefaults({ groupTitles: { general: " Général " } });
+            expect(vault.getGroups()[0].getTitle()).to.equal("Général");
+        });
+
+        it("still accepts a format as the only argument", function () {
+            const vault = Vault.createWithDefaults(VaultFormatA);
+            expect(vault.format).to.be.an.instanceof(VaultFormatA);
+            expect(vault.getGroups().map((group) => group.getTitle())).to.deep.equal([
+                "General",
+                "Trash"
+            ]);
+        });
+
+        it("accepts a format with translated titles", function () {
+            const vault = Vault.createWithDefaults({
+                format: VaultFormatB,
+                groupTitles: { general: "一般", trash: "ゴミ箱" }
+            });
+            expect(vault.format).to.be.an.instanceof(VaultFormatB);
+            expect(vault.getTrashGroup().getTitle()).to.equal("ゴミ箱");
+        });
+    });
+
+    describe("findEntriesByType", function () {
+        beforeEach(function () {
+            this.vault = Vault.createWithDefaults();
+            const general = this.vault.findGroupsByTitle("General")[0];
+            this.login = general.createEntry("Login");
+            this.card = general
+                .createEntry("Card")
+                .setAttribute(Entry.Attributes.FacadeType, EntryType.CreditCard);
+            this.note = general
+                .createEntry("Note")
+                .setAttribute(Entry.Attributes.FacadeType, EntryType.Note);
+        });
+
+        it("returns entries of the type", function () {
+            expect(this.vault.findEntriesByType(EntryType.CreditCard)).to.deep.equal([this.card]);
+        });
+
+        it("treats entries without a type as logins", function () {
+            expect(this.vault.findEntriesByType(EntryType.Login)).to.deep.equal([this.login]);
+        });
+
+        it("returns an empty array for unused types", function () {
+            expect(this.vault.findEntriesByType(EntryType.SSHKey)).to.deep.equal([]);
+        });
+    });
+
+    describe("getAllEntryTypes", function () {
+        it("returns an empty array for a vault without entries", function () {
+            expect(Vault.createWithDefaults().getAllEntryTypes()).to.deep.equal([]);
+        });
+
+        it("returns each used type once, in EntryType order", function () {
+            const vault = Vault.createWithDefaults();
+            const general = vault.findGroupsByTitle("General")[0];
+            general.createEntry("Note").setAttribute(Entry.Attributes.FacadeType, EntryType.Note);
+            general.createEntry("Login");
+            general
+                .createEntry("Card 1")
+                .setAttribute(Entry.Attributes.FacadeType, EntryType.CreditCard);
+            general
+                .createEntry("Card 2")
+                .setAttribute(Entry.Attributes.FacadeType, EntryType.CreditCard);
+            expect(vault.getAllEntryTypes()).to.deep.equal([
+                EntryType.CreditCard,
+                EntryType.Login,
+                EntryType.Note
+            ]);
         });
     });
 

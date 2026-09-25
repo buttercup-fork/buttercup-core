@@ -63,6 +63,27 @@ export function mergeValues(
     return merged;
 }
 
+/**
+ * Timestamp for a new write to an existing value. Merges keep whichever
+ * value has the later `updated` time, so a write must always be later than
+ * the state it replaces - even if the system clock has gone backwards since
+ * (NTP corrections, VM/WSL clock sync, a user fixing their clock). Otherwise
+ * the next merge silently reverts the edit.
+ */
+export function nextUpdateTimestamp(value: FormatBValue): number {
+    return Math.max(getTimestamp(), value.updated + 1, (value.deleted ?? 0) + 1);
+}
+
+/**
+ * Timestamp for deleting an existing value. Merges treat a value as deleted
+ * when its deletion time is at or after its last update, so the deletion
+ * must not be earlier than the value's `updated` time, whatever the clock
+ * says.
+ */
+export function nextDeleteTimestamp(value: FormatBValue): number {
+    return Math.max(getTimestamp(), value.updated);
+}
+
 export function newRawValue(value: string): FormatBValue {
     const ts = getTimestamp();
     return {

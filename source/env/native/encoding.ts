@@ -31,6 +31,8 @@ function encodeBase64(text: string): string {
 
 export function getEncodingResources() {
     return {
+        // Binary data is handled as Buffers in NodeJS
+        "encoding/v1/arrayBufferToBufferLike": (data: ArrayBuffer) => Buffer.from(data),
         "encoding/v1/base64ToBytes": (input: string) => decodeBase64(input, true),
         "encoding/v1/base64ToText": decodeBase64,
         "encoding/v1/bytesToBase64": encodeBytesToBase64,

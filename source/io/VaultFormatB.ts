@@ -2,6 +2,8 @@ import { ORPHANS_GROUP_TITLE, VaultFormat } from "./VaultFormat.js";
 import { Vault } from "../core/Vault.js";
 import { generateUUID } from "../tools/uuid.js";
 import { getSharedAppEnv } from "../env/appEnv.js";
+import { Layerr } from "layerr";
+import { ErrorCode, withDecryptionErrorCode } from "../tools/error.js";
 import { getMasterPassword } from "../credentials/memory/password.js";
 import { Credentials } from "../credentials/Credentials.js";
 import { historyArrayToString, historyStringToArray } from "./common.js";
@@ -14,8 +16,13 @@ import {
 import { historiesDiffer } from "./formatB/compare.js";
 import { mergeRawVaults } from "./formatB/merge.js";
 import { valuesObjectToKeyValueObject } from "./formatB/conversion.js";
-import { newRawValue, valueToHistoryItem } from "./formatB/history.js";
-import { getDateString, getTimestamp } from "../tools/date.js";
+import {
+    newRawValue,
+    nextDeleteTimestamp,
+    nextUpdateTimestamp,
+    valueToHistoryItem
+} from "./formatB/history.js";
+import { getDateString } from "../tools/date.js";
 import {
     EntryChange,
     EntryChangeType,
@@ -82,11 +89,16 @@ export class VaultFormatB extends VaultFormat {
         return Promise.resolve()
             .then(() => {
                 if (!hasValidSignature(encryptedContent)) {
-                    throw new Error("No valid signature in vault");
+                    throw new Layerr(
+                        { info: { code: ErrorCode.InvalidVaultSignature } },
+                        "No valid signature in vault"
+                    );
                 }
                 return stripSignature(encryptedContent);
             })
-            .then((encryptedData) => decrypt(encryptedData, masterPassword))
+            .then((encryptedData) =>
+                withDecryptionErrorCode<string>(decrypt(encryptedData, masterPassword), "vault")
+            )
             .then(async (decrypted) => {
                 const decompressed = await decompress(decrypted);
                 return historyStringToArray(decompressed, VaultFormatID.B);
@@ -167,14 +179,14 @@ export class VaultFormatB extends VaultFormat {
     deleteEntryAttribute(entryID: EntryID, attribute: string) {
         const entry = this.source.e.find((e: FormatBEntry) => e.id === entryID);
         if (!entry.a[attribute]) return;
-        entry.a[attribute].deleted = getTimestamp();
+        entry.a[attribute].deleted = nextDeleteTimestamp(entry.a[attribute]);
         this.emit("commandsExecuted");
     }
 
     deleteEntryProperty(entryID: EntryID, property: string) {
         const entry = this.source.e.find((e) => e.id === entryID);
         if (!entry.p[property]) return;
-        entry.p[property].deleted = getTimestamp();
+        entry.p[property].deleted = nextDeleteTimestamp(entry.p[property]);
         this.emit("commandsExecuted");
     }
 
@@ -190,13 +202,13 @@ export class VaultFormatB extends VaultFormat {
     deleteGroupAttribute(groupID: GroupID, attribute: string) {
         const group = this.source.g.find((g) => g.id === groupID);
         if (!group.a[attribute]) return;
-        group.a[attribute].deleted = getTimestamp();
+        group.a[attribute].deleted = nextDeleteTimestamp(group.a[attribute]);
         this.emit("commandsExecuted");
     }
 
     deleteVaultAttribute(attribute: string) {
         if (!this.source.a[attribute]) return;
-        this.source.a[attribute].deleted = getTimestamp();
+        this.source.a[attribute].deleted = nextDeleteTimestamp(this.source.a[attribute]);
         this.emit("commandsExecuted");
     }
 
@@ -454,7 +466,9 @@ export class VaultFormatB extends VaultFormat {
             const item = entry.a[attribute];
             item.history.unshift(valueToHistoryItem(item));
             item.value = value;
-            item.updated = getTimestamp();
+            item.updated = nextUpdateTimestamp(item);
+            // Writing a value un-deletes it
+            delete item.deleted;
         }
         this.emit("commandsExecuted");
     }
@@ -467,7 +481,9 @@ export class VaultFormatB extends VaultFormat {
             const item = entry.p[property];
             item.history.unshift(valueToHistoryItem(item));
             item.value = value;
-            item.updated = getTimestamp();
+            item.updated = nextUpdateTimestamp(item);
+            // Writing a value un-deletes it
+            delete item.deleted;
         }
         this.emit("commandsExecuted");
     }
@@ -480,7 +496,9 @@ export class VaultFormatB extends VaultFormat {
             const item = group.a[attribute];
             item.history.unshift(valueToHistoryItem(item));
             item.value = value;
-            item.updated = getTimestamp();
+            item.updated = nextUpdateTimestamp(item);
+            // Writing a value un-deletes it
+            delete item.deleted;
         }
         this.emit("commandsExecuted");
     }
@@ -498,7 +516,9 @@ export class VaultFormatB extends VaultFormat {
             const item = this.source.a[key];
             item.history.unshift(valueToHistoryItem(item));
             item.value = value;
-            item.updated = getTimestamp();
+            item.updated = nextUpdateTimestamp(item);
+            // Writing a value un-deletes it
+            delete item.deleted;
         }
         this.emit("commandsExecuted");
     }

@@ -8,9 +8,10 @@ export {
     VaultSource,
     VaultSourceConfig,
     VaultSourceMetadata,
+    VaultSourceSaveOptions,
     VaultSourceUnlockOptions
 } from "./core/VaultSource.js";
-export { Vault } from "./core/Vault.js";
+export { Vault, VaultDefaultsOptions } from "./core/Vault.js";
 export { Group } from "./core/Group.js";
 export { Entry } from "./core/Entry.js";
 export { AttachmentManager } from "./attachments/AttachmentManager.js";
@@ -33,6 +34,7 @@ export { FileDatasource } from "./datasources/FileDatasource.js";
 export { default as WebDAVDatasource } from "./datasources/WebDAVDatasource.js";
 export { default as DropboxDatasource } from "./datasources/DropboxDatasource.js";
 export { default as GoogleDriveDatasource } from "./datasources/GoogleDriveDatasource.js";
+export { default as OneDriveDatasource } from "./datasources/OneDriveDatasource.js";
 export { default as DatasourceAuthManager } from "./datasources/DatasourceAuthManager.js";
 export { registerDatasource } from "./datasources/register.js";
 
@@ -48,6 +50,7 @@ export {
 } from "./facades/vault.js";
 export { isOTPURI, isVaultFacade } from "./facades/detection.js";
 export {
+    ConsumeEntryFacadeOptions,
     CreateEntryFacadeOptions,
     consumeEntryFacade,
     createEntryFacade,
@@ -77,17 +80,20 @@ export { StorageInterface } from "./storage/StorageInterface.js";
 export { MemoryStorageInterface } from "./storage/MemoryStorageInterface.js";
 
 export { SearchResult } from "./search/BaseSearch.js";
-export { VaultEntrySearch as Search } from "./search/VaultEntrySearch.js"; // compat @todo remove
 export { VaultEntrySearch } from "./search/VaultEntrySearch.js";
+export { VaultEntrySearch as Search } from "./search/VaultEntrySearch.js"; // compat @todo remove
 export { VaultFacadeEntrySearch } from "./search/VaultFacadeEntrySearch.js";
 export { VaultSourceEntrySearch } from "./search/VaultSourceEntrySearch.js";
 export { SearchKey, buildSearcher } from "./search/searcher.js";
 
 export { AppEnv, AppEnvGetPropertyOptions } from "./env/core/appEnv.js";
+export { AppEnvMapper } from "./env/appEnv.js";
 export { getSharedAppEnv } from "./env/appEnv.js";
 
 export { generateUUID } from "./tools/uuid.js";
 export { EntryURLType, getEntryPath, getEntryURLs } from "./tools/entry.js";
+export { ErrorCode, getErrorCode } from "./tools/error.js";
+export { findConflictCopies, isConflictCopy } from "./tools/conflictFiles.js";
 export {
     base64ToBytes,
     bytesToBase64,

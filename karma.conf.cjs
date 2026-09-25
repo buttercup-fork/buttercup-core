@@ -38,11 +38,19 @@ module.exports = config => config.set({
 
     basePath: __dirname,
 
-    browsers: CI ? ["ChromeHeadless", "FirefoxHeadless"] : ["ChromeHeadless"],
+    browsers: CI ? ["ChromeHeadlessCI", "FirefoxHeadless"] : ["ChromeHeadless"],
 
     captureTimeout: 60000,
 
     colors: true,
+
+    customLaunchers: {
+        // CI containers run as root, where Chrome won't start sandboxed
+        ChromeHeadlessCI: {
+            base: "ChromeHeadless",
+            flags: ["--no-sandbox"]
+        }
+    },
 
     // coverageReporter: {
     //     dir: "build/coverage/",

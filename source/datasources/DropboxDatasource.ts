@@ -4,10 +4,19 @@ import { Credentials } from "../credentials/Credentials.js";
 import { getCredentials } from "../credentials/memory/credentials.js";
 import { getSharedAppEnv } from "../env/appEnv.js";
 import {
+    getDropboxAttachment,
+    getDropboxAttachmentPath,
+    putDropboxAttachment,
+    removeDropboxAttachment
+} from "./attachments/dropbox.js";
+import {
+    AttachmentDetails,
+    BufferLike,
     DatasourceConfigurationDropbox,
     DatasourceLoadedData,
     EncryptedContent,
-    History
+    History,
+    VaultID
 } from "../types.js";
 
 /**
@@ -41,6 +50,20 @@ export default class DropboxDatasource extends TextDatasource {
     }
 
     /**
+     * Get encrypted attachment data
+     * @param vaultID The ID of the vault
+     * @param attachmentID The ID of the attachment
+     * @memberof DropboxDatasource
+     */
+    getAttachment(vaultID: VaultID, attachmentID: string): Promise<BufferLike> {
+        return getDropboxAttachment(
+            this.client,
+            this.token,
+            getDropboxAttachmentPath(this.path, vaultID, attachmentID)
+        );
+    }
+
+    /**
      * Get the datasource configuration
      * @memberof DropboxDatasource
      */
@@ -69,6 +92,40 @@ export default class DropboxDatasource extends TextDatasource {
     }
 
     /**
+     * Put encrypted attachment data
+     * @param vaultID The ID of the vault
+     * @param attachmentID The ID of the attachment
+     * @param buffer The encrypted attachment data
+     * @param details The attachment details
+     * @memberof DropboxDatasource
+     */
+    putAttachment(
+        vaultID: VaultID,
+        attachmentID: string,
+        buffer: BufferLike,
+        details: AttachmentDetails
+    ): Promise<void> {
+        return putDropboxAttachment(
+            this.client,
+            getDropboxAttachmentPath(this.path, vaultID, attachmentID),
+            buffer
+        );
+    }
+
+    /**
+     * Remove an attachment
+     * @param vaultID The ID of the vault
+     * @param attachmentID The ID of the attachment
+     * @memberof DropboxDatasource
+     */
+    removeAttachment(vaultID: VaultID, attachmentID: string): Promise<void> {
+        return removeDropboxAttachment(
+            this.client,
+            getDropboxAttachmentPath(this.path, vaultID, attachmentID)
+        );
+    }
+
+    /**
      * Save an archive using the datasource
      * @param history The archive history to save
      * @param credentials The credentials to save with
@@ -81,6 +138,14 @@ export default class DropboxDatasource extends TextDatasource {
             .then((encryptedContent: EncryptedContent) =>
                 this.client.putFileContents(this.path, encryptedContent)
             );
+    }
+
+    /**
+     * Whether or not the datasource supports attachments
+     * @memberof DropboxDatasource
+     */
+    supportsAttachments(): boolean {
+        return true;
     }
 
     /**

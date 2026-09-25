@@ -15,6 +15,8 @@ import {
     VaultSource,
     setDefaultFormat
 } from "../../dist/node/index.js";
+import { registerDatasourcePostProcessor } from "../../dist/node/datasources/register.js";
+import { createFakeDropbox, createFakeGoogleDrive } from "../resources/fakeCloudStorage.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -43,10 +45,40 @@ describe("AttachmentManager", function () {
                 {
                     type: "file",
                     path: join(dirSync().name, "vault.bcup")
+                },
+                {
+                    type: "dropbox",
+                    token: "fake-token",
+                    path: "/Apps/Buttercup/vault.bcup"
+                },
+                {
+                    type: "googledrive",
+                    token: "fake-token",
+                    refreshToken: "fake-refresh-token",
+                    fileID: "vault-file"
                 }
             ].forEach((datasourceConfig) => {
                 describe(`using datasource type: ${datasourceConfig.type}`, function () {
                     beforeEach(async function () {
+                        // Cloud datasources talk to in-memory fakes of their
+                        // APIs, via their clients' patchable request method
+                        this.fakeDropbox = createFakeDropbox();
+                        this.fakeGoogleDrive = createFakeGoogleDrive({
+                            seedFiles: { "vault-file": "" }
+                        });
+                        this.postProcessor = registerDatasourcePostProcessor((type, datasource) => {
+                            if (type === "dropbox") {
+                                datasource.client.patcher.patch(
+                                    "request",
+                                    this.fakeDropbox.request
+                                );
+                            } else if (type === "googledrive") {
+                                datasource.client.patcher.patch(
+                                    "request",
+                                    this.fakeGoogleDrive.request
+                                );
+                            }
+                        });
                         this.vaultManager = new VaultManager({
                             cacheStorage: new MemoryStorageInterface(),
                             sourceStorage: new MemoryStorageInterface()
@@ -69,6 +101,10 @@ describe("AttachmentManager", function () {
                         this.entry = this.group
                             .createEntry("Account")
                             .setProperty("username", "user@test.com");
+                    });
+
+                    afterEach(function () {
+                        this.postProcessor.remove();
                     });
 
                     it("uses the right format", function () {
@@ -107,7 +143,10 @@ describe("AttachmentManager", function () {
                             name: "image.png",
                             type: "image/png",
                             sizeOriginal: 439968,
-                            sizeEncrypted: 440189,
+                            // GCM's auth tag (16 bytes) is smaller than CBC's
+                            // HMAC-SHA256 (32 bytes), so the packed blob is
+                            // correspondingly smaller than under CBC.
+                            sizeEncrypted: 440141,
                             created: nowDate.toUTCString(),
                             updated: nowDate.toUTCString()
                         });
@@ -218,7 +257,7 @@ describe("AttachmentManager", function () {
                                 );
                             } catch (err) {
                                 expect(err).to.match(/Not enough space/i);
-                                expect(err).to.match(/needed = 440189 B/i);
+                                expect(err).to.match(/needed = 440141 B/i);
                                 expect(err).to.match(/available = 1000 B/i);
                             }
                             expect(getAvailableStorage.callCount).to.equal(1);

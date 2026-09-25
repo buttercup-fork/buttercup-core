@@ -4,6 +4,7 @@ import {
     Group,
     Vault,
     VaultFormatA,
+    VaultFormatB,
     VaultPermission,
     generateUUID,
     setDefaultFormat
@@ -188,6 +189,59 @@ describe("core/Group", function () {
                 const entries = this.group.getEntries().map((e) => e.id);
                 expect(entries).to.contain(this.entry1.id);
                 expect(entries).to.contain(this.entry2.id);
+            });
+        });
+
+        describe("getAllEntries / getAllGroups", function () {
+            beforeEach(function () {
+                this.sub = this.group.createGroup("sub");
+                this.subSub = this.sub.createGroup("sub-sub");
+                this.entry3 = this.sub.createEntry("entry3");
+                this.entry4 = this.subSub.createEntry("entry4");
+                this.outside = this.vault.createGroup("other").createEntry("outside");
+            });
+
+            it("returns entries at every depth, and no others", function () {
+                expect(this.group.getAllEntries().map((e) => e.id)).to.have.members([
+                    this.entry1.id,
+                    this.entry2.id,
+                    this.entry3.id,
+                    this.entry4.id
+                ]);
+                expect(this.sub.getAllEntries().map((e) => e.id)).to.have.members([
+                    this.entry3.id,
+                    this.entry4.id
+                ]);
+            });
+
+            it("returns groups at every depth, excluding itself", function () {
+                expect(this.group.getAllGroups().map((g) => g.id)).to.have.members([
+                    this.sub.id,
+                    this.subSub.id
+                ]);
+                expect(this.subSub.getAllGroups()).to.deep.equal([]);
+            });
+
+            it("follows entries and groups that are moved or deleted", function () {
+                this.entry4.moveToGroup(this.vault.findGroupsByTitle("other")[0]);
+                this.sub.createGroup("new").createEntry("new entry");
+                this.entry1.delete();
+                expect(
+                    this.group.getAllEntries().map((e) => e.getProperty("title"))
+                ).to.have.members(["entry2", "entry3", "new entry"]);
+                expect(this.group.getAllGroups().map((g) => g.getTitle())).to.have.members([
+                    "sub",
+                    "sub-sub",
+                    "new"
+                ]);
+            });
+
+            it("works with Format B vaults", function () {
+                const vault = Vault.createWithDefaults(VaultFormatB);
+                const top = vault.createGroup("top");
+                const entry = top.createGroup("sub").createEntry("deep");
+                expect(top.getAllEntries().map((e) => e.id)).to.deep.equal([entry.id]);
+                expect(top.getAllGroups()).to.have.lengthOf(1);
             });
         });
 

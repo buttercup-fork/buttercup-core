@@ -1,4 +1,4 @@
-import { createAdapter } from "iocane";
+import { createAdapter, EncryptionAlgorithm } from "iocane";
 import cryptoRandomString from "crypto-random-string";
 import { CRYPTO_PBKDF2_ROUNDS, CRYPTO_RANDOM_STRING_CHARS } from "../core/constants.js";
 
@@ -13,6 +13,11 @@ function encryptData(data: string | Buffer, password: string): Promise<string | 
     if (__derivationRoundsOverride > 0) {
         adapter.setDerivationRounds(__derivationRoundsOverride);
     }
+    // GCM is authenticated encryption (vs. CBC + a separate HMAC), and the
+    // algorithm used is stored per-blob in the encrypted output's own
+    // header, so this only affects new encryptions - existing CBC-encrypted
+    // vaults keep decrypting exactly as before.
+    adapter.setAlgorithm(EncryptionAlgorithm.GCM);
     return adapter.encrypt(data, password) as Promise<string | Buffer>;
 }
 

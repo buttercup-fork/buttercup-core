@@ -7,7 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [14.x, 16.x, 18.x, 20.x]
+        # Supported Node versions: see "engines" in package.json
+        node-version: [20.x, 22.x, 24.x]
     steps:
       - uses: actions/checkout@v2
       - name: Node.js specs ${{ matrix.node-version }}
@@ -20,22 +21,34 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [22.x]
     steps:
       - uses: actions/checkout@v2
+      # Firefox from Mozilla's APT repository, so apt installs everything it
+      # depends on (the runner image has no desktop libraries)
+      - name: Install Firefox
+        run: |
+          install -d -m 0755 /etc/apt/keyrings
+          curl -fsSL https://packages.mozilla.org/apt/repo-signing-key.gpg -o /etc/apt/keyrings/packages.mozilla.org.asc
+          echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main" > /etc/apt/sources.list.d/mozilla.list
+          printf 'Package: *\nPin: origin packages.mozilla.org\nPin-Priority: 1000\n' > /etc/apt/preferences.d/mozilla
+          apt-get update && apt-get install -y firefox
+      # Full GitHub URL: this Forgejo instance's default action source
+      # (data.forgejo.org) doesn't mirror browser-actions/*. Runs before
+      # setup-node so it uses the image's newer Node.
+      - name: Setup Chrome
+        id: setup-chrome
+        uses: https://github.com/browser-actions/setup-chrome@v1
+        with:
+          install-dependencies: true
+          no-sudo: true
       - name: Node.js web specs ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-        env:
-          MOZ_HEADLESS: 1
-          CI: travis
-      - name: Setup Firefox
-        uses: browser-actions/setup-firefox@latest
-        with:
-          firefox-version: latest
-      - name: Setup Chrome
-        uses: browser-actions/setup-chrome@latest
-      - run: google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://localhost &
       - run: npm ci
       - run: npm run test:web
+        env:
+          CI: true
+          MOZ_HEADLESS: 1
+          CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}

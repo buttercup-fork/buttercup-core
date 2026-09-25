@@ -19,7 +19,8 @@ export function generateVaultInsights(vault: Vault): VaultInsights {
         trashGroupCount = 0,
         longestPasswordLength = null,
         shortestPasswordLength = null,
-        weakPasswords = 0;
+        weakPasswords = 0,
+        expiredPasswords = 0;
     const passwordCounts = {};
     const usernameSet = new Set();
     const entryPasswordLengths = [];
@@ -28,7 +29,11 @@ export function generateVaultInsights(vault: Vault): VaultInsights {
         groupCount += 1;
         entryCount += entries.length;
         entries.forEach((entry) => {
-            const password = entry.getProperty("password");
+            // A linked password belongs to another entry, which counts it
+            const password =
+                entry.getPropertyLink("password") && !entry.isPropertyLinkBroken("password")
+                    ? undefined
+                    : entry.getProperty("password");
             if (typeof password === "string") {
                 entryPasswordLengths.push(password.length);
                 if (longestPasswordLength === null || password.length > longestPasswordLength) {
@@ -37,6 +42,9 @@ export function generateVaultInsights(vault: Vault): VaultInsights {
                 if (shortestPasswordLength === null || password.length < shortestPasswordLength) {
                     shortestPasswordLength = password.length;
                 }
+            }
+            if (!group.isTrash() && entry.hasExpiredPassword() && !entry.isInTrash()) {
+                expiredPasswords += 1;
             }
             const username = entry.getProperty("username");
             if (["login", "website"].includes(entry.getType())) {
@@ -80,6 +88,7 @@ export function generateVaultInsights(vault: Vault): VaultInsights {
         trashGroups: trashGroupCount,
         usernames: usernameSet.size,
         duplicatePasswords,
+        expiredPasswords,
         weakPasswords
     };
 }

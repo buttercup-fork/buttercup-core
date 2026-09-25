@@ -1,4 +1,5 @@
 import { Layerr } from "layerr";
+import { ErrorCode, withDecryptionErrorCode } from "../tools/error.js";
 import { VaultFormat } from "./VaultFormat.js";
 import { Vault } from "../core/Vault.js";
 import { Credentials } from "../credentials/Credentials.js";
@@ -156,11 +157,16 @@ export class VaultFormatA extends VaultFormat {
         return Promise.resolve()
             .then(() => {
                 if (!hasValidSignature(encryptedContent)) {
-                    throw new Error("No valid signature in vault");
+                    throw new Layerr(
+                        { info: { code: ErrorCode.InvalidVaultSignature } },
+                        "No valid signature in vault"
+                    );
                 }
                 return stripSignature(encryptedContent);
             })
-            .then((encryptedData) => decrypt(encryptedData, masterPassword))
+            .then((encryptedData) =>
+                withDecryptionErrorCode<string>(decrypt(encryptedData, masterPassword), "vault")
+            )
             .then((decrypted) => {
                 if (decrypted && decrypted.length > 0) {
                     const decompressed = decompress(decrypted);

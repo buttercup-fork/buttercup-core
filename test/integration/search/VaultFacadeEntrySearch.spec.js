@@ -104,9 +104,22 @@ describe("VaultFacadeEntrySearch", function () {
                 expect(results).to.deep.equal(["Work logs"]);
             });
 
-            it.skip("excludes trash entries", function () {
+            it("excludes trash entries", function () {
                 const results = this.search.searchByTerm("ebay");
                 expect(results).to.have.lengthOf(0);
+            });
+
+            it("excludes entries in groups inside Trash", async function () {
+                // Deleting a group moves it, with its entries, into Trash
+                const archive = this.vault.createGroup("Archive");
+                archive.createGroup("Old sites").createEntry("Geocities");
+                archive.delete();
+                const search = new VaultFacadeEntrySearch(
+                    [createVaultFacade(this.vault)],
+                    new MemoryStorageInterface()
+                );
+                await search.prepare();
+                expect(search.searchByTerm("Geocities")).to.have.lengthOf(0);
             });
         });
 
@@ -117,7 +130,7 @@ describe("VaultFacadeEntrySearch", function () {
                 expect(results[0]).to.have.nested.property("properties.title", "Wordpress");
             });
 
-            it.skip("excludes trash entries", function () {
+            it("excludes trash entries", function () {
                 const results = this.search.searchByURL("ebay.com");
                 expect(results).to.have.lengthOf(0);
             });

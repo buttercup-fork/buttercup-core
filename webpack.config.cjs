@@ -64,6 +64,9 @@ const baseConfig = {
     resolve: {
         extensions: [".js"],
         fallback: {
+            // foreachasync's optional fallback for environments without native
+            // Promise - never used, don't bundle or warn about it
+            bluebird: false,
             crypto: false,
             dns: false,
             fs: false,

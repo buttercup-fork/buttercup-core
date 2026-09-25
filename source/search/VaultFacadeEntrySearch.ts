@@ -1,10 +1,33 @@
 import { Entry } from "../core/Entry.js";
+import { Group } from "../core/Group.js";
 import { BaseSearch, ProcessedSearchEntry, SearcherFactory } from "./BaseSearch.js";
 import { EntryURLType, getEntryURLs } from "../tools/entry.js";
 import { fieldsToAttributes, fieldsToProperties } from "../facades/entry.js";
 import { StorageInterface } from "../storage/StorageInterface.js";
-import { EntryFacade, VaultFacade } from "../types.js";
+import { EntryFacade, GroupID, VaultFacade } from "../types.js";
 import { isValidTag } from "../tools/tag.js";
+
+/**
+ * IDs of the Trash group and every group inside it
+ */
+function getTrashGroupIDs(facade: VaultFacade): Set<GroupID> {
+    const trashIDs = new Set<GroupID>(
+        facade.groups
+            .filter((group) => group.attributes?.[Group.Attribute.Role] === "trash")
+            .map((group) => group.id)
+    );
+    let added = trashIDs.size > 0;
+    while (added) {
+        added = false;
+        for (const group of facade.groups) {
+            if (!trashIDs.has(group.id) && trashIDs.has(group.parentID)) {
+                trashIDs.add(group.id);
+                added = true;
+            }
+        }
+    }
+    return trashIDs;
+}
 
 async function extractEntries(
     facade: VaultFacade,
@@ -19,9 +42,10 @@ async function extractEntries(
             vaultScore = scores;
         } catch (err) {}
     }
-    // Get entries
+    // Get entries, except those in Trash
+    const trashGroupIDs = getTrashGroupIDs(facade);
     return facade.entries.reduce((entries: Array<ProcessedSearchEntry>, nextEntry: EntryFacade) => {
-        // @todo in trash
+        if (trashGroupIDs.has(nextEntry.parentID)) return entries;
         const attributes = fieldsToAttributes(nextEntry.fields);
         const tags = attributes[Entry.Attributes.Tags]
             ? attributes[Entry.Attributes.Tags].split(",").reduce((output, tag) => {
