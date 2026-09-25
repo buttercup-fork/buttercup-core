@@ -12,6 +12,8 @@ A task-oriented guide to using `buttercup` as a library: opening a vault, and li
     - [Finding entries](#finding-entries)
     - [Creating an entry](#creating-an-entry)
     - [Updating an entry](#updating-an-entry)
+    - [Hiding a custom field](#hiding-a-custom-field)
+    - [Linking a field to another entry](#linking-a-field-to-another-entry)
     - [Deleting an entry](#deleting-an-entry)
 - [Saving and locking](#saving-and-locking)
 - [Merging conflict copies](#merging-conflict-copies)
@@ -217,6 +219,21 @@ await source.save();
 ```
 
 Buttercup keeps a history of changed property values, which the apps show as "entry history". See `entry.getChanges()`.
+
+### Hiding a custom field
+
+To have the apps hide a custom field's value the way they hide passwords (eg. a security answer or a PIN), give it the `password` value type:
+
+```javascript
+import { EntryPropertyValueType } from "buttercup";
+
+entry.setProperty("Security answer", "Rex");
+entry.setPropertyValueType("Security answer", EntryPropertyValueType.Password);
+
+entry.getPropertyValueType("Security answer"); // "password"
+```
+
+The value type is stored in a `BC_ENTRY_FIELD_TYPE:<property>` attribute and shows up as the field's `valueType` in entry facades. Other value types are `note` (multi-line), `otp` (a one-time password URI) and `text`, the default. `setPropertyValueType(property, null)` resets it to `text`.
 
 ### Linking a field to another entry
 
