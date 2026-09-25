@@ -14,6 +14,7 @@ A task-oriented guide to using `buttercup` as a library: opening a vault, and li
     - [Updating an entry](#updating-an-entry)
     - [Hiding a custom field](#hiding-a-custom-field)
     - [Storing recovery codes](#storing-recovery-codes)
+    - [Ordering fields](#ordering-fields)
     - [Linking a field to another entry](#linking-a-field-to-another-entry)
     - [Deleting an entry](#deleting-an-entry)
 - [Saving and locking](#saving-and-locking)
@@ -257,6 +258,27 @@ entry.setRecoveryCodes("Backup codes");
 ```
 
 The codes are stored one per line as the field's value, and the field becomes a password field, so apps without recovery codes support still hide it. Which codes are used is kept in a `BC_ENTRY_RECOVERY_CODES:<property>` attribute. Pass `false` as a third argument to `markRecoveryCodeUsed` to mark a code as unused again. `isRecoveryCodesProperty(property)` tells recovery codes apart from other password fields, and `unsetRecoveryCodes(property)` turns the field back into a plain password field.
+
+### Ordering fields
+
+An entry's fields can be put in a custom display order:
+
+```javascript
+entry.getPropertyOrders(); // ["title", "username", "password", "PIN"]
+
+// Move one field, shifting the others along:
+entry.setPropertyOrder("PIN", 1);
+entry.getPropertyOrders(); // ["title", "PIN", "username", "password"]
+
+// Or set the whole order at once, eg. after drag and drop.
+// Fields that aren't listed follow, in their current order:
+entry.setPropertyOrders(["password", "username"]);
+entry.getPropertyOrders(); // ["password", "username", "title", "PIN"]
+```
+
+Each field's position is stored in a `BC_ENTRY_FIELD_ORDER:<property>` attribute, starting from 0. `getPropertyOrder(property)` returns a field's position, or `Infinity` if it has none. Fields without a position, such as ones added later, come after the ordered ones. `resetPropertyOrders()` removes the order, and deleting a field removes its position.
+
+Entry facades follow the order: once an entry has one, `createEntryFacade` lists its property fields in that order. When fields are moved in a facade, `consumeEntryFacade` saves the new order. A facade whose fields weren't moved leaves the order alone.
 
 ### Linking a field to another entry
 

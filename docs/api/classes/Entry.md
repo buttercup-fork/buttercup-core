@@ -47,7 +47,7 @@ Remote source object reference
 
 ### Attributes
 
-> `static` **Attributes**: `Readonly`\<\{ `AttachmentPrefix`: `"BC_ENTRY_ATTACHMENT:"`; `FacadeType`: `"BC_ENTRY_FACADE_TYPE"`; `FieldTypePrefix`: `"BC_ENTRY_FIELD_TYPE:"`; `PropertyLinkPrefix`: `"BC_ENTRY_PROPERTY_LINK:"`; `RecoveryCodesPrefix`: `"BC_ENTRY_RECOVERY_CODES:"`; `Tags`: `"BC_ENTRY_TAGS"`; \}\>
+> `static` **Attributes**: `Readonly`\<\{ `AttachmentPrefix`: `"BC_ENTRY_ATTACHMENT:"`; `FacadeType`: `"BC_ENTRY_FACADE_TYPE"`; `FieldOrderPrefix`: `"BC_ENTRY_FIELD_ORDER:"`; `FieldTypePrefix`: `"BC_ENTRY_FIELD_TYPE:"`; `PropertyLinkPrefix`: `"BC_ENTRY_PROPERTY_LINK:"`; `RecoveryCodesPrefix`: `"BC_ENTRY_RECOVERY_CODES:"`; `Tags`: `"BC_ENTRY_TAGS"`; \}\>
 
 ## Accessors
 
@@ -387,6 +387,53 @@ The linked entry ID and property, or `null` if the property
 
 ***
 
+### getPropertyOrder()
+
+> **getPropertyOrder**(`property`): `number`
+
+Get the display order of a property
+
+#### Parameters
+
+##### property
+
+`string`
+
+The property name
+
+#### Returns
+
+`number`
+
+The 0-based order, or `Infinity` if the property has no order
+ (it's then shown after the ordered properties)
+
+#### See
+
+Entry.setPropertyOrder
+
+***
+
+### getPropertyOrders()
+
+> **getPropertyOrders**(): `string`[]
+
+Get all property names in display order
+Properties without an order follow the ordered ones, in the order
+they're stored.
+
+#### Returns
+
+`string`[]
+
+An array of property names
+
+#### See
+
+Entry.setPropertyOrder
+
+***
+
 ### getPropertyValueType()
 
 > **getPropertyValueType**(`property`): [`EntryPropertyValueType`](../enumerations/EntryPropertyValueType.md)
@@ -538,6 +585,21 @@ The permission to check for
 #### Inherited from
 
 `VaultItem.hasPermission`
+
+***
+
+### hasPropertyOrders()
+
+> **hasPropertyOrders**(): `boolean`
+
+Check if any of the entry's properties has a display order
+
+#### Returns
+
+`boolean`
+
+True if the properties were ordered with
+ [Entry.setPropertyOrder](#setpropertyorder) or [Entry.setPropertyOrders](#setpropertyorders)
 
 ***
 
@@ -731,6 +793,20 @@ Self
 
 ***
 
+### resetPropertyOrders()
+
+> **resetPropertyOrders**(): `this`
+
+Remove the display order of all properties
+
+#### Returns
+
+`this`
+
+Self
+
+***
+
 ### revokeAllPermissions()
 
 > **revokeAllPermissions**(): `void`
@@ -824,6 +900,71 @@ The property value
 `this`
 
 Returns self
+
+***
+
+### setPropertyOrder()
+
+> **setPropertyOrder**(`property`, `order`): `this`
+
+Move a property to a position in the display order
+The properties at and after the position move down by one. All
+properties are given an order, starting from 0, so properties that
+had none keep their current place.
+
+#### Parameters
+
+##### property
+
+`string`
+
+The property to move
+
+##### order
+
+`number`
+
+The 0-based position. `Infinity`, or any position past
+ the last property, moves it to the end.
+
+#### Returns
+
+`this`
+
+Self
+
+#### Throws
+
+Throws if the entry has no such property
+
+***
+
+### setPropertyOrders()
+
+> **setPropertyOrders**(`properties`): `this`
+
+Set the display order of the properties, eg. after reordering them by
+drag and drop
+
+#### Parameters
+
+##### properties
+
+`string`[]
+
+Property names in their new order. Properties that
+ aren't listed follow them, in their current order.
+
+#### Returns
+
+`this`
+
+Self
+
+#### Throws
+
+Throws if a listed property doesn't exist on the entry
+ or is listed twice
 
 ***
 

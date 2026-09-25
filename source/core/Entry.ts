@@ -24,6 +24,7 @@ export class Entry extends VaultItem {
     static Attributes = Object.freeze({
         AttachmentPrefix: "BC_ENTRY_ATTACHMENT:",
         FacadeType: "BC_ENTRY_FACADE_TYPE",
+        FieldOrderPrefix: "BC_ENTRY_FIELD_ORDER:",
         FieldTypePrefix: "BC_ENTRY_FIELD_TYPE:",
         PropertyLinkPrefix: "BC_ENTRY_PROPERTY_LINK:",
         RecoveryCodesPrefix: "BC_ENTRY_RECOVERY_CODES:",
@@ -123,6 +124,10 @@ export class Entry extends VaultItem {
         this.vault.format.deleteEntryProperty(this.id, property);
         this._deletePropertyLink(property);
         this._deleteRecoveryCodesMarker(property);
+        const orderAttribute = `${Entry.Attributes.FieldOrderPrefix}${property}`;
+        if (typeof this.getAttribute(orderAttribute) === "string") {
+            this.deleteAttribute(orderAttribute);
+        }
         return this;
     }
 
@@ -203,6 +208,33 @@ export class Entry extends VaultItem {
             entryID: value.slice(0, separator),
             property: value.slice(separator + 1)
         };
+    }
+
+    /**
+     * Get the display order of a property
+     * @param property The property name
+     * @returns The 0-based order, or `Infinity` if the property has no order
+     *  (it's then shown after the ordered properties)
+     * @see Entry.setPropertyOrder
+     */
+    getPropertyOrder(property: string): number {
+        const value = this.getAttribute(`${Entry.Attributes.FieldOrderPrefix}${property}`);
+        const order = typeof value === "string" && /^\d+$/.test(value) ? parseInt(value, 10) : NaN;
+        return isNaN(order) ? Infinity : order;
+    }
+
+    /**
+     * Get all property names in display order
+     * Properties without an order follow the ordered ones, in the order
+     * they're stored.
+     * @returns An array of property names
+     * @see Entry.setPropertyOrder
+     */
+    getPropertyOrders(): Array<string> {
+        return Object.keys(this.getProperty())
+            .map((property, index) => ({ property, index, order: this.getPropertyOrder(property) }))
+            .sort((a, b) => (a.order === b.order ? a.index - b.index : a.order < b.order ? -1 : 1))
+            .map((item) => item.property);
     }
 
     /**
@@ -302,6 +334,18 @@ export class Entry extends VaultItem {
     isInTrash(): boolean {
         const group = this.getGroup();
         return group.isTrash() || group.isInTrash();
+    }
+
+    /**
+     * Check if any of the entry's properties has a display order
+     * @returns True if the properties were ordered with
+     *  {@link Entry.setPropertyOrder} or {@link Entry.setPropertyOrders}
+     */
+    hasPropertyOrders(): boolean {
+        const properties = this.getProperty();
+        return Object.keys(properties).some(
+            (property) => this.getPropertyOrder(property) !== Infinity
+        );
     }
 
     /**
@@ -457,6 +501,58 @@ export class Entry extends VaultItem {
     }
 
     /**
+     * Move a property to a position in the display order
+     * The properties at and after the position move down by one. All
+     * properties are given an order, starting from 0, so properties that
+     * had none keep their current place.
+     * @param property The property to move
+     * @param order The 0-based position. `Infinity`, or any position past
+     *  the last property, moves it to the end.
+     * @returns Self
+     * @throws {Error} Throws if the entry has no such property
+     */
+    setPropertyOrder(property: string, order: number): this {
+        const properties = this.getPropertyOrders();
+        if (!properties.includes(property)) {
+            throw new Error(`Cannot set property order: No such property: ${property}`);
+        }
+        if (typeof order !== "number" || isNaN(order)) {
+            throw new Error(`Cannot set property order: Invalid order: ${order}`);
+        }
+        const others = properties.filter((name) => name !== property);
+        const index = Math.min(Math.max(Math.floor(order), 0), others.length);
+        others.splice(index, 0, property);
+        this._writePropertyOrders(others);
+        return this;
+    }
+
+    /**
+     * Set the display order of the properties, eg. after reordering them by
+     * drag and drop
+     * @param properties Property names in their new order. Properties that
+     *  aren't listed follow them, in their current order.
+     * @returns Self
+     * @throws {Error} Throws if a listed property doesn't exist on the entry
+     *  or is listed twice
+     */
+    setPropertyOrders(properties: Array<string>): this {
+        const current = this.getPropertyOrders();
+        properties.forEach((property, index) => {
+            if (!current.includes(property)) {
+                throw new Error(`Cannot set property orders: No such property: ${property}`);
+            }
+            if (properties.indexOf(property) !== index) {
+                throw new Error(`Cannot set property orders: Property listed twice: ${property}`);
+            }
+        });
+        this._writePropertyOrders([
+            ...properties,
+            ...current.filter((property) => !properties.includes(property))
+        ]);
+        return this;
+    }
+
+    /**
      * Make a property hold a list of recovery codes (eg. 2FA backup codes)
      * The codes are stored one per line in the property's value, and the
      * property becomes a password field, so apps without recovery codes
@@ -507,6 +603,19 @@ export class Entry extends VaultItem {
         } else {
             this.setAttribute(`${Entry.Attributes.FieldTypePrefix}${property}`, valueType);
         }
+        return this;
+    }
+
+    /**
+     * Remove the display order of all properties
+     * @returns Self
+     */
+    resetPropertyOrders(): this {
+        Object.keys(this.getAttribute()).forEach((attribute) => {
+            if (attribute.indexOf(Entry.Attributes.FieldOrderPrefix) === 0) {
+                this.deleteAttribute(attribute);
+            }
+        });
         return this;
     }
 
@@ -640,6 +749,15 @@ export class Entry extends VaultItem {
 
     _updateRefs() {
         this._source = this.vault.format.findEntryByID(this.id);
+    }
+
+    _writePropertyOrders(properties: Array<string>) {
+        properties.forEach((property, index) => {
+            const attribute = `${Entry.Attributes.FieldOrderPrefix}${property}`;
+            if (this.getAttribute(attribute) !== `${index}`) {
+                this.setAttribute(attribute, `${index}`);
+            }
+        });
     }
 }
 

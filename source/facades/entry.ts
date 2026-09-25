@@ -69,6 +69,40 @@ function addExtraFieldsNonDestructive(entry: Entry, fields: Array<EntryFacadeFie
 }
 
 /**
+ * Sort facade fields by the entry's property order, if it has one
+ * Property fields come first, in property order, followed by attribute
+ * fields in their original order.
+ * @param entry An Entry instance
+ * @param fields An array of fields
+ * @returns The sorted fields
+ * @private
+ */
+function sortFieldsByPropertyOrder(
+    entry: Entry,
+    fields: Array<EntryFacadeField>
+): Array<EntryFacadeField> {
+    if (!entry.hasPropertyOrders()) return fields;
+    const sortKey = (field: EntryFacadeField) =>
+        field.propertyType === EntryPropertyType.Property
+            ? entry.getPropertyOrder(field.property)
+            : Infinity;
+    return fields
+        .map((field, index) => ({
+            field,
+            index,
+            isProperty: field.propertyType === EntryPropertyType.Property
+        }))
+        .sort((a, b) => {
+            if (a.isProperty !== b.isProperty) return a.isProperty ? -1 : 1;
+            const orderA = sortKey(a.field),
+                orderB = sortKey(b.field);
+            if (orderA === orderB) return a.index - b.index;
+            return orderA < orderB ? -1 : 1;
+        })
+        .map((item) => item.field);
+}
+
+/**
  * Apply a facade field descriptor to an entry
  * Takes data from the descriptor and writes it to the entry.
  * @param entry The entry to apply to
@@ -102,6 +136,9 @@ export function consumeEntryFacade(
     if (facade && facade.type) {
         const properties = entry.getProperty();
         const attributes = entry.getAttribute();
+        const shownOrder = createEntryFacade(entry)
+            .fields.filter((field) => field.propertyType === EntryPropertyType.Property)
+            .map((field) => field.property);
         if (facade.type !== facadeType) {
             throw new Error(
                 `Failed consuming entry data: Expected type "${facadeType}" but received "${facade.type}"`
@@ -158,6 +195,19 @@ export function consumeEntryFacade(
                 entry.deleteAttribute(attrKey);
             }
         });
+        // Fields moved in the facade change the entry's property order
+        const newOrder = fields
+            .filter((field) => field.propertyType === EntryPropertyType.Property)
+            .map((field) => field.property)
+            .filter((property, index, all) => all.indexOf(property) === index);
+        const moved = newOrder.filter((property) => shownOrder.includes(property));
+        const kept = shownOrder.filter((property) => moved.includes(property));
+        if (moved.some((property, index) => kept[index] !== property)) {
+            const existing = entry.getProperty();
+            entry.setPropertyOrders(
+                newOrder.filter((property) => existing.hasOwnProperty(property))
+            );
+        }
         return;
     }
     throw new Error("Failed consuming entry data: Invalid item passed as a facade");
@@ -184,7 +234,7 @@ export function createEntryFacade(
         throw new Error(`Failed creating entry facade: No factory found for type "${facadeType}"`);
     }
     const fields = entry
-        ? addExtraFieldsNonDestructive(entry, createFields(entry))
+        ? sortFieldsByPropertyOrder(entry, addExtraFieldsNonDestructive(entry, createFields(entry)))
         : createFields(entry);
     if (
         !fields.find(
