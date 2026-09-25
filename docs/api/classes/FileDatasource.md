@@ -53,7 +53,7 @@ The credentials instance with which to
 
 ### sourceID
 
-> **sourceID**: `string` = `null`
+> **sourceID**: `string` \| `null` = `null`
 
 #### Inherited from
 
@@ -155,7 +155,7 @@ The file path
 
 ### changePassword()
 
-> **changePassword**(`newCredentials`, `preflight`): `Promise`\<`boolean`\>
+> **changePassword**(`newCredentials`, `preflight`): `Promise`\<`boolean` \| `undefined`\>
 
 Change the password of the vault
 
@@ -176,7 +176,7 @@ Whether or not the password change attempt is a preflight
 
 #### Returns
 
-`Promise`\<`boolean`\>
+`Promise`\<`boolean` \| `undefined`\>
 
 True/False if in preflight, as to whether or not the password change
  can be performed at this time, or undefined when not in preflight mode.
@@ -220,13 +220,13 @@ The ID of the attachment
 
 ### getAvailableStorage()
 
-> **getAvailableStorage**(): `Promise`\<`number`\>
+> **getAvailableStorage**(): `Promise`\<`number` \| `null`\>
 
 Get the available storage space, in bytes
 
 #### Returns
 
-`Promise`\<`number`\>
+`Promise`\<`number` \| `null`\>
 
 Bytes of free space, or null if not
  available
@@ -274,13 +274,13 @@ A hasn of the datasource (unique ID)
 
 ### getTotalStorage()
 
-> **getTotalStorage**(): `Promise`\<`number`\>
+> **getTotalStorage**(): `Promise`\<`number` \| `null`\>
 
 Get the total storage space, in bytes
 
 #### Returns
 
-`Promise`\<`number`\>
+`Promise`\<`number` \| `null`\>
 
 Bytes of free space, or null if not
  available

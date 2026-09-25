@@ -3,9 +3,13 @@ import { getMasterPassword } from "../credentials/memory/password.js";
 import { Credentials } from "../credentials/Credentials.js";
 import { TextDatasource } from "./TextDatasource.js";
 
-const __datasources = {};
-const __datasourceFlags = {};
-const __postHandlers = [];
+interface DatasourceFlags {
+    open?: boolean;
+}
+
+const __datasources: { [type: string]: any } = {};
+const __datasourceFlags: { [type: string]: DatasourceFlags } = {};
+const __postHandlers: Array<Function> = [];
 
 /**
  * Convert a Credentials instance to a Datasource
@@ -19,7 +23,7 @@ const __postHandlers = [];
  * @private
  */
 export function credentialsToDatasource(credentials: Credentials): TextDatasource {
-    const { datasource } = getCredentials(credentials.id).data;
+    const { datasource } = getCredentials(credentials.id)!.data;
     if (!datasource) {
         throw new Error("No datasource configuration in credentials");
     }
@@ -59,19 +63,19 @@ export function fireInstantiationHandlers(type: string, datasource: TextDatasour
  */
 export function prepareDatasourceCredentials(
     credentials: Credentials,
-    typeOverride: string = null
+    typeOverride: string | null = null
 ): Credentials {
     const {
         data: { datasource }
-    } = getCredentials(credentials.id);
-    const masterPassword = getMasterPassword(credentials.id);
-    const datasourceType = typeOverride || datasource.type || "";
+    } = getCredentials(credentials.id)!;
+    const masterPassword = getMasterPassword(credentials.id)!;
+    const datasourceType = typeOverride || datasource!.type || "";
     const { open = false } = __datasourceFlags[datasourceType] || {};
     if (!open) {
         return credentials;
     }
     const newCreds = Credentials.fromCredentials(credentials, masterPassword);
-    const newCredPayload = getCredentials(newCreds.id);
+    const newCredPayload = getCredentials(newCreds.id)!;
     newCredPayload.open = true;
     return newCreds;
 }
@@ -84,7 +88,11 @@ export function prepareDatasourceCredentials(
  * @param DSClass The class for the new datasource
  * @memberof module:Buttercup
  */
-export function registerDatasource(datasourceType: string, DSClass: any, flags = {}) {
+export function registerDatasource(
+    datasourceType: string,
+    DSClass: any,
+    flags: { open?: boolean } = {}
+) {
     if (__datasources[datasourceType]) {
         throw new Error(`Datasource already registered for type: ${datasourceType}`);
     }

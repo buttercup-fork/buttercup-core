@@ -3,7 +3,7 @@ import { CredentialsPayload } from "../../types.js";
 const __store: Record<string, CredentialsPayload | null> = {};
 
 export function credentialsAllowsPurpose(id: string, purpose: string): boolean {
-    const { purposes } = getCredentials(id);
+    const { purposes } = getCredentials(id)!;
     return purposes.includes(purpose);
 }
 

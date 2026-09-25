@@ -100,7 +100,7 @@ export function executeDeleteEntry(archive: FormatAVault, opts: any, entryID: En
     if (!group) {
         throw new Error(`Failed deleting entry: Invalid entry ID: ${entryID}`);
     }
-    group.entries.splice(index, 1);
+    group.entries!.splice(index!, 1);
 }
 
 export function executeDeleteEntryAttribute(
@@ -155,7 +155,7 @@ export function executeDeleteGroup(archive: FormatAVault, opts: any, groupID: Gr
     if (!group) {
         throw new Error(`Invalid group ID: ${groupID}`);
     }
-    group.groups.splice(index, 1);
+    group.groups!.splice(index!, 1);
 }
 
 export function executeDeleteGroupAttribute(
@@ -205,7 +205,7 @@ export function executeMoveEntry(
     if (!targetGroup) {
         throw new Error("Invalid group ID");
     }
-    const [movedEntry] = originGroup.entries.splice(originIndex, 1);
+    const [movedEntry] = originGroup.entries!.splice(originIndex!, 1);
     targetGroup.entries = targetGroup.entries || [];
     targetGroup.entries.push(movedEntry);
     movedEntry.parentID = groupID;
@@ -229,7 +229,7 @@ export function executeMoveGroup(
     if (!targetGroup) {
         throw new Error(`Invalid target group ID: ${targetGroupID}`);
     }
-    const [movedGroup] = originGroup.groups.splice(originIndex, 1);
+    const [movedGroup] = originGroup.groups!.splice(originIndex!, 1);
     targetGroup.groups = targetGroup.groups || [];
     targetGroup.groups.push(movedGroup);
     movedGroup.parentID = targetGroupID;

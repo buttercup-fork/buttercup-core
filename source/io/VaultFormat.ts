@@ -18,7 +18,7 @@ import {
 
 export const ORPHANS_GROUP_TITLE = "Orphaned Items";
 
-function notImplemented() {
+function notImplemented(): never {
     throw new Error("Not implemented");
 }
 
@@ -32,8 +32,7 @@ export class VaultFormat extends EventEmitter {
     }
 
     static getFormatID(): VaultFormatID {
-        notImplemented();
-        return null;
+        return notImplemented();
     }
 
     static historiesDiffer(historyA: History, historyB: History): boolean {
@@ -50,13 +49,12 @@ export class VaultFormat extends EventEmitter {
     }
 
     static vaultFromMergedHistories(local: History, incoming: History): Vault {
-        notImplemented();
-        return null;
+        return notImplemented();
     }
 
     protected _readOnly = false;
     public dirty = false;
-    public source: FormatAVault | FormatBVault = null;
+    public source: FormatAVault | FormatBVault;
 
     get history() {
         return this.getHistory();
@@ -112,9 +110,10 @@ export class VaultFormat extends EventEmitter {
     }
 
     erase() {
-        Object.keys(this.source).forEach((sourceKey) => {
-            this.source[sourceKey] = undefined;
-            delete this.source[sourceKey];
+        const source = this.source as { [key: string]: any };
+        Object.keys(source).forEach((sourceKey) => {
+            source[sourceKey] = undefined;
+            delete source[sourceKey];
         });
         this.history.splice(0, Infinity);
     }
@@ -123,36 +122,32 @@ export class VaultFormat extends EventEmitter {
         notImplemented();
     }
 
-    findEntryByID(id: EntryID): FormatAEntry | FormatBEntry {
-        notImplemented();
-        return null;
+    findEntryByID(id: EntryID): FormatAEntry | FormatBEntry | null {
+        return notImplemented();
     }
 
-    findGroupByID(id: GroupID): FormatAGroup | FormatBGroup {
-        notImplemented();
-        return null;
+    findGroupByID(id: GroupID): FormatAGroup | FormatBGroup | null {
+        return notImplemented();
     }
 
-    findGroupContainingEntryID(id: EntryID): FormatAGroup | FormatBGroup {
-        notImplemented();
-        return null;
+    findGroupContainingEntryID(id: EntryID): FormatAGroup | FormatBGroup | null {
+        return notImplemented();
     }
 
-    findGroupContainingGroupID(id: GroupID): FormatAGroup | FormatBGroup {
-        notImplemented();
-        return null;
+    findGroupContainingGroupID(id: GroupID): FormatAGroup | FormatBGroup | null {
+        return notImplemented();
     }
 
     generateID() {
         notImplemented();
     }
 
-    getAllEntries(parentID: GroupID = null): Array<FormatAEntry | FormatBEntry> {
+    getAllEntries(parentID: GroupID | null = null): Array<FormatAEntry | FormatBEntry> {
         notImplemented();
         return [];
     }
 
-    getAllGroups(parentID: GroupID = null): Array<FormatAGroup | FormatBGroup> {
+    getAllGroups(parentID: GroupID | null = null): Array<FormatAGroup | FormatBGroup> {
         notImplemented();
         return [];
     }
@@ -231,8 +226,7 @@ export class VaultFormat extends EventEmitter {
     }
 
     prepareOrphansGroup(): FormatAGroup | FormatBGroup {
-        notImplemented();
-        return null;
+        return notImplemented();
     }
 
     setEntryAttribute(entryID: EntryID, attribute: string, value: string) {

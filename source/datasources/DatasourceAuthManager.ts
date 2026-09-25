@@ -70,7 +70,9 @@ export default class DatasourceAuthManager extends EventEmitter {
             );
         }
         return Promise.resolve()
-            .then(() => forEachAsync(handlers, (handler) => handler(datasourceInst)))
+            .then(() =>
+                forEachAsync(handlers, (handler: AuthHandlerFunction) => handler(datasourceInst))
+            )
             .then(() => {
                 /**
                  * Event for when the handlers have been fired

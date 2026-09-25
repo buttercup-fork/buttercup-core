@@ -9,6 +9,6 @@ export function removeMasterPassword(id: string) {
     delete __store[id];
 }
 
-export function setMasterPassword(id: string, value: string) {
+export function setMasterPassword(id: string, value: string | null) {
     __store[id] = value;
 }

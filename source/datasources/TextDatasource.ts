@@ -24,7 +24,7 @@ export class TextDatasource extends EventEmitter {
     _content: EncryptedContent;
     _credentials: Credentials;
 
-    public sourceID: VaultSourceID = null;
+    public sourceID: VaultSourceID | null = null;
     public type: string;
 
     /**
@@ -37,7 +37,7 @@ export class TextDatasource extends EventEmitter {
         this._credentials = credentials;
         this._content = "";
         try {
-            const { data: credentialData } = getCredentials(credentials.id);
+            const { data: credentialData } = getCredentials(credentials.id)!;
             const { datasource: datasourceConfig = {} } = credentialData || {};
             const { content = "" } = datasourceConfig as DatasourceConfiguration;
             this._content = content;
@@ -61,7 +61,7 @@ export class TextDatasource extends EventEmitter {
      * @memberof TextDatasource
      */
     get hasContent(): boolean {
-        return this._content && this._content.length > 0;
+        return !!this._content && this._content.length > 0;
     }
 
     /**

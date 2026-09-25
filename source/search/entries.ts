@@ -28,7 +28,7 @@ export function getAllChildEntries(entries: Array<Entry>, parentGroupID: GroupID
     return entries.filter((entry) => {
         const parentID = entry.vault.format.getItemParentID(entry._source);
         if (parentID === parentGroupID) return true;
-        let nextParent: Group;
+        let nextParent: Group | null = null;
         while (
             (nextParent = nextParent ? nextParent.getParentGroup() : entry.getGroup()) !== null
         ) {

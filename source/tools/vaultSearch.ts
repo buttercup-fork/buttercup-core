@@ -12,8 +12,8 @@ export function findEntriesByCheck(
     groups: Array<Group>,
     compareFn: (entry: Entry) => boolean
 ): Array<Entry> {
-    let foundEntries = [],
-        newEntries;
+    let foundEntries: Array<Entry> = [],
+        newEntries: Array<Entry>;
     groups.forEach((group: Group) => {
         newEntries = group.getEntries().filter(compareFn);
         if (newEntries.length > 0) {

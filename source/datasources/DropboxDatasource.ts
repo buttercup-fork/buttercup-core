@@ -36,7 +36,7 @@ export default class DropboxDatasource extends TextDatasource {
      */
     constructor(credentials: Credentials) {
         super(credentials);
-        const { data: credentialData } = getCredentials(credentials.id);
+        const { data: credentialData } = getCredentials(credentials.id)!;
         const { datasource: datasourceConfig } = credentialData as {
             datasource: DatasourceConfigurationDropbox;
         };
@@ -85,7 +85,7 @@ export default class DropboxDatasource extends TextDatasource {
         if (this.hasContent) {
             return super.load(credentials);
         }
-        return this.client.getFileContents(this.path).then((content) => {
+        return this.client.getFileContents(this.path).then((content: string) => {
             this.setContent(content);
             return super.load(credentials);
         });

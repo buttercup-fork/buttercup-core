@@ -13,7 +13,7 @@ export class VaultSourceEntrySearch extends VaultEntrySearch {
         memory?: StorageInterface,
         searcherFactory?: SearcherFactory
     ) {
-        const vaults: Array<Vault> = sources.reduce((output, source) => {
+        const vaults: Array<Vault> = sources.reduce((output: Array<Vault>, source) => {
             if (source.status === VaultSourceStatus.Unlocked) {
                 return [...output, source.vault];
             }

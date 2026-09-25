@@ -61,7 +61,7 @@ Throws if the attachment isn't found
 
 ### getAttachmentDetails()
 
-> **getAttachmentDetails**(`entry`, `attachmentID`): `Promise`\<[`AttachmentDetails`](../interfaces/AttachmentDetails.md)\>
+> **getAttachmentDetails**(`entry`, `attachmentID`): `Promise`\<[`AttachmentDetails`](../interfaces/AttachmentDetails.md) \| `null`\>
 
 Get an attachment's details
 
@@ -81,7 +81,7 @@ The attachment ID
 
 #### Returns
 
-`Promise`\<[`AttachmentDetails`](../interfaces/AttachmentDetails.md)\>
+`Promise`\<[`AttachmentDetails`](../interfaces/AttachmentDetails.md) \| `null`\>
 
 The details or null if the attachment isn't found
 

@@ -366,7 +366,7 @@ Entry.setLoginEntry
 
 ### findEntryByID()
 
-> **findEntryByID**(`id`): [`Entry`](Entry.md)
+> **findEntryByID**(`id`): [`Entry`](Entry.md) \| `null`
 
 Find an entry by its ID
 
@@ -380,7 +380,7 @@ The ID to search for
 
 #### Returns
 
-[`Entry`](Entry.md)
+[`Entry`](Entry.md) \| `null`
 
 Null if not found, or the Entry instance
 
@@ -388,7 +388,7 @@ Null if not found, or the Entry instance
 
 ### findGroupByID()
 
-> **findGroupByID**(`id`): [`Group`](Group.md)
+> **findGroupByID**(`id`): [`Group`](Group.md) \| `null`
 
 Find a group by its ID
 
@@ -402,7 +402,7 @@ The group ID to search for
 
 #### Returns
 
-[`Group`](Group.md)
+[`Group`](Group.md) \| `null`
 
 The group or null if not found
 
@@ -497,7 +497,7 @@ An array of tag strings
 
 ### getAttribute()
 
-> **getAttribute**(`attributeName?`): `string` \| `Object`
+> **getAttribute**(`attributeName?`): `string` \| `Object` \| `undefined`
 
 Get the value of an attribute
 
@@ -511,7 +511,7 @@ The attribute to get
 
 #### Returns
 
-`string` \| `Object`
+`string` \| `Object` \| `undefined`
 
 The value of the attribute or undefined if not
  set. Returns an object if no attribute name is given.
@@ -532,13 +532,13 @@ Get the top-level groups in the vault
 
 ### getTrashGroup()
 
-> **getTrashGroup**(): [`Group`](Group.md)
+> **getTrashGroup**(): [`Group`](Group.md) \| `null`
 
 Get the trash group
 
 #### Returns
 
-[`Group`](Group.md)
+[`Group`](Group.md) \| `null`
 
 The trash group or null if it doesn't
  exist

@@ -194,7 +194,7 @@ The new order
 
 ### getSourceForID()
 
-> **getSourceForID**(`sourceID`): [`VaultSource`](VaultSource.md)
+> **getSourceForID**(`sourceID`): [`VaultSource`](VaultSource.md) \| `null`
 
 Get a source for an ID
 
@@ -208,7 +208,7 @@ The source ID
 
 #### Returns
 
-[`VaultSource`](VaultSource.md)
+[`VaultSource`](VaultSource.md) \| `null`
 
 The source with the matching ID or null if not found
 

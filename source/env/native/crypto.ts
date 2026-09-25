@@ -39,6 +39,6 @@ async function randomString(length: number): Promise<string> {
     });
 }
 
-function setDerivationRounds(rounds: number = null) {
+function setDerivationRounds(rounds: number | null = null) {
     __derivationRoundsOverride = !rounds ? CRYPTO_PBKDF2_ROUNDS : rounds;
 }

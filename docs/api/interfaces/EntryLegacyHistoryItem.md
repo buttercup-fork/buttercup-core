@@ -10,13 +10,13 @@
 
 ### newValue
 
-> **newValue**: `string`
+> **newValue**: `string` \| `null`
 
 ***
 
 ### originalValue
 
-> **originalValue**: `string`
+> **originalValue**: `string` \| `null`
 
 ***
 

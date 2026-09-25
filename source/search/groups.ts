@@ -23,7 +23,7 @@ export function getAllChildGroups(groups: Array<Group>, parentID: GroupID): Arra
     return groups.filter((group) => {
         const thisParentID = getParentID(group);
         if (thisParentID === parentID) return true;
-        let nextParent: Group;
+        let nextParent: Group | null = null;
         while (
             (nextParent = nextParent ? nextParent.getParentGroup() : group.getParentGroup()) !==
             null

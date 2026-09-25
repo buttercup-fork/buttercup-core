@@ -28,6 +28,10 @@ The class for the new datasource
 
 ### flags?
 
+#### open?
+
+`boolean`
+
 ## Returns
 
 `void`

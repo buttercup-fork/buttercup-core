@@ -13,6 +13,7 @@ import {
     FormatBGroup,
     FormatBKeyValueObject,
     FormatBVault,
+    FormatBValueHistoryItem,
     PropertyKeyValueObject
 } from "../../types.js";
 
@@ -29,7 +30,7 @@ export function convertFormatAEntry(entry: FormatAEntry): FormatBEntry {
             (change) =>
                 change.property === key && change.propertyType === EntryPropertyType.Attribute
         );
-        formatBEntry.a[key].history = propChanges.map((propChange) => ({
+        formatBEntry.a[key].history = propChanges.map((propChange): FormatBValueHistoryItem => ({
             value: propChange.newValue,
             updated: null
         }));
@@ -39,7 +40,7 @@ export function convertFormatAEntry(entry: FormatAEntry): FormatBEntry {
             (change) =>
                 change.property === key && change.propertyType === EntryPropertyType.Property
         );
-        formatBEntry.p[key].history = propChanges.map((propChange) => ({
+        formatBEntry.p[key].history = propChanges.map((propChange): FormatBValueHistoryItem => ({
             value: propChange.newValue,
             updated: null
         }));

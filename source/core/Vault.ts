@@ -5,7 +5,17 @@ import { findEntriesByProperty } from "../search/entries.js";
 import { Group } from "./Group.js";
 import { Entry } from "./Entry.js";
 import { VaultFormat } from "../io/VaultFormat.js";
-import { DefaultGroupTitles, EntryID, EntryType, GroupID, History } from "../types.js";
+import {
+    DefaultGroupTitles,
+    EntryID,
+    EntryType,
+    FormatAEntry,
+    FormatAGroup,
+    FormatBEntry,
+    FormatBGroup,
+    GroupID,
+    History
+} from "../types.js";
 
 export interface VaultDefaultsOptions {
     /**
@@ -81,11 +91,12 @@ export class Vault extends EventEmitter {
 
     _entries: Array<Entry> = [];
 
-    _format: VaultFormat;
+    // Set by _updateFormat(), called from the constructor
+    _format!: VaultFormat;
 
     _groups: Array<Group> = [];
 
-    _onCommandExec: () => void;
+    _onCommandExec!: () => void;
 
     _tagMap: Map<string, Array<EntryID>> = new Map();
 
@@ -170,7 +181,7 @@ export class Vault extends EventEmitter {
      */
     emptyTrash(): this {
         const trash = this.getTrashGroup();
-        if (!trash) return;
+        if (!trash) return this;
         trash.getGroups().forEach((group) => {
             group.delete(/* skip trash */ true);
         });
@@ -278,10 +289,10 @@ export class Vault extends EventEmitter {
                     }
                 }
             }
-            return [...entryIDs].map((id) => this.findEntryByID(id));
+            return [...entryIDs].map((id) => this.findEntryByID(id)!);
         }
-        const entryIDs = this._tagMap.has(tagLower) ? this._tagMap.get(tagLower) : [];
-        return entryIDs.map((id) => this.findEntryByID(id));
+        const entryIDs = this._tagMap.has(tagLower) ? this._tagMap.get(tagLower)! : [];
+        return entryIDs.map((id) => this.findEntryByID(id)!);
     }
 
     /**
@@ -404,13 +415,13 @@ export class Vault extends EventEmitter {
             this._groups = [];
             this._entries = [];
         }
-        this.format.getAllGroups().forEach((rawGroup) => {
+        this.format.getAllGroups().forEach((rawGroup: FormatAGroup | FormatBGroup) => {
             const id = this.format.getItemID(rawGroup);
             if (!this._groups.find((g) => g.id === id)) {
                 this._groups.push(new Group(this, rawGroup));
             }
         });
-        this.format.getAllEntries().forEach((rawEntry) => {
+        this.format.getAllEntries().forEach((rawEntry: FormatAEntry | FormatBEntry) => {
             const id = this.format.getItemID(rawEntry);
             if (!this._entries.find((e) => e.id === id)) {
                 this._entries.push(new Entry(this, rawEntry));
@@ -426,7 +437,7 @@ export class Vault extends EventEmitter {
             for (const tag of tags) {
                 const tagLower = tag.toLowerCase();
                 const existingIDs = this._tagMap.has(tagLower)
-                    ? [...this._tagMap.get(tagLower)]
+                    ? [...this._tagMap.get(tagLower)!]
                     : [];
                 if (!existingIDs.includes(entry.id)) {
                     existingIDs.push(entry.id);

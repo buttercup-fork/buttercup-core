@@ -5,11 +5,11 @@ const UINT16_MAX = 65535;
 
 let __derivationRoundsOverride = CRYPTO_PBKDF2_ROUNDS;
 
-function decryptData(data: string | ArrayBuffer, password): Promise<string | ArrayBuffer> {
-    return createAdapter().decrypt(data, password);
+function decryptData(data: string | ArrayBuffer, password: string): Promise<string | ArrayBuffer> {
+    return createAdapter().decrypt(data, password) as Promise<string | ArrayBuffer>;
 }
 
-function encryptData(data: string | ArrayBuffer, password): Promise<string | ArrayBuffer> {
+function encryptData(data: string | ArrayBuffer, password: string): Promise<string | ArrayBuffer> {
     const adapter = createAdapter();
     if (__derivationRoundsOverride > 0) {
         adapter.setDerivationRounds(__derivationRoundsOverride);
@@ -19,7 +19,7 @@ function encryptData(data: string | ArrayBuffer, password): Promise<string | Arr
     // header, so this only affects new encryptions - existing CBC-encrypted
     // vaults keep decrypting exactly as before.
     adapter.setAlgorithm(EncryptionAlgorithm.GCM);
-    return adapter.encrypt(data, password);
+    return adapter.encrypt(data, password) as Promise<string | ArrayBuffer>;
 }
 
 export function getCryptoResources() {
@@ -44,6 +44,6 @@ function randomString(length: number): Promise<string> {
     });
 }
 
-function setDerivationRounds(rounds: number = null) {
+function setDerivationRounds(rounds: number | null = null) {
     __derivationRoundsOverride = !rounds ? CRYPTO_PBKDF2_ROUNDS : rounds;
 }

@@ -9,11 +9,11 @@ import {
 
 const DIGIT = "\\d";
 
-function createBaseFields(entry: Entry): Array<EntryFacadeField> {
+function createBaseFields(entry: Entry | null): Array<EntryFacadeField> {
     return [createFieldDescriptor(entry, "Title", EntryPropertyType.Property, "title")];
 }
 
-function createCreditCardFields(entry: Entry): Array<EntryFacadeField> {
+function createCreditCardFields(entry: Entry | null): Array<EntryFacadeField> {
     return [
         ...createBaseFields(entry),
         createFieldDescriptor(entry, "Card Holder", EntryPropertyType.Property, "username"),
@@ -77,7 +77,7 @@ function createCreditCardFields(entry: Entry): Array<EntryFacadeField> {
     ];
 }
 
-function createLoginFields(entry: Entry): Array<EntryFacadeField> {
+function createLoginFields(entry: Entry | null): Array<EntryFacadeField> {
     return [
         ...createBaseFields(entry),
         createFieldDescriptor(entry, "Username", EntryPropertyType.Property, "username"),
@@ -87,7 +87,7 @@ function createLoginFields(entry: Entry): Array<EntryFacadeField> {
     ];
 }
 
-function createNoteFields(entry: Entry): Array<EntryFacadeField> {
+function createNoteFields(entry: Entry | null): Array<EntryFacadeField> {
     return [
         ...createBaseFields(entry),
         createFieldDescriptor(entry, "Note", EntryPropertyType.Property, "note", {
@@ -96,7 +96,7 @@ function createNoteFields(entry: Entry): Array<EntryFacadeField> {
     ];
 }
 
-function createSSHKeyFields(entry: Entry): Array<EntryFacadeField> {
+function createSSHKeyFields(entry: Entry | null): Array<EntryFacadeField> {
     return [
         ...createBaseFields(entry),
         createFieldDescriptor(entry, "Public key", EntryPropertyType.Property, "publicKey"),
@@ -106,7 +106,7 @@ function createSSHKeyFields(entry: Entry): Array<EntryFacadeField> {
     ];
 }
 
-function createWebsiteFields(entry: Entry): Array<EntryFacadeField> {
+function createWebsiteFields(entry: Entry | null): Array<EntryFacadeField> {
     return [
         ...createLoginFields(entry),
         createFieldDescriptor(entry, "URL", EntryPropertyType.Property, "url")

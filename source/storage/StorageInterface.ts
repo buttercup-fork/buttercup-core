@@ -32,7 +32,7 @@ export class StorageInterface {
      * Set a value for a key
      * @memberof StorageInterface
      */
-    setValue(name: string, value: string): Promise<void> {
+    setValue(name: string, value: string | null): Promise<void> {
         return Promise.resolve();
     }
 }

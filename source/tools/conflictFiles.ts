@@ -24,7 +24,7 @@ const CONFLICT_PATTERNS = [
 ];
 
 function getBaseName(path: string): string {
-    return path.split(/[\\/]/).pop();
+    return path.split(/[\\/]/).pop()!;
 }
 
 function splitExtension(filename: string): [string, string] {

@@ -10,7 +10,11 @@
 
 ### attachments?
 
-> `optional` **attachments?**: `Object`
+> `optional` **attachments?**: `object`
+
+#### Index Signature
+
+\[`vaultID`: `string`\]: `object`
 
 ***
 

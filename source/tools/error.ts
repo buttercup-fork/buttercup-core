@@ -75,7 +75,7 @@ export async function withDecryptionErrorCode<T>(
         if (isAuthenticationFailure(err)) {
             throw new Layerr(
                 {
-                    cause: err,
+                    cause: err as Error,
                     info: {
                         code: ErrorCode.DecryptionFailed
                     }

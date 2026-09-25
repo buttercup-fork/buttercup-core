@@ -130,7 +130,7 @@ export class InigoCommand {
 export function extractCommandComponents(cmd: string): Array<string> {
     const patt = /("[^"]*")/;
     const matches: Array<string> = [];
-    let match: RegExpExecArray;
+    let match: RegExpExecArray | null;
     let command = cmd.replace(/\\\"/g, PLACEHOLDER_ESCAPED);
     // Replace complex command segments
     while ((match = patt.exec(command))) {
@@ -145,14 +145,14 @@ export function extractCommandComponents(cmd: string): Array<string> {
     return command.split(" ").map((part) => {
         let item = part.trim();
         if (item === PLACEHOLDER_QUOTED) {
-            item = matches.shift();
+            item = matches.shift()!;
         }
         item = item.replace(new RegExp(PLACEHOLDER_ESCAPED, "g"), '"');
         return item;
     });
 }
 
-export function findEntryByID(groups: Array<FormatAGroup>, id: EntryID) {
+export function findEntryByID(groups: Array<FormatAGroup>, id: EntryID): FormatAEntry | null {
     for (let i = 0, groupsLen = groups.length; i < groupsLen; i += 1) {
         const group = groups[i];
         if (group.entries) {
@@ -172,13 +172,16 @@ export function findEntryByID(groups: Array<FormatAGroup>, id: EntryID) {
     return null;
 }
 
-function findGroupByCheck(groups, checkFn) {
+function findGroupByCheck(
+    groups: Array<FormatAGroup>,
+    checkFn: (group: FormatAGroup) => boolean
+): FormatAGroup | null {
     for (let i = 0, groupsLen = groups.length; i < groupsLen; i += 1) {
         if (checkFn(groups[i]) === true) {
             return groups[i];
         }
         if (groups[i].groups) {
-            const deepGroup = findGroupByCheck(groups[i].groups, checkFn);
+            const deepGroup = findGroupByCheck(groups[i].groups!, checkFn);
             if (deepGroup) {
                 return deepGroup;
             }
@@ -187,8 +190,8 @@ function findGroupByCheck(groups, checkFn) {
     return null;
 }
 
-export function findGroupByID(groups, id) {
-    return findGroupByCheck(groups, function (group) {
+export function findGroupByID(groups: Array<FormatAGroup>, id: GroupID): FormatAGroup | null {
+    return findGroupByCheck(groups, function (group: FormatAGroup) {
         return group.id === id;
     });
 }
@@ -199,7 +202,10 @@ export function findGroupByID(groups, id) {
  * @param id The entry ID to search for
  * @returns The parent group of the found entry
  */
-export function findGroupContainingEntryID(groups: Array<FormatAGroup>, id: EntryID) {
+export function findGroupContainingEntryID(
+    groups: Array<FormatAGroup>,
+    id: EntryID
+): { group: FormatAGroup | null; index: number | null } {
     for (let i = 0, groupsLen = groups.length; i < groupsLen; i += 1) {
         const group = groups[i];
         if (group.entries) {
@@ -231,7 +237,10 @@ export function findGroupContainingEntryID(groups: Array<FormatAGroup>, id: Entr
  * @param id The group ID to search for
  * @returns The parent of the located group ID
  */
-export function findGroupContainingGroupID(group: FormatAGroup | FormatAVault, id: GroupID) {
+export function findGroupContainingGroupID(
+    group: FormatAGroup | FormatAVault,
+    id: GroupID
+): { group: FormatAGroup | FormatAVault | null; index: number | null } {
     const groups = group.groups || [];
     for (let i = 0, groupsLen = groups.length; i < groupsLen; i += 1) {
         if (groups[i].id === id) {
@@ -271,8 +280,8 @@ export function findGroupContainingGroupID(group: FormatAGroup | FormatAVault, i
 export function generateEntryLegacyHistoryItem(
     property: string,
     propertyType: EntryPropertyType,
-    originalValue: string = null,
-    newValue: string = null
+    originalValue: string | null = null,
+    newValue: string | null = null
 ): EntryLegacyHistoryItem {
     return Object.freeze({
         property,
@@ -282,8 +291,11 @@ export function generateEntryLegacyHistoryItem(
     });
 }
 
-export function getAllEntries(source: FormatAVault, parentID: GroupID = null): Array<FormatAEntry> {
-    const entries = [];
+export function getAllEntries(
+    source: FormatAVault,
+    parentID: GroupID | null = null
+): Array<FormatAEntry> {
+    const entries: Array<FormatAEntry> = [];
     const getEntries = (group: FormatAGroup) => {
         if (parentID === null || group.id === parentID) {
             entries.push(...(group.entries || []));
@@ -294,8 +306,11 @@ export function getAllEntries(source: FormatAVault, parentID: GroupID = null): A
     return entries;
 }
 
-export function getAllGroups(source: FormatAVault, parentID: GroupID = null): Array<FormatAGroup> {
-    const foundGroups = [];
+export function getAllGroups(
+    source: FormatAVault,
+    parentID: GroupID | null = null
+): Array<FormatAGroup> {
+    const foundGroups: Array<FormatAGroup> = [];
     const getGroups = (parent: FormatAVault | FormatAGroup) => {
         (parent.groups || []).forEach((subGroup) => {
             if (

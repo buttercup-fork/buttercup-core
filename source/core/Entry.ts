@@ -64,7 +64,7 @@ export class Entry extends VaultItem {
         // Create new entry
         vault.format.createEntry(parentGroupID, id);
         vault._rebuild();
-        return vault.findEntryByID(id);
+        return vault.findEntryByID(id)!;
     }
 
     /**
@@ -144,15 +144,15 @@ export class Entry extends VaultItem {
     }
 
     /**
-     * Get an attribute
-     * If no attribute name is specified, an object with all attributes and their
-     * values is returned.
-     * @param attribute The name of the attribute to fetch
-     * @returns The attribute value or an object
-     *  containing all attribute keys and their values if no attribute name
-     *  is provided
+     * Get all attributes
+     * @returns An object containing all attribute keys and their values
      */
     getAttribute(): PropertyKeyValueObject;
+    /**
+     * Get an attribute
+     * @param attribute The name of the attribute to fetch
+     * @returns The attribute value, or undefined if not set
+     */
     getAttribute(attribute: string): string | undefined;
     getAttribute(attribute?: string): PropertyKeyValueObject | string | undefined {
         const attributes = this.vault.format.getEntryAttributes(this._source) || {};
@@ -181,17 +181,20 @@ export class Entry extends VaultItem {
             throw new Error(`No parent group found for entry: ${this.id}`);
         }
         const parentID = this.vault.format.getItemID(parentGroup);
-        return this.vault._groups.find((group) => group.id === parentID);
+        return this.vault._groups.find((group) => group.id === parentID)!;
     }
 
     /**
-     * Get a property value
-     * If no property name is specified, an object with all properties and their
-     * values is returned.
-     * @param property The name of the property to fetch
-     * @returns The property value or an object with all
-     *  values if no property specified
+     * Get all property values
+     * @returns An object with all properties and their values
      */
+    getProperty(): PropertyKeyValueObject;
+    /**
+     * Get a property value
+     * @param property The name of the property to fetch
+     * @returns The property value, or undefined if not set
+     */
+    getProperty(property: string): string | undefined;
     getProperty(property?: string): PropertyKeyValueObject | string | undefined {
         if (typeof property === "undefined") {
             return this._getResolvedProperties();
@@ -394,7 +397,7 @@ export class Entry extends VaultItem {
     getTags(): Array<string> {
         const tags = this.getAttribute(Entry.Attributes.Tags);
         return typeof tags === "string"
-            ? tags.split(",").reduce((output, tag) => {
+            ? tags.split(",").reduce((output: Array<string>, tag) => {
                   return isValidTag(tag) ? [...output, tag] : output;
               }, [])
             : [];
@@ -530,8 +533,8 @@ export class Entry extends VaultItem {
             );
         }
         // Walk the target's links, checking they don't lead back here
-        let linkedEntry: Entry = target,
-            linkedProperty = targetProperty;
+        let linkedEntry: Entry | null = target,
+            linkedProperty: string | null = targetProperty;
         const visited = new Set<string>();
         while (linkedEntry) {
             const key = `${linkedEntry.id}:${linkedProperty}`;
@@ -539,7 +542,7 @@ export class Entry extends VaultItem {
                 throw new Error("Cannot link property: Link would create a loop");
             }
             visited.add(key);
-            const link = linkedEntry.getPropertyLink(linkedProperty);
+            const link = linkedEntry.getPropertyLink(linkedProperty!);
             linkedEntry = link ? this.vault.findEntryByID(link.entryID) : null;
             linkedProperty = link ? link.property : null;
         }

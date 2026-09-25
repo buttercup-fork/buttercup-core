@@ -47,7 +47,7 @@ export class VaultManager extends EventEmitter {
 
     _autoUpdateDelay: number;
     _autoUpdateEnabled: boolean;
-    _autoUpdateTimer: SetTimeout = null;
+    _autoUpdateTimer: SetTimeout | null = null;
     _cacheStorage: StorageInterface;
     _initialised: boolean = false;
     _queue = new ChannelQueue();
@@ -149,8 +149,8 @@ export class VaultManager extends EventEmitter {
             typeof sourceOrSourceID === "string"
                 ? this.getSourceForID(sourceOrSourceID)
                 : sourceOrSourceID;
-        const dehydratedString = await source.dehydrate();
-        await this._storeDehydratedSource(source.id, dehydratedString);
+        const dehydratedString = await source!.dehydrate();
+        await this._storeDehydratedSource(source!.id, dehydratedString);
     }
 
     /**
@@ -270,7 +270,7 @@ export class VaultManager extends EventEmitter {
                 .filter((key) => STORAGE_KEY_PREFIX_TEST.test(key))
                 .map(async (key) => {
                     const dehydratedSource = await this._sourceStorage.getValue(key);
-                    const source = VaultSource.rehydrate(dehydratedSource);
+                    const source = VaultSource.rehydrate(dehydratedSource!);
                     await this.addSource(source, {
                         order: source.order
                     });
@@ -426,7 +426,7 @@ export class VaultManager extends EventEmitter {
 
     async _startAutoUpdateTimer() {
         await this.enqueueStateChange(() => {
-            clearTimeout(this._autoUpdateTimer);
+            clearTimeout(this._autoUpdateTimer!);
             this._autoUpdateTimer = setTimeout(() => {
                 this._autoUpdateSources().then(() => {
                     if (this._autoUpdateEnabled) {
@@ -439,7 +439,7 @@ export class VaultManager extends EventEmitter {
 
     async _stopAutoUpdateTimer() {
         await this.enqueueStateChange(() => {
-            clearTimeout(this._autoUpdateTimer);
+            clearTimeout(this._autoUpdateTimer!);
             this._autoUpdateTimer = null;
         });
     }

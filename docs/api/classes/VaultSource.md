@@ -314,13 +314,13 @@ Will be removed in next major - insecure
 
 ### getOfflineContent()
 
-> **getOfflineContent**(): `Promise`\<`string`\>
+> **getOfflineContent**(): `Promise`\<`string` \| `null`\>
 
 Get offline content, if it exists
 
 #### Returns
 
-`Promise`\<`string`\>
+`Promise`\<`string` \| `null`\>
 
 A promise a resolves with the content, or null
  if it doesn't exist

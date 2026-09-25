@@ -10,11 +10,12 @@ jobs:
         # Supported Node versions: see "engines" in package.json
         node-version: [20.x, 22.x, 24.x]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
       - name: Node.js specs ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node-version }}
+          cache: npm
       - run: npm ci
       - run: npm run test:node
   web-specs:
@@ -23,7 +24,7 @@ jobs:
       matrix:
         node-version: [22.x]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
       # Firefox from Mozilla's APT repository, so apt installs everything it
       # depends on (the runner image has no desktop libraries)
       - name: Install Firefox
@@ -43,9 +44,10 @@ jobs:
           install-dependencies: true
           no-sudo: true
       - name: Node.js web specs ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node-version }}
+          cache: npm
       - run: npm ci
       - run: npm run test:web
         env:

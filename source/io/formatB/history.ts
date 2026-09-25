@@ -98,9 +98,10 @@ export function sortValueHistory(
     history: Array<FormatBValueHistoryItem>
 ): Array<FormatBValueHistoryItem> {
     return history.sort((a, b) => {
-        if (a.updated > b.updated) {
+        // Null timestamps (converted Format A history) compare as 0, as JS does
+        if ((a.updated as number) > (b.updated as number)) {
             return -1;
-        } else if (b.updated > a.updated) {
+        } else if ((b.updated as number) > (a.updated as number)) {
             return 1;
         }
         return 0;

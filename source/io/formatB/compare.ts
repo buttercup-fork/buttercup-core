@@ -49,7 +49,7 @@ export function propertiesDiffer(
 export function valuesDiffer(value1: FormatBValue, value2: FormatBValue): boolean {
     if ((!value1 && value2) || (value1 && !value2)) return true;
     for (const prop of ["value", "created", "updated"]) {
-        if (value1[prop] !== value2[prop]) return true;
+        if (value1[prop as keyof FormatBValue] !== value2[prop as keyof FormatBValue]) return true;
     }
     if (value1.history.length !== value2.history.length) return true;
     if (value1.history.length === 0) return false;

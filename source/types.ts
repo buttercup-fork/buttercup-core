@@ -110,8 +110,8 @@ export type EncryptedContent = string;
 export interface EntryChange {
     property: string;
     type: EntryChangeType;
-    value?: string;
-    ts: UTCTimestamp;
+    value?: string | null;
+    ts: UTCTimestamp | null;
 }
 
 export enum EntryChangeType {
@@ -121,7 +121,7 @@ export enum EntryChangeType {
 }
 
 export interface EntryFacade {
-    id: EntryID;
+    id: EntryID | null;
     type: EntryType;
     fields: Array<EntryFacadeField>;
     parentID: GroupID;
@@ -252,8 +252,8 @@ export interface FormatBValue {
 }
 
 export interface FormatBValueHistoryItem {
-    value: string;
-    updated: UTCTimestamp;
+    value: string | null;
+    updated: UTCTimestamp | null;
 }
 
 export interface FormatBVault {
@@ -283,7 +283,7 @@ export interface History extends Array<string> {
 }
 
 export interface MemoryStore {
-    attachments?: Object;
+    attachments?: { [vaultID: string]: { [attachmentID: string]: BufferLike | null } };
     vault?: EncryptedContent;
 }
 
@@ -341,8 +341,8 @@ export interface VaultInsights {
     entries: number; // Number of entries in the vault
     expiredPasswords: number; // Number of expired passwords (see Entry#setPasswordExpiry)
     groups: number; // Number of groups in the vault
-    longPassLen: number; // Longest password length
-    shortPassLen: number; // Shortest password length
+    longPassLen: number | null; // Longest password length, null if none
+    shortPassLen: number | null; // Shortest password length, null if none
     trashEntries: number; // Number of entries in trash
     trashGroups: number; // Number of groups in trash
     usernames: number; // Number of usernames in the vault

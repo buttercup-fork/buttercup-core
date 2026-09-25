@@ -39,7 +39,7 @@ export class Group extends VaultItem {
         }
         vault.format.createGroup(parentID, id);
         vault._rebuild();
-        return vault.findGroupByID(id);
+        return vault.findGroupByID(id)!;
     }
 
     /**

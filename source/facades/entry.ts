@@ -14,6 +14,7 @@ import {
     EntryType,
     EntryPropertyValueType,
     GroupID,
+    PropertyKeyValueObject,
     VaultFacade
 } from "../types.js";
 
@@ -40,7 +41,7 @@ const { FacadeType: FacadeTypeAttribute } = Entry.Attributes;
 function addExtraFieldsNonDestructive(entry: Entry, fields: Array<EntryFacadeField>) {
     const exists = (propName: string, fieldType: EntryPropertyType) =>
         fields.find((item) => item.propertyType === fieldType && item.property === propName);
-    const properties = entry.getProperty();
+    const properties = entry.getProperty() as PropertyKeyValueObject;
     const attributes = entry.getAttribute();
     return [
         ...fields,
@@ -134,7 +135,7 @@ export function consumeEntryFacade(
     const { mergeMode = false } = options;
     const facadeType = getEntryFacadeType(entry);
     if (facade && facade.type) {
-        const properties = entry.getProperty();
+        const properties = entry.getProperty() as PropertyKeyValueObject;
         const attributes = entry.getAttribute();
         const shownOrder = createEntryFacade(entry)
             .fields.filter((field) => field.propertyType === EntryPropertyType.Property)
@@ -252,7 +253,7 @@ export function createEntryFacade(
     }
     const fields = entry
         ? sortFieldsByPropertyOrder(entry, addExtraFieldsNonDestructive(entry, createFields(entry)))
-        : createFields(entry);
+        : createFields(null);
     if (
         !fields.find(
             (field) =>
@@ -261,7 +262,7 @@ export function createEntryFacade(
         )
     ) {
         const entryTypeField = createFieldDescriptor(
-            entry, // Entry instance
+            entry ?? null, // Entry instance
             "", // Title
             EntryPropertyType.Attribute, // Type
             FacadeTypeAttribute // Property name
@@ -273,7 +274,8 @@ export function createEntryFacade(
         id: entry ? entry.id : null,
         type: facadeType,
         fields,
-        parentID: entry ? entry.getGroup().id : null,
+        // A facade without an entry has no parent until it's saved
+        parentID: entry ? entry.getGroup().id : (null as unknown as GroupID),
         _history: [], // deprecated
         _changes: entry ? entry.getChanges() : []
     };
@@ -314,7 +316,7 @@ export function createEntryFromFacade(group: Group, facade: EntryFacade): Entry 
 export function fieldsToAttributes(facadeFields: Array<EntryFacadeField>): {
     [key: string]: string;
 } {
-    return facadeFields.reduce((output, field) => {
+    return facadeFields.reduce((output: PropertyKeyValueObject, field) => {
         if (field.propertyType !== EntryPropertyType.Attribute) return output;
         output[field.property] = field.value;
         return output;
@@ -330,7 +332,7 @@ export function fieldsToAttributes(facadeFields: Array<EntryFacadeField>): {
 export function fieldsToProperties(facadeFields: Array<EntryFacadeField>): {
     [key: string]: string;
 } {
-    return facadeFields.reduce((output, field) => {
+    return facadeFields.reduce((output: PropertyKeyValueObject, field) => {
         if (field.propertyType !== EntryPropertyType.Property) return output;
         output[field.property] = field.value;
         return output;
@@ -342,11 +344,11 @@ export function getEntryFacadePath(entryID: EntryID, facade: VaultFacade): Array
     if (!entry) {
         throw new Error(`No entry facade found for ID: ${entryID}`);
     }
-    let targetGroupID: GroupID = null;
+    let targetGroupID: GroupID | null = null;
     const path: Array<GroupID> = [];
     do {
         targetGroupID = targetGroupID
-            ? facade.groups.find((g) => g.id === targetGroupID).parentID
+            ? facade.groups.find((g) => g.id === targetGroupID)!.parentID
             : entry.parentID;
         if (targetGroupID && targetGroupID != "0") {
             path.unshift(targetGroupID);
@@ -411,7 +413,7 @@ function setEntryValue(
     propertyType: EntryPropertyType,
     property: string,
     value: string,
-    valueType?: EntryPropertyValueType
+    valueType?: EntryPropertyValueType | null
 ) {
     switch (propertyType) {
         case "property":

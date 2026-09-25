@@ -6,7 +6,7 @@
 
 # Function: getErrorCode()
 
-> **getErrorCode**(`err`): [`ErrorCode`](../enumerations/ErrorCode.md)
+> **getErrorCode**(`err`): [`ErrorCode`](../enumerations/ErrorCode.md) \| `null`
 
 Get the error code attached to an error, if any. Codes attached to
 wrapped (cause) errors are found too.
@@ -21,6 +21,6 @@ The error to check
 
 ## Returns
 
-[`ErrorCode`](../enumerations/ErrorCode.md)
+[`ErrorCode`](../enumerations/ErrorCode.md) \| `null`
 
 The error code, or null if none is attached

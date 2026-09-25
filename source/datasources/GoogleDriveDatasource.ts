@@ -37,7 +37,7 @@ export default class GoogleDriveDatasource extends TextDatasource {
      */
     constructor(credentials: Credentials) {
         super(credentials);
-        const { data: credentialData } = getCredentials(credentials.id);
+        const { data: credentialData } = getCredentials(credentials.id)!;
         const { datasource: datasourceConfig } = credentialData as {
             datasource: DatasourceConfigurationGoogleDrive;
         };
@@ -147,7 +147,7 @@ export default class GoogleDriveDatasource extends TextDatasource {
      * @returns A promise that resolves when saving has completed
      * @memberof GoogleDriveDatasource
      */
-    save(history: History, credentials: Credentials, hasAuthed: boolean = false) {
+    save(history: History, credentials: Credentials, hasAuthed: boolean = false): Promise<string> {
         return super
             .save(history, credentials)
             .then((encryptedContent) => this.client.putFileContents(encryptedContent, this.fileID))
@@ -196,9 +196,9 @@ export default class GoogleDriveDatasource extends TextDatasource {
         if (refreshToken) this.refreshToken = refreshToken;
         this.client = new GoogleDriveClient(accessToken);
         this.attachments.updateClient(this.client, accessToken);
-        const { data: credentialData } = getCredentials(this.credentials.id);
-        credentialData.datasource.token = accessToken;
-        if (refreshToken) credentialData.datasource.refreshToken = refreshToken;
+        const { data: credentialData } = getCredentials(this.credentials.id)!;
+        credentialData.datasource!.token = accessToken;
+        if (refreshToken) credentialData.datasource!.refreshToken = refreshToken;
         this.emit("updated");
     }
 
@@ -210,16 +210,16 @@ export default class GoogleDriveDatasource extends TextDatasource {
         try {
             return await operation();
         } catch (err) {
-            const { authFailure = false } = Layerr.info(err);
+            const { authFailure = false } = Layerr.info(err as Error);
             if (!authFailure) {
-                throw new Layerr(err, failureMessage);
+                throw new Layerr(err as Error, failureMessage);
             }
         }
         try {
             await this.authManager.executeAuthHandlers(DATASOURCE_TYPE, this);
             return await operation();
         } catch (err) {
-            throw new Layerr(err, failureMessage);
+            throw new Layerr(err as Error, failureMessage);
         }
     }
 }

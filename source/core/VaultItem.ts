@@ -5,15 +5,13 @@ import { VaultPermission } from "../types.js";
  * Base vault member class (for Entry, Group etc.)
  */
 export class VaultItem {
-    _boundUpdateRefs: () => void;
-
     _source: any;
 
     /**
      * Reference to the containing vault
      * @protected
      */
-    _vault: Vault = null;
+    _vault: Vault | null = null;
 
     /**
      * Constructor for the vault member base class
@@ -35,7 +33,7 @@ export class VaultItem {
      * @readonly
      */
     get id(): string {
-        return this._vault.format.getItemID(this._source);
+        return this._vault!.format.getItemID(this._source);
     }
 
     /**
@@ -50,7 +48,7 @@ export class VaultItem {
      * @readonly
      */
     get vault(): Vault {
-        return this._vault;
+        return this._vault!;
     }
 
     /**
@@ -83,7 +81,9 @@ export class VaultItem {
      * @param perm The permission to revoke
      */
     revokePermission(perm: string) {
-        this._source.permissions = this._source.permissions.filter((current) => current !== perm);
+        this._source.permissions = this._source.permissions.filter(
+            (current: string) => current !== perm
+        );
     }
 
     /**

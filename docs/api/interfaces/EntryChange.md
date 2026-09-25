@@ -16,7 +16,7 @@
 
 ### ts
 
-> **ts**: `number`
+> **ts**: `number` \| `null`
 
 ***
 
@@ -28,4 +28,4 @@
 
 ### value?
 
-> `optional` **value?**: `string`
+> `optional` **value?**: `string` \| `null`

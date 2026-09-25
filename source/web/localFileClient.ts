@@ -3,14 +3,16 @@ import { getSharedAppEnv } from "../env/appEnv.js";
 
 const BASE_URL = "http://localhost:12821";
 
+type Callback = (err?: Error | null, result?: any) => void;
+
 export function buildClient(token: string) {
     const encrypt = getSharedAppEnv().getProperty("crypto/v1/encryptText");
     const decrypt = getSharedAppEnv().getProperty("crypto/v1/decryptText");
     return {
-        readdir: (remotePath, callback) => {
+        readdir: (remotePath: string, callback: Callback) => {
             const url = joinURL(BASE_URL, "/get/directory");
             encrypt(remotePath, token)
-                .then((payload) =>
+                .then((payload: string) =>
                     fetch(url, {
                         method: "POST",
                         headers: {
@@ -21,25 +23,25 @@ export function buildClient(token: string) {
                         })
                     })
                 )
-                .then((response) => {
+                .then((response: Response) => {
                     if (response.ok && response.status === 200) {
                         return response.json();
                     }
                     throw new Error(`Failed reading remote file: ${remotePath}`);
                 })
-                .then((response) => decrypt(response.payload, token))
+                .then((response: { payload: string }) => decrypt(response.payload, token))
                 .then(JSON.parse)
-                .then((results) => callback(null, results))
+                .then((results: any) => callback(null, results))
                 .catch(callback);
         },
 
-        readFile: (remotePath, options, callback) => {
+        readFile: (remotePath: string, options: object | Callback, callback?: Callback) => {
             const encrypt = getSharedAppEnv().getProperty("crypto/v1/encryptText");
             const decrypt = getSharedAppEnv().getProperty("crypto/v1/decryptText");
-            const cb = typeof options === "function" ? options : callback;
+            const cb = (typeof options === "function" ? options : callback) as Callback;
             const url = joinURL(BASE_URL, "/get/file");
             encrypt(remotePath, token)
-                .then((payload) =>
+                .then((payload: string) =>
                     fetch(url, {
                         method: "POST",
                         headers: {
@@ -50,22 +52,27 @@ export function buildClient(token: string) {
                         })
                     })
                 )
-                .then((response) => {
+                .then((response: Response) => {
                     if (response.ok && response.status === 200) {
                         return response.json();
                     }
                     throw new Error(`Failed reading remote file: ${remotePath}`);
                 })
-                .then((response) => decrypt(response.payload, token))
-                .then((data) => {
+                .then((response: { payload: string }) => decrypt(response.payload, token))
+                .then((data: string) => {
                     cb(null, data);
                 })
                 .catch(cb);
         },
 
-        writeFile: (remotePath, data, options, callback) => {
+        writeFile: (
+            remotePath: string,
+            data: string,
+            options: object | Callback,
+            callback?: Callback
+        ) => {
             const encrypt = getSharedAppEnv().getProperty("crypto/v1/encryptText");
-            const cb = typeof options === "function" ? options : callback;
+            const cb = (typeof options === "function" ? options : callback) as Callback;
             if (typeof data !== "string") {
                 throw new Error("Failed writing file: Expected data to be of type string");
             }
@@ -77,7 +84,7 @@ export function buildClient(token: string) {
                 }),
                 token
             )
-                .then((payload) =>
+                .then((payload: string) =>
                     fetch(url, {
                         method: "POST",
                         headers: {
@@ -88,7 +95,7 @@ export function buildClient(token: string) {
                         })
                     })
                 )
-                .then((response) => {
+                .then((response: Response) => {
                     if (response.ok && response.status === 200) {
                         cb();
                         return;

@@ -10,10 +10,10 @@
 
 ### updated
 
-> **updated**: `number`
+> **updated**: `number` \| `null`
 
 ***
 
 ### value
 
-> **value**: `string`
+> **value**: `string` \| `null`

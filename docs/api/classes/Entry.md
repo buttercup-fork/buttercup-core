@@ -256,25 +256,19 @@ Throws if property doesn't exist, or cannot be deleted
 
 > **getAttribute**(): [`PropertyKeyValueObject`](../interfaces/PropertyKeyValueObject.md)
 
-Get an attribute
-If no attribute name is specified, an object with all attributes and their
-values is returned.
+Get all attributes
 
 ##### Returns
 
 [`PropertyKeyValueObject`](../interfaces/PropertyKeyValueObject.md)
 
-The attribute value or an object
- containing all attribute keys and their values if no attribute name
- is provided
+An object containing all attribute keys and their values
 
 #### Call Signature
 
-> **getAttribute**(`attribute`): `string`
+> **getAttribute**(`attribute`): `string` \| `undefined`
 
 Get an attribute
-If no attribute name is specified, an object with all attributes and their
-values is returned.
 
 ##### Parameters
 
@@ -286,11 +280,9 @@ The name of the attribute to fetch
 
 ##### Returns
 
-`string`
+`string` \| `undefined`
 
-The attribute value or an object
- containing all attribute keys and their values if no attribute name
- is provided
+The attribute value, or undefined if not set
 
 ***
 
@@ -326,13 +318,13 @@ Throws if no parent group found
 
 ### getLoginEntry()
 
-> **getLoginEntry**(): `Entry`
+> **getLoginEntry**(): `Entry` \| `null`
 
 Get the entry used to sign in to this entry's account
 
 #### Returns
 
-`Entry`
+`Entry` \| `null`
 
 The entry, or `null` if none is set or the link is broken
  (the entry is in Trash or was deleted)
@@ -345,14 +337,14 @@ Entry.setLoginEntry
 
 ### getLoginEntryLink()
 
-> **getLoginEntryLink**(): [`EntryLoginLink`](../interfaces/EntryLoginLink.md)
+> **getLoginEntryLink**(): [`EntryLoginLink`](../interfaces/EntryLoginLink.md) \| `null`
 
 Get the stored link to the entry used to sign in to this entry's
 account, even if the link is broken
 
 #### Returns
 
-[`EntryLoginLink`](../interfaces/EntryLoginLink.md)
+[`EntryLoginLink`](../interfaces/EntryLoginLink.md) \| `null`
 
 The linked entry's ID and its title when last in sync, or
  `null` if none is set
@@ -365,7 +357,7 @@ Entry.setLoginEntry
 
 ### getPasswordChangedTime()
 
-> **getPasswordChangedTime**(): `number`
+> **getPasswordChangedTime**(): `number` \| `null`
 
 Get when the entry's password was last changed
 Recorded whenever the password property is set to a new value. For a
@@ -374,7 +366,7 @@ last changed.
 
 #### Returns
 
-`number`
+`number` \| `null`
 
 A UTC timestamp in milliseconds, or `null` if not known (eg.
  the password was last changed before this was recorded)
@@ -383,13 +375,13 @@ A UTC timestamp in milliseconds, or `null` if not known (eg.
 
 ### getPasswordExpiry()
 
-> **getPasswordExpiry**(): `number`
+> **getPasswordExpiry**(): `number` \| `null`
 
 Get the password expiry period
 
 #### Returns
 
-`number`
+`number` \| `null`
 
 The number of days after a password change that the password
  expires, or `null` if it doesn't expire
@@ -402,13 +394,13 @@ Entry.setPasswordExpiry
 
 ### getPasswordExpiryTime()
 
-> **getPasswordExpiryTime**(): `number`
+> **getPasswordExpiryTime**(): `number` \| `null`
 
 Get when the entry's password expires
 
 #### Returns
 
-`number`
+`number` \| `null`
 
 A UTC timestamp in milliseconds, or `null` if the password
  doesn't expire or its last change isn't known
@@ -443,32 +435,43 @@ A key-value object of the matching properties
 
 ### getProperty()
 
-> **getProperty**(`property?`): `string` \| [`PropertyKeyValueObject`](../interfaces/PropertyKeyValueObject.md)
+#### Call Signature
+
+> **getProperty**(): [`PropertyKeyValueObject`](../interfaces/PropertyKeyValueObject.md)
+
+Get all property values
+
+##### Returns
+
+[`PropertyKeyValueObject`](../interfaces/PropertyKeyValueObject.md)
+
+An object with all properties and their values
+
+#### Call Signature
+
+> **getProperty**(`property`): `string` \| `undefined`
 
 Get a property value
-If no property name is specified, an object with all properties and their
-values is returned.
 
-#### Parameters
+##### Parameters
 
-##### property?
+###### property
 
 `string`
 
 The name of the property to fetch
 
-#### Returns
+##### Returns
 
-`string` \| [`PropertyKeyValueObject`](../interfaces/PropertyKeyValueObject.md)
+`string` \| `undefined`
 
-The property value or an object with all
- values if no property specified
+The property value, or undefined if not set
 
 ***
 
 ### getPropertyLink()
 
-> **getPropertyLink**(`property`): [`EntryPropertyLink`](../interfaces/EntryPropertyLink.md)
+> **getPropertyLink**(`property`): [`EntryPropertyLink`](../interfaces/EntryPropertyLink.md) \| `null`
 
 Get the link of a linked property
 A linked property shows the current value of a property on another
@@ -484,7 +487,7 @@ The property name
 
 #### Returns
 
-[`EntryPropertyLink`](../interfaces/EntryPropertyLink.md)
+[`EntryPropertyLink`](../interfaces/EntryPropertyLink.md) \| `null`
 
 The linked entry ID and property, or `null` if the property
  isn't linked
@@ -562,7 +565,7 @@ The property value type
 
 ### getRecoveryCodes()
 
-> **getRecoveryCodes**(`property`): [`EntryRecoveryCode`](../interfaces/EntryRecoveryCode.md)[]
+> **getRecoveryCodes**(`property`): [`EntryRecoveryCode`](../interfaces/EntryRecoveryCode.md)[] \| `null`
 
 Get the codes of a recovery codes property
 
@@ -576,7 +579,7 @@ The property name
 
 #### Returns
 
-[`EntryRecoveryCode`](../interfaces/EntryRecoveryCode.md)[]
+[`EntryRecoveryCode`](../interfaces/EntryRecoveryCode.md)[] \| `null`
 
 The codes in their stored order, each with whether it was
  marked as used, or `null` if the property isn't a recovery codes
@@ -590,13 +593,13 @@ Entry.setRecoveryCodes
 
 ### getSingleUsePasswords()
 
-> **getSingleUsePasswords**(): `string`[]
+> **getSingleUsePasswords**(): `string`[] \| `null`
 
 Get the single-use passwords of the entry
 
 #### Returns
 
-`string`[]
+`string`[] \| `null`
 
 The current password followed by the queued ones, or `null`
  if the entry doesn't use single-use passwords
@@ -952,7 +955,7 @@ Returns self
 
 ### popSingleUsePassword()
 
-> **popSingleUsePassword**(): `string`
+> **popSingleUsePassword**(): `string` \| `null`
 
 Discard the current single-use password and move the next queued one
 into the password property
@@ -962,7 +965,7 @@ The used password stays in the entry's history.
 
 #### Returns
 
-`string`
+`string` \| `null`
 
 The new current password, or `null` if none are left
 
@@ -1090,7 +1093,7 @@ vault is saved, so a broken link can still name the entry.
 
 ##### target
 
-`Entry`
+`Entry` \| `null`
 
 The entry, in the same vault, or `null` to remove the
  link
@@ -1122,7 +1125,7 @@ now.
 
 ##### days
 
-`number`
+`number` \| `null`
 
 The number of days (a whole number of at least 1), or
  `null` to stop the password expiring
@@ -1248,7 +1251,7 @@ The property to set the value type for
 
 ##### valueType
 
-[`EntryPropertyValueType`](../enumerations/EntryPropertyValueType.md)
+[`EntryPropertyValueType`](../enumerations/EntryPropertyValueType.md) \| `null`
 
 The new value type to set, or `null` to remove
 

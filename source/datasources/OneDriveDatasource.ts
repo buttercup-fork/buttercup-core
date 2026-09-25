@@ -41,7 +41,7 @@ export default class OneDriveDatasource extends TextDatasource {
      */
     constructor(credentials: Credentials) {
         super(credentials);
-        const { data: credentialData } = getCredentials(credentials.id);
+        const { data: credentialData } = getCredentials(credentials.id)!;
         const { datasource: datasourceConfig } = credentialData as {
             datasource: DatasourceConfigurationOneDrive;
         };
@@ -146,9 +146,9 @@ export default class OneDriveDatasource extends TextDatasource {
         this.token = accessToken;
         if (refreshToken) this.refreshToken = refreshToken;
         this.client = this._createClient(accessToken);
-        const { data: credentialData } = getCredentials(this.credentials.id);
-        credentialData.datasource.token = accessToken;
-        if (refreshToken) credentialData.datasource.refreshToken = refreshToken;
+        const { data: credentialData } = getCredentials(this.credentials.id)!;
+        credentialData.datasource!.token = accessToken;
+        if (refreshToken) credentialData.datasource!.refreshToken = refreshToken;
         this.emit("updated");
     }
 

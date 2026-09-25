@@ -10,8 +10,15 @@ interface DomainScores {
     [domain: string]: number;
 }
 
-type EntryFetcher = (
-    target: Vault | VaultFacade,
+interface URLSearchResult {
+    item: ProcessedSearchEntry;
+    score: number;
+    url: string;
+    domainScore: number;
+}
+
+type EntryFetcher<T> = (
+    target: T,
     memory: StorageInterface
 ) => Promise<Array<ProcessedSearchEntry>>;
 
@@ -56,19 +63,19 @@ function extractDomain(str: string): string {
     return (match && match[3]) || "";
 }
 
-export class BaseSearch {
+export class BaseSearch<T extends Vault | VaultFacade = Vault | VaultFacade> {
     _entries: Array<ProcessedSearchEntry> = [];
-    _entryFetcher: EntryFetcher;
+    _entryFetcher: EntryFetcher<T>;
     _fuse: any = null;
     _memory: StorageInterface;
     _results: Array<SearchResult> = [];
     _searcherFactory: SearcherFactory;
     _scores: SearchScores = {};
-    _targets: Array<Vault> | Array<VaultFacade>;
+    _targets: Array<T>;
 
     constructor(
-        targets: Array<Vault> | Array<VaultFacade>,
-        entryFetcher: EntryFetcher,
+        targets: Array<T>,
+        entryFetcher: EntryFetcher<T>,
         memory = new StorageInterface(),
         searcherFactory: SearcherFactory = buildSearcher
     ) {
@@ -102,7 +109,7 @@ export class BaseSearch {
      */
     async incrementScore(vaultID: VaultID, entryID: EntryID, url: string) {
         const scoresRaw = await this._memory.getValue(`bcup_search_${vaultID}`);
-        let vaultScore = {};
+        let vaultScore: { [entryID: string]: DomainScores } = {};
         if (scoresRaw) {
             try {
                 vaultScore = JSON.parse(scoresRaw);
@@ -174,7 +181,9 @@ export class BaseSearch {
             // Reset instance
             this._fuse = this._searcherFactory(this._entries);
         }
-        this._results = this._fuse.search(searchTerm).map((result) => result.item);
+        this._results = this._fuse
+            .search(searchTerm)
+            .map((result: { item: SearchResult }) => result.item);
         return this._results;
     }
 
@@ -189,9 +198,9 @@ export class BaseSearch {
             this._results = [];
             return this._results;
         }
-        const results = this._entries.reduce((output, entryItem) => {
+        const results = this._entries.reduce((output: Array<URLSearchResult>, entryItem) => {
             let bestScore = Infinity;
-            const bestURL = entryItem.urls.reduce((best, next) => {
+            const bestURL = entryItem.urls.reduce((best: string | null, next) => {
                 const thisDomain = extractDomain(next);
                 if (!thisDomain) return best;
                 if (!domainsRelated(thisDomain, incomingDomain)) return best;
@@ -231,7 +240,7 @@ export class BaseSearch {
                 }
                 return 0;
             })
-            .map((result) => result.item);
+            .map((result: { item: SearchResult }) => result.item);
         return this._results;
     }
 }
