@@ -8,7 +8,7 @@
 
 ## Extends
 
-- `BaseSearch`
+- `BaseSearch`\<[`Vault`](Vault.md)\>
 
 ## Extended by
 
@@ -40,7 +40,7 @@
 
 #### Overrides
 
-`BaseSearch.constructor`
+`BaseSearch<Vault>.constructor`
 
 ## Accessors
 

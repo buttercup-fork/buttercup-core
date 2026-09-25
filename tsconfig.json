@@ -7,7 +7,12 @@
         "module": "es2020",
         "moduleResolution": "node",
         "declaration": true,
-        "target": "es2020"
+        "target": "es2020",
+        "alwaysStrict": true,
+        "noImplicitThis": true,
+        "strictBindCallApply": true,
+        "strictFunctionTypes": true,
+        "useUnknownInCatchVariables": true
     },
     "include": [
         "./source/**/*"

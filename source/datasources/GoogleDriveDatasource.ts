@@ -210,16 +210,16 @@ export default class GoogleDriveDatasource extends TextDatasource {
         try {
             return await operation();
         } catch (err) {
-            const { authFailure = false } = Layerr.info(err);
+            const { authFailure = false } = Layerr.info(err as Error);
             if (!authFailure) {
-                throw new Layerr(err, failureMessage);
+                throw new Layerr(err as Error, failureMessage);
             }
         }
         try {
             await this.authManager.executeAuthHandlers(DATASOURCE_TYPE, this);
             return await operation();
         } catch (err) {
-            throw new Layerr(err, failureMessage);
+            throw new Layerr(err as Error, failureMessage);
         }
     }
 }

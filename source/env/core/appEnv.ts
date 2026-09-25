@@ -41,7 +41,11 @@ interface InternalPrivateAPI {
  * @name getProperty
  * @memberof AppEnv
  */
-function __getProperty(propertyName: string, options: AppEnvGetPropertyOptions = {}) {
+function __getProperty(
+    this: InternalPrivateAPI,
+    propertyName: string,
+    options: AppEnvGetPropertyOptions = {}
+) {
     const self = this as InternalPrivateAPI;
     const { defaultValue = null, failIfNotExist = true } = options;
     if (typeof self.properties[propertyName] !== "undefined") {
@@ -62,7 +66,7 @@ function __getProperty(propertyName: string, options: AppEnvGetPropertyOptions =
  * @name hasProperty
  * @memberof AppEnv
  */
-function __hasProperty(propertyName: string): boolean {
+function __hasProperty(this: InternalPrivateAPI, propertyName: string): boolean {
     const self = this as InternalPrivateAPI;
     return typeof self.properties[propertyName] !== "undefined";
 }
@@ -74,7 +78,7 @@ function __hasProperty(propertyName: string): boolean {
  * @memberof AppEnv
  * @see setProperty
  */
-function __setProperties(propertyList: { [key: string]: any }) {
+function __setProperties(this: InternalPrivateAPI, propertyList: { [key: string]: any }) {
     const self = this as InternalPrivateAPI;
     const setProp = __setProperty.bind(self);
     for (const propertyName in propertyList) {
@@ -89,7 +93,7 @@ function __setProperties(propertyList: { [key: string]: any }) {
  * @name setProperty
  * @memberof AppEnv
  */
-function __setProperty(propertyName, propertyValue) {
+function __setProperty(this: InternalPrivateAPI, propertyName, propertyValue) {
     const self = this as InternalPrivateAPI;
     if (typeof self.properties[propertyName] !== "undefined") {
         throw new Error(

@@ -8,7 +8,7 @@
 
 ## Extends
 
-- `BaseSearch`
+- `BaseSearch`\<[`VaultFacade`](../interfaces/VaultFacade.md)\>
 
 ## Constructors
 
@@ -36,7 +36,7 @@
 
 #### Overrides
 
-`BaseSearch.constructor`
+`BaseSearch<VaultFacade>.constructor`
 
 ## Accessors
 

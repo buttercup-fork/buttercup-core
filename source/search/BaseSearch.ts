@@ -10,8 +10,8 @@ interface DomainScores {
     [domain: string]: number;
 }
 
-type EntryFetcher = (
-    target: Vault | VaultFacade,
+type EntryFetcher<T> = (
+    target: T,
     memory: StorageInterface
 ) => Promise<Array<ProcessedSearchEntry>>;
 
@@ -56,19 +56,19 @@ function extractDomain(str: string): string {
     return (match && match[3]) || "";
 }
 
-export class BaseSearch {
+export class BaseSearch<T extends Vault | VaultFacade = Vault | VaultFacade> {
     _entries: Array<ProcessedSearchEntry> = [];
-    _entryFetcher: EntryFetcher;
+    _entryFetcher: EntryFetcher<T>;
     _fuse: any = null;
     _memory: StorageInterface;
     _results: Array<SearchResult> = [];
     _searcherFactory: SearcherFactory;
     _scores: SearchScores = {};
-    _targets: Array<Vault> | Array<VaultFacade>;
+    _targets: Array<T>;
 
     constructor(
-        targets: Array<Vault> | Array<VaultFacade>,
-        entryFetcher: EntryFetcher,
+        targets: Array<T>,
+        entryFetcher: EntryFetcher<T>,
         memory = new StorageInterface(),
         searcherFactory: SearcherFactory = buildSearcher
     ) {

@@ -68,7 +68,7 @@ async function extractEntries(
     }, []);
 }
 
-export class VaultFacadeEntrySearch extends BaseSearch {
+export class VaultFacadeEntrySearch extends BaseSearch<VaultFacade> {
     constructor(
         facades: Array<VaultFacade>,
         memory?: StorageInterface,
