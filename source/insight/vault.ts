@@ -1,3 +1,4 @@
+import { Group } from "../core/Group.js";
 import { Vault } from "../core/Vault.js";
 import { VaultInsights } from "../types.js";
 
@@ -17,14 +18,14 @@ export function generateVaultInsights(vault: Vault): VaultInsights {
         entryCount = 0,
         trashEntryCount = 0,
         trashGroupCount = 0,
-        longestPasswordLength = null,
-        shortestPasswordLength = null,
+        longestPasswordLength: number = null,
+        shortestPasswordLength: number = null,
         weakPasswords = 0,
         expiredPasswords = 0;
-    const passwordCounts = {};
+    const passwordCounts: { [password: string]: number } = {};
     const usernameSet = new Set();
-    const entryPasswordLengths = [];
-    const processGroup = (group) => {
+    const entryPasswordLengths: Array<number> = [];
+    const processGroup = (group: Group) => {
         const entries = group.getEntries();
         groupCount += 1;
         entryCount += entries.length;
@@ -33,7 +34,7 @@ export function generateVaultInsights(vault: Vault): VaultInsights {
             const password =
                 entry.getPropertyLink("password") && !entry.isPropertyLinkBroken("password")
                     ? undefined
-                    : entry.getProperty("password");
+                    : (entry.getProperty("password") as string | undefined);
             if (typeof password === "string") {
                 entryPasswordLengths.push(password.length);
                 if (longestPasswordLength === null || password.length > longestPasswordLength) {
@@ -66,7 +67,7 @@ export function generateVaultInsights(vault: Vault): VaultInsights {
         entryPasswordLengths.reduce((total, next) => total + next, 0) / entryPasswordLengths.length;
     const trashGroup = vault.getTrashGroup();
     if (trashGroup) {
-        const processTrashGroup = (group) => {
+        const processTrashGroup = (group: Group) => {
             const subGroups = group.getGroups();
             trashGroupCount += subGroups.length;
             subGroups.forEach((subGroup) => processTrashGroup(subGroup));

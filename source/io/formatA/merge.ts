@@ -1,6 +1,6 @@
 import { History } from "../../types.js";
 
-const ENTRY_SPECIFIC_TARGET_COMMANDS = {
+const ENTRY_SPECIFIC_TARGET_COMMANDS: { [command: string]: number } = {
     cen: 1, // entry ID is argument 2
     den: 0,
     dea: 0,
@@ -11,7 +11,7 @@ const ENTRY_SPECIFIC_TARGET_COMMANDS = {
     sem: 0,
     sep: 0
 };
-const GROUP_SPECIFIC_TARGET_COMMANDS = {
+const GROUP_SPECIFIC_TARGET_COMMANDS: { [command: string]: number } = {
     cgr: 1, // group ID is argument 2
     dgr: 0,
     dga: 0,

@@ -93,7 +93,7 @@ function __setProperties(this: InternalPrivateAPI, propertyList: { [key: string]
  * @name setProperty
  * @memberof AppEnv
  */
-function __setProperty(this: InternalPrivateAPI, propertyName, propertyValue) {
+function __setProperty(this: InternalPrivateAPI, propertyName: string, propertyValue: any) {
     const self = this as InternalPrivateAPI;
     if (typeof self.properties[propertyName] !== "undefined") {
         throw new Error(

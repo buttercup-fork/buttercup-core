@@ -102,7 +102,7 @@ export class BaseSearch<T extends Vault | VaultFacade = Vault | VaultFacade> {
      */
     async incrementScore(vaultID: VaultID, entryID: EntryID, url: string) {
         const scoresRaw = await this._memory.getValue(`bcup_search_${vaultID}`);
-        let vaultScore = {};
+        let vaultScore: { [entryID: string]: DomainScores } = {};
         if (scoresRaw) {
             try {
                 vaultScore = JSON.parse(scoresRaw);
@@ -174,7 +174,9 @@ export class BaseSearch<T extends Vault | VaultFacade = Vault | VaultFacade> {
             // Reset instance
             this._fuse = this._searcherFactory(this._entries);
         }
-        this._results = this._fuse.search(searchTerm).map((result) => result.item);
+        this._results = this._fuse
+            .search(searchTerm)
+            .map((result: { item: SearchResult }) => result.item);
         return this._results;
     }
 
@@ -231,7 +233,7 @@ export class BaseSearch<T extends Vault | VaultFacade = Vault | VaultFacade> {
                 }
                 return 0;
             })
-            .map((result) => result.item);
+            .map((result: { item: SearchResult }) => result.item);
         return this._results;
     }
 }

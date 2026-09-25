@@ -381,12 +381,12 @@ export class VaultSource extends EventEmitter {
                 colour: this.colour,
                 order: this.order,
                 meta: this.meta,
-                credentials: null
+                credentials: null as string
             };
             if (this.status === VaultSource.STATUS_PENDING) {
                 throw new Layerr(`Failed dehydrating source: Source in pending state: ${this.id}`);
             } else if (this.status === VaultSource.STATUS_LOCKED) {
-                payload.credentials = this._credentials;
+                payload.credentials = this._credentials as string;
             } else {
                 payload.credentials = await (<Credentials>this._credentials).toSecureString();
             }
@@ -651,7 +651,7 @@ export class VaultSource extends EventEmitter {
             this._vault._updatePropertyLinkCopies();
             // Capture encrypted content
             let encryptedContent: string = null;
-            const encryptedCallback = ({ content }) => {
+            const encryptedCallback = ({ content }: { content: string }) => {
                 encryptedContent = content;
             };
             this._datasource.once("encryptedContent", encryptedCallback);
@@ -906,7 +906,7 @@ export class VaultSource extends EventEmitter {
         await this._datasource.updateInsights(insights);
     }
 
-    async _updateVaultCredentials(newCredentials) {
+    async _updateVaultCredentials(newCredentials: Credentials) {
         if (this.status !== VaultSource.STATUS_UNLOCKED) {
             throw new Layerr(
                 `Failed updating vault credentials: Source is not unlocked: ${this.id}`

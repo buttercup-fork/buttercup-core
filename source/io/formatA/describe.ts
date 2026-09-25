@@ -16,7 +16,7 @@ export function describeVaultDataset(
     const isVault = typeof (<FormatAVault>dataset).format === "string";
     const currentGroupID = isVault ? "0" : dataset.id;
     const entries = currentGroupID === "0" ? [] : (<FormatAGroup>dataset).entries || [];
-    var commands = [];
+    var commands: History = [];
     if (currentGroupID === "0") {
         // Vault
         if (typeof (<FormatAVault>dataset).format === "string") {

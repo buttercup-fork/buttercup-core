@@ -147,7 +147,7 @@ export default class GoogleDriveDatasource extends TextDatasource {
      * @returns A promise that resolves when saving has completed
      * @memberof GoogleDriveDatasource
      */
-    save(history: History, credentials: Credentials, hasAuthed: boolean = false) {
+    save(history: History, credentials: Credentials, hasAuthed: boolean = false): Promise<string> {
         return super
             .save(history, credentials)
             .then((encryptedContent) => this.client.putFileContents(encryptedContent, this.fileID))

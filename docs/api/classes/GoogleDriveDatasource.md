@@ -374,7 +374,7 @@ The ID of the attachment
 
 ### save()
 
-> **save**(`history`, `credentials`, `hasAuthed?`): `any`
+> **save**(`history`, `credentials`, `hasAuthed?`): `Promise`\<`string`\>
 
 Save an archive using the datasource
 
@@ -398,7 +398,7 @@ The credentials to save with
 
 #### Returns
 
-`any`
+`Promise`\<`string`\>
 
 A promise that resolves when saving has completed
 

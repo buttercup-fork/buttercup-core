@@ -112,9 +112,10 @@ export class VaultFormat extends EventEmitter {
     }
 
     erase() {
-        Object.keys(this.source).forEach((sourceKey) => {
-            this.source[sourceKey] = undefined;
-            delete this.source[sourceKey];
+        const source = this.source as { [key: string]: any };
+        Object.keys(source).forEach((sourceKey) => {
+            source[sourceKey] = undefined;
+            delete source[sourceKey];
         });
         this.history.splice(0, Infinity);
     }

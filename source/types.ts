@@ -283,7 +283,7 @@ export interface History extends Array<string> {
 }
 
 export interface MemoryStore {
-    attachments?: Object;
+    attachments?: { [vaultID: string]: { [attachmentID: string]: BufferLike } };
     vault?: EncryptedContent;
 }
 

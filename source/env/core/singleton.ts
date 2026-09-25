@@ -12,7 +12,7 @@ const GLOBAL_INSTANCE_REF = "@@__ButtercupAppEnv";
  * @memberof module:Buttercup
  */
 export function getSharedAppEnv(): AppEnv {
-    const globalRef = getGlobal();
+    const globalRef = getGlobal() as unknown as { [GLOBAL_INSTANCE_REF]?: AppEnv };
     if (!globalRef[GLOBAL_INSTANCE_REF]) {
         const appEnv = createAppEnv();
         assignObjImmutableProp(globalRef, GLOBAL_INSTANCE_REF, appEnv);

@@ -62,13 +62,13 @@ Credentials for the datasource
 
 #### Get Signature
 
-> **get** **baseDir**(): `any`
+> **get** **baseDir**(): `string`
 
 The vault file's base directory
 
 ##### Returns
 
-`any`
+`string`
 
 ***
 

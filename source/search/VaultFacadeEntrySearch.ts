@@ -35,7 +35,7 @@ async function extractEntries(
 ): Promise<Array<ProcessedSearchEntry>> {
     // Get scores
     const scoresRaw = await memory.getValue(`bcup_search_${facade.id}`);
-    let vaultScore = {};
+    let vaultScore: { [entryID: string]: { [domain: string]: number } } = {};
     if (scoresRaw) {
         try {
             const scores = JSON.parse(scoresRaw);

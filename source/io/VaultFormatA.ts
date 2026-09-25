@@ -62,7 +62,7 @@ import {
     EntryPropertyType
 } from "../types.js";
 
-const COMMANDS = {
+const COMMANDS: { [command: string]: Function } = {
     aid: executeArchiveID,
     cen: executeCreateEntry,
     cgr: executeCreateGroup,
@@ -118,7 +118,7 @@ export class VaultFormatA extends VaultFormat {
      */
     static extractSharesFromHistory(history: History): Object {
         return history.reduce(
-            (output, line) => {
+            (output: { [shareID: string]: History }, line) => {
                 if (SHARE_COMMAND_EXP.test(line)) {
                     const shareID = line.substring(1, 1 + UUID_LEN);
                     const command = line.replace(SHARE_COMMAND_EXP, "");

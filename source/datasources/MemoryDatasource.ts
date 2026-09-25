@@ -37,7 +37,8 @@ export class MemoryDatasource extends TextDatasource {
         };
         const { property } = datasourceConfig;
         this._property = property;
-        this._store = global[property] = global[property] || {};
+        const globalRef = global as unknown as { [property: string]: MemoryStore };
+        this._store = globalRef[property] = globalRef[property] || {};
         this.type = TYPE;
         fireInstantiationHandlers(TYPE, this);
     }

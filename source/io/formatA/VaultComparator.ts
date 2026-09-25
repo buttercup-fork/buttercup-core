@@ -26,9 +26,9 @@ function calculateCommonRecentCommand(
     historyA: History,
     historyB: History
 ): CommonRecentCommandResult | null {
-    const getCommandType = (fullCommand) =>
+    const getCommandType = (fullCommand: string) =>
         fullCommand && fullCommand.length >= 3 ? fullCommand.substr(0, 3) : "";
-    const getPaddingID = (command) => command.split(" ")[1];
+    const getPaddingID = (command: string) => command.split(" ")[1];
     for (let a = historyA.length - 1; a >= 9; a -= 1) {
         if (getCommandType(historyA[a]) === "pad") {
             const paddingA = getPaddingID(historyA[a]);
@@ -114,7 +114,10 @@ function different(object1: Object, object2: Object): boolean {
             });
         if (!isMissingAKey) {
             return allKeys.some(function (key) {
-                return different(object1[key], object2[key]);
+                return different(
+                    (object1 as { [key: string]: any })[key],
+                    (object2 as { [key: string]: any })[key]
+                );
             });
         }
     } else if (PRIMATIVES.indexOf(typeof object1) === PRIMATIVES.indexOf(typeof object2)) {

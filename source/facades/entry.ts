@@ -14,6 +14,7 @@ import {
     EntryType,
     EntryPropertyValueType,
     GroupID,
+    PropertyKeyValueObject,
     VaultFacade
 } from "../types.js";
 
@@ -40,7 +41,7 @@ const { FacadeType: FacadeTypeAttribute } = Entry.Attributes;
 function addExtraFieldsNonDestructive(entry: Entry, fields: Array<EntryFacadeField>) {
     const exists = (propName: string, fieldType: EntryPropertyType) =>
         fields.find((item) => item.propertyType === fieldType && item.property === propName);
-    const properties = entry.getProperty();
+    const properties = entry.getProperty() as PropertyKeyValueObject;
     const attributes = entry.getAttribute();
     return [
         ...fields,
@@ -134,7 +135,7 @@ export function consumeEntryFacade(
     const { mergeMode = false } = options;
     const facadeType = getEntryFacadeType(entry);
     if (facade && facade.type) {
-        const properties = entry.getProperty();
+        const properties = entry.getProperty() as PropertyKeyValueObject;
         const attributes = entry.getAttribute();
         const shownOrder = createEntryFacade(entry)
             .fields.filter((field) => field.propertyType === EntryPropertyType.Property)
@@ -314,7 +315,7 @@ export function createEntryFromFacade(group: Group, facade: EntryFacade): Entry 
 export function fieldsToAttributes(facadeFields: Array<EntryFacadeField>): {
     [key: string]: string;
 } {
-    return facadeFields.reduce((output, field) => {
+    return facadeFields.reduce((output: PropertyKeyValueObject, field) => {
         if (field.propertyType !== EntryPropertyType.Attribute) return output;
         output[field.property] = field.value;
         return output;
@@ -330,7 +331,7 @@ export function fieldsToAttributes(facadeFields: Array<EntryFacadeField>): {
 export function fieldsToProperties(facadeFields: Array<EntryFacadeField>): {
     [key: string]: string;
 } {
-    return facadeFields.reduce((output, field) => {
+    return facadeFields.reduce((output: PropertyKeyValueObject, field) => {
         if (field.propertyType !== EntryPropertyType.Property) return output;
         output[field.property] = field.value;
         return output;

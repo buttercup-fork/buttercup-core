@@ -5,7 +5,13 @@ import { Entry } from "../core/Entry.js";
 import { Group } from "../core/Group.js";
 import { Vault } from "../core/Vault.js";
 import { generateUUID } from "../tools/uuid.js";
-import { EntryFacade, GroupFacade, GroupID, VaultFacade } from "../types.js";
+import {
+    EntryFacade,
+    GroupFacade,
+    GroupID,
+    PropertyKeyValueObject,
+    VaultFacade
+} from "../types.js";
 
 export interface ConsumeVaultFacadeOptions {
     mergeMode?: boolean;
@@ -33,7 +39,7 @@ const { FacadeType } = Entry.Attributes;
  */
 export function consumeGroupFacade(group: Group, facade: GroupFacade) {
     const { id, title, type, attributes } = facade;
-    const existingAttributes = group.getAttribute();
+    const existingAttributes = group.getAttribute() as PropertyKeyValueObject;
     if (type !== "group") {
         throw new Error(`Failed consuming group facade: Invalid facade type: ${type}`);
     }
@@ -94,7 +100,7 @@ export function consumeVaultFacade(
             `Failed consuming vault facade: Provided facade ID (${id}) does not match target vault ID: ${vault.id}`
         );
     }
-    const newIDLookup = {};
+    const newIDLookup: { [facadeID: string]: string } = {};
     // Create comparison facade
     let {
         groups: currentGroups,

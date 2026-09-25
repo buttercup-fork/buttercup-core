@@ -42,7 +42,7 @@ export function getEntryURLs(
                 Object.assign(output, {
                     [nextKey]: properties[nextKey]
                 }),
-            {}
+            {} as { [key: string]: string }
         );
     if (preference === EntryURLType.General || preference === EntryURLType.Login) {
         return Object.keys(urlRef)

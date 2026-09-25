@@ -5,7 +5,17 @@ import { findEntriesByProperty } from "../search/entries.js";
 import { Group } from "./Group.js";
 import { Entry } from "./Entry.js";
 import { VaultFormat } from "../io/VaultFormat.js";
-import { DefaultGroupTitles, EntryID, EntryType, GroupID, History } from "../types.js";
+import {
+    DefaultGroupTitles,
+    EntryID,
+    EntryType,
+    FormatAEntry,
+    FormatAGroup,
+    FormatBEntry,
+    FormatBGroup,
+    GroupID,
+    History
+} from "../types.js";
 
 export interface VaultDefaultsOptions {
     /**
@@ -404,13 +414,13 @@ export class Vault extends EventEmitter {
             this._groups = [];
             this._entries = [];
         }
-        this.format.getAllGroups().forEach((rawGroup) => {
+        this.format.getAllGroups().forEach((rawGroup: FormatAGroup | FormatBGroup) => {
             const id = this.format.getItemID(rawGroup);
             if (!this._groups.find((g) => g.id === id)) {
                 this._groups.push(new Group(this, rawGroup));
             }
         });
-        this.format.getAllEntries().forEach((rawEntry) => {
+        this.format.getAllEntries().forEach((rawEntry: FormatAEntry | FormatBEntry) => {
             const id = this.format.getItemID(rawEntry);
             if (!this._entries.find((e) => e.id === id)) {
                 this._entries.push(new Entry(this, rawEntry));
