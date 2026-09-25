@@ -5,8 +5,6 @@ import { VaultPermission } from "../types.js";
  * Base vault member class (for Entry, Group etc.)
  */
 export class VaultItem {
-    _boundUpdateRefs: () => void;
-
     _source: any;
 
     /**

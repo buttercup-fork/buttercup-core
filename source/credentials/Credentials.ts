@@ -172,7 +172,8 @@ export class Credentials {
         );
     }
 
-    id: string;
+    // Set with Object.defineProperty in the constructor (read-only)
+    id!: string;
 
     /**
      * Create a new Credentials instance

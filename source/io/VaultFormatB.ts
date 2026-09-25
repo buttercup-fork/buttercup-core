@@ -115,7 +115,8 @@ export class VaultFormatB extends VaultFormat {
         return vault;
     }
 
-    public source: FormatBVault;
+    // Set by the VaultFormat constructor
+    public source!: FormatBVault;
 
     constructor(source: FormatBVault = emptyVault()) {
         super(source);

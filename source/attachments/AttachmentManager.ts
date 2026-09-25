@@ -18,7 +18,6 @@ export class AttachmentManager {
         return generateUUID();
     }
 
-    _credentials: Credentials;
     _source: VaultSource;
 
     /**

@@ -8,13 +8,7 @@
         "moduleResolution": "node",
         "declaration": true,
         "target": "es2020",
-        "alwaysStrict": true,
-        "noImplicitAny": true,
-        "noImplicitThis": true,
-        "strictBindCallApply": true,
-        "strictFunctionTypes": true,
-        "strictNullChecks": true,
-        "useUnknownInCatchVariables": true
+        "strict": true
     },
     "files": [
       "./source/modules.d.ts"

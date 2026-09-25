@@ -91,11 +91,12 @@ export class Vault extends EventEmitter {
 
     _entries: Array<Entry> = [];
 
-    _format: VaultFormat;
+    // Set by _updateFormat(), called from the constructor
+    _format!: VaultFormat;
 
     _groups: Array<Group> = [];
 
-    _onCommandExec: () => void;
+    _onCommandExec!: () => void;
 
     _tagMap: Map<string, Array<EntryID>> = new Map();
 
