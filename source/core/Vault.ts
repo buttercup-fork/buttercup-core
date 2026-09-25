@@ -180,7 +180,7 @@ export class Vault extends EventEmitter {
      */
     emptyTrash(): this {
         const trash = this.getTrashGroup();
-        if (!trash) return;
+        if (!trash) return this;
         trash.getGroups().forEach((group) => {
             group.delete(/* skip trash */ true);
         });
@@ -288,10 +288,10 @@ export class Vault extends EventEmitter {
                     }
                 }
             }
-            return [...entryIDs].map((id) => this.findEntryByID(id));
+            return [...entryIDs].map((id) => this.findEntryByID(id)!);
         }
-        const entryIDs = this._tagMap.has(tagLower) ? this._tagMap.get(tagLower) : [];
-        return entryIDs.map((id) => this.findEntryByID(id));
+        const entryIDs = this._tagMap.has(tagLower) ? this._tagMap.get(tagLower)! : [];
+        return entryIDs.map((id) => this.findEntryByID(id)!);
     }
 
     /**
@@ -436,7 +436,7 @@ export class Vault extends EventEmitter {
             for (const tag of tags) {
                 const tagLower = tag.toLowerCase();
                 const existingIDs = this._tagMap.has(tagLower)
-                    ? [...this._tagMap.get(tagLower)]
+                    ? [...this._tagMap.get(tagLower)!]
                     : [];
                 if (!existingIDs.includes(entry.id)) {
                     existingIDs.push(entry.id);

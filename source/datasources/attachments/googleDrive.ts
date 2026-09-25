@@ -27,7 +27,7 @@ export interface GoogleDriveAttachmentClient {
  */
 export class GoogleDriveAttachments {
     protected _client: GoogleDriveAttachmentClient;
-    protected _folderIDs: Map<string, Promise<string>> = new Map();
+    protected _folderIDs: Map<string, Promise<string | null>> = new Map();
     protected _token: string;
 
     constructor(client: GoogleDriveAttachmentClient, token: string) {
@@ -55,7 +55,8 @@ export class GoogleDriveAttachments {
     }
 
     async putAttachment(vaultID: VaultID, attachmentID: string, data: BufferLike): Promise<void> {
-        const folderID = await this._getVaultFolderID(vaultID, true);
+        // Created if missing, so never null here
+        const folderID = (await this._getVaultFolderID(vaultID, true))!;
         const filename = attachmentFilename(attachmentID);
         const existingID = await this._findItem(filename, folderID, false);
         if (existingID) {
@@ -173,7 +174,7 @@ export class GoogleDriveAttachments {
      */
     protected _getVaultFolderID(vaultID: VaultID, create: boolean): Promise<string | null> {
         if (this._folderIDs.has(vaultID)) {
-            return this._folderIDs.get(vaultID);
+            return this._folderIDs.get(vaultID)!;
         }
         const lookup = (async () => {
             const rootFolderID = await this._findOrCreateFolder(ATTACHMENTS_FOLDER, "root", create);

@@ -10,6 +10,13 @@ interface DomainScores {
     [domain: string]: number;
 }
 
+interface URLSearchResult {
+    item: ProcessedSearchEntry;
+    score: number;
+    url: string;
+    domainScore: number;
+}
+
 type EntryFetcher<T> = (
     target: T,
     memory: StorageInterface
@@ -191,9 +198,9 @@ export class BaseSearch<T extends Vault | VaultFacade = Vault | VaultFacade> {
             this._results = [];
             return this._results;
         }
-        const results = this._entries.reduce((output, entryItem) => {
+        const results = this._entries.reduce((output: Array<URLSearchResult>, entryItem) => {
             let bestScore = Infinity;
-            const bestURL = entryItem.urls.reduce((best, next) => {
+            const bestURL = entryItem.urls.reduce((best: string | null, next) => {
                 const thisDomain = extractDomain(next);
                 if (!thisDomain) return best;
                 if (!domainsRelated(thisDomain, incomingDomain)) return best;

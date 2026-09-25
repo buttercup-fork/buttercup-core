@@ -48,7 +48,7 @@ A promise that resolves with an array of keys
 
 ### getValue()
 
-> **getValue**(`name`): `Promise`\<`string`\>
+> **getValue**(`name`): `Promise`\<`string` \| `null`\>
 
 Get the value of a key
 
@@ -62,7 +62,7 @@ The key name
 
 #### Returns
 
-`Promise`\<`string`\>
+`Promise`\<`string` \| `null`\>
 
 A promise that resolves with the value
 

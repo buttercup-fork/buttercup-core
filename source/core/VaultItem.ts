@@ -13,7 +13,7 @@ export class VaultItem {
      * Reference to the containing vault
      * @protected
      */
-    _vault: Vault = null;
+    _vault: Vault | null = null;
 
     /**
      * Constructor for the vault member base class
@@ -35,7 +35,7 @@ export class VaultItem {
      * @readonly
      */
     get id(): string {
-        return this._vault.format.getItemID(this._source);
+        return this._vault!.format.getItemID(this._source);
     }
 
     /**
@@ -50,7 +50,7 @@ export class VaultItem {
      * @readonly
      */
     get vault(): Vault {
-        return this._vault;
+        return this._vault!;
     }
 
     /**

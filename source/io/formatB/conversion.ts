@@ -13,8 +13,8 @@ import {
     FormatBGroup,
     FormatBKeyValueObject,
     FormatBVault,
-    PropertyKeyValueObject,
-    UTCTimestamp
+    FormatBValueHistoryItem,
+    PropertyKeyValueObject
 } from "../../types.js";
 
 export function convertFormatAEntry(entry: FormatAEntry): FormatBEntry {
@@ -30,9 +30,9 @@ export function convertFormatAEntry(entry: FormatAEntry): FormatBEntry {
             (change) =>
                 change.property === key && change.propertyType === EntryPropertyType.Attribute
         );
-        formatBEntry.a[key].history = propChanges.map((propChange) => ({
+        formatBEntry.a[key].history = propChanges.map((propChange): FormatBValueHistoryItem => ({
             value: propChange.newValue,
-            updated: null as UTCTimestamp
+            updated: null
         }));
     }
     for (const key in formatBEntry.p) {
@@ -40,9 +40,9 @@ export function convertFormatAEntry(entry: FormatAEntry): FormatBEntry {
             (change) =>
                 change.property === key && change.propertyType === EntryPropertyType.Property
         );
-        formatBEntry.p[key].history = propChanges.map((propChange) => ({
+        formatBEntry.p[key].history = propChanges.map((propChange): FormatBValueHistoryItem => ({
             value: propChange.newValue,
-            updated: null as UTCTimestamp
+            updated: null
         }));
     }
     return formatBEntry;

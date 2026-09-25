@@ -88,7 +88,7 @@ export function mergeRawVaults(base: FormatBVault, incoming: FormatBVault): Form
         // Skip unique groups
         if (uniqueGroupsBase.indexOf(baseGroup) >= 0) return;
         // Find matching on incoming vault
-        const incomingGroup = incoming.g.find((ing) => ing.id === baseGroup.id);
+        const incomingGroup = incoming.g.find((ing) => ing.id === baseGroup.id)!;
         // Setup new group
         const newGroup = cloneGroup(incomingGroup);
         newGroup.a = mergeProperties(baseGroup.a, incomingGroup.a, EntryPropertyType.Attribute);
@@ -110,7 +110,7 @@ export function mergeRawVaults(base: FormatBVault, incoming: FormatBVault): Form
         // Skip unique groups
         if (uniqueEntriesBase.indexOf(baseEntry) >= 0) return;
         // Find matching on incoming vault
-        const incomingEntry = incoming.e.find((ing) => ing.id === baseEntry.id);
+        const incomingEntry = incoming.e.find((ing) => ing.id === baseEntry.id)!;
         // Setup new group
         const newEntry = cloneEntry(incomingEntry);
         newEntry.p = mergeProperties(baseEntry.p, incomingEntry.p, EntryPropertyType.Property);

@@ -113,7 +113,7 @@ export function consumeVaultFacade(
             const existing = groups.find((group) => group.id === currentGroupFacade.id);
             if (!existing) {
                 // Removed, so delete
-                const targetItem = vault.findGroupByID(currentGroupFacade.id);
+                const targetItem = vault.findGroupByID(currentGroupFacade.id!);
                 if (targetItem) {
                     // Only attempt deleting if it comes back as a result. It's possible
                     // that if a parent was deleted, the children were also removed and
@@ -144,7 +144,7 @@ export function consumeVaultFacade(
                 }
                 // Handle group addition
                 const targetParent =
-                    targetParentID === "0" ? vault : vault.findGroupByID(targetParentID);
+                    targetParentID === "0" ? vault : vault.findGroupByID(targetParentID)!;
                 const newGroupInst = targetParent.createGroup(groupFacade.title);
                 if (groupIDTargetedNew) {
                     newIDLookup[`${groupFacade.id}`] = newGroupInst.id;
@@ -157,17 +157,17 @@ export function consumeVaultFacade(
                 }
                 // Handle group move
                 const { id: groupID, parentID: groupParentID } = groupFacade;
-                const ref = vault.findGroupByID(groupID);
+                const ref = vault.findGroupByID(groupID!)!;
                 const refGroup = ref.getParentGroup();
                 if (
                     (refGroup === null && groupParentID !== "0") ||
                     (refGroup !== null && refGroup.id !== groupParentID)
                 ) {
                     // Group has different parent, so move
-                    ref.moveTo(groupParentID === "0" ? vault : vault.findGroupByID(groupParentID));
+                    ref.moveTo(groupParentID === "0" ? vault : vault.findGroupByID(groupParentID)!);
                 }
             }
-            consumeGroupFacade(vault.findGroupByID(groupFacade.id), groupFacade);
+            consumeGroupFacade(vault.findGroupByID(groupFacade.id!)!, groupFacade);
             return false; // remove from loop - done
         });
         if (originalLength === groupsLeft.length) {
@@ -181,7 +181,7 @@ export function consumeVaultFacade(
             const existing = entries.find((entry) => entry.id === currentEntryFacade.id);
             if (!existing) {
                 // Removed, so delete
-                const entry = vault.findEntryByID(currentEntryFacade.id);
+                const entry = vault.findEntryByID(currentEntryFacade.id!);
                 if (entry) {
                     entry.delete();
                 }
@@ -206,7 +206,7 @@ export function consumeVaultFacade(
                 }
             }
             // Handle entry addition
-            const targetGroup = vault.findGroupByID(targetGroupID);
+            const targetGroup = vault.findGroupByID(targetGroupID)!;
             const newEntry = targetGroup.createEntry();
             if (entryIDTargetedNew) {
                 // Not used at the moment, but if references towards
@@ -223,14 +223,14 @@ export function consumeVaultFacade(
                 return;
             }
             // Handle entry move
-            const ref = vault.findEntryByID(entryFacade.id);
+            const ref = vault.findEntryByID(entryFacade.id!)!;
             const refGroup = ref.getGroup();
             if (refGroup.id !== entryFacade.parentID) {
                 // Entry has different group, so move
-                ref.moveToGroup(vault.findGroupByID(entryFacade.parentID));
+                ref.moveToGroup(vault.findGroupByID(entryFacade.parentID)!);
             }
         }
-        const entryToUpdate = vault.findEntryByID(entryFacade.id);
+        const entryToUpdate = vault.findEntryByID(entryFacade.id!)!;
         consumeEntryFacade(entryToUpdate, entryFacade, { mergeMode });
         return false; // done - remove
     });
@@ -295,10 +295,19 @@ export function createGroupFacade(group: Group | null, parentID: GroupID = "0"):
  * @param options Options for getting entry facades
  * @returns An array of entry facades
  */
-function getEntriesFacades(vault: Vault, options: GetGroupEntriesFacadesOptions = {}) {
+function getEntriesFacades(
+    vault: Vault,
+    options: GetGroupEntriesFacadesOptions = {}
+): Array<EntryFacade> {
     return vault
         .getGroups()
-        .reduce((output, group) => [...output, ...getGroupEntriesFacades(group, options)], []);
+        .reduce(
+            (output: Array<EntryFacade>, group) => [
+                ...output,
+                ...getGroupEntriesFacades(group, options)
+            ],
+            []
+        );
 }
 
 /**
@@ -312,7 +321,7 @@ function getGroupEntriesFacades(
     options: GetGroupEntriesFacadesOptions = {}
 ): Array<EntryFacade> {
     const { includeTrash = true } = options;
-    const facades = entryCollection.getEntries().reduce((facades, entry) => {
+    const facades = entryCollection.getEntries().reduce((facades: Array<EntryFacade>, entry) => {
         if (includeTrash === false && entry.isInTrash()) {
             return facades;
         }
@@ -332,7 +341,7 @@ function getGroupEntriesFacades(
  */
 function getGroupsFacades(vault: Vault, options: GetGroupsFacadesOptions = {}): Array<GroupFacade> {
     const { includeTrash = true } = options;
-    return vault._groups.reduce((output, group) => {
+    return vault._groups.reduce((output: Array<GroupFacade>, group) => {
         if (includeTrash === false && (group.isTrash() || group.isInTrash())) {
             return output;
         }

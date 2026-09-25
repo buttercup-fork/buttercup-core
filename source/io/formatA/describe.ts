@@ -22,7 +22,7 @@ export function describeVaultDataset(
         if (typeof (<FormatAVault>dataset).format === "string") {
             commands.push(
                 Inigo.create(Command.Format)
-                    .addArgument((<FormatAVault>dataset).format)
+                    .addArgument((<FormatAVault>dataset).format!)
                     .generateCommand()
             );
         }
@@ -36,7 +36,7 @@ export function describeVaultDataset(
                 commands.push(
                     Inigo.create(Command.SetArchiveAttribute)
                         .addArgument(attributeName)
-                        .addArgument(dataset.attributes[attributeName])
+                        .addArgument(dataset.attributes![attributeName])
                         .generateCommand()
                 );
             });
@@ -67,7 +67,7 @@ export function describeVaultDataset(
                         Inigo.create(Command.SetGroupAttribute)
                             .addArgument(currentGroupID)
                             .addArgument(attributeName)
-                            .addArgument(dataset.attributes[attributeName])
+                            .addArgument(dataset.attributes![attributeName])
                             .generateCommand()
                     );
                 }
@@ -88,7 +88,7 @@ export function describeVaultDataset(
                     Inigo.create(Command.SetEntryProperty)
                         .addArgument(entry.id)
                         .addArgument(propertyName)
-                        .addArgument(entry.properties[propertyName])
+                        .addArgument(entry.properties![propertyName])
                         .generateCommand()
                 );
             });

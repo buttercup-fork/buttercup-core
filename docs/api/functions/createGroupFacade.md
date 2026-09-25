@@ -14,7 +14,7 @@ Create a group facade from a Group instance
 
 ### group
 
-[`Group`](../classes/Group.md)
+[`Group`](../classes/Group.md) \| `null`
 
 The group instance
 

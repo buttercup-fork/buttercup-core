@@ -23,7 +23,7 @@ const __postHandlers: Array<Function> = [];
  * @private
  */
 export function credentialsToDatasource(credentials: Credentials): TextDatasource {
-    const { datasource } = getCredentials(credentials.id).data;
+    const { datasource } = getCredentials(credentials.id)!.data;
     if (!datasource) {
         throw new Error("No datasource configuration in credentials");
     }
@@ -63,19 +63,19 @@ export function fireInstantiationHandlers(type: string, datasource: TextDatasour
  */
 export function prepareDatasourceCredentials(
     credentials: Credentials,
-    typeOverride: string = null
+    typeOverride: string | null = null
 ): Credentials {
     const {
         data: { datasource }
-    } = getCredentials(credentials.id);
-    const masterPassword = getMasterPassword(credentials.id);
-    const datasourceType = typeOverride || datasource.type || "";
+    } = getCredentials(credentials.id)!;
+    const masterPassword = getMasterPassword(credentials.id)!;
+    const datasourceType = typeOverride || datasource!.type || "";
     const { open = false } = __datasourceFlags[datasourceType] || {};
     if (!open) {
         return credentials;
     }
     const newCreds = Credentials.fromCredentials(credentials, masterPassword);
-    const newCredPayload = getCredentials(newCreds.id);
+    const newCredPayload = getCredentials(newCreds.id)!;
     newCredPayload.open = true;
     return newCreds;
 }

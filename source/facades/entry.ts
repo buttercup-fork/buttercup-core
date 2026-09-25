@@ -253,7 +253,7 @@ export function createEntryFacade(
     }
     const fields = entry
         ? sortFieldsByPropertyOrder(entry, addExtraFieldsNonDestructive(entry, createFields(entry)))
-        : createFields(entry);
+        : createFields(null);
     if (
         !fields.find(
             (field) =>
@@ -262,7 +262,7 @@ export function createEntryFacade(
         )
     ) {
         const entryTypeField = createFieldDescriptor(
-            entry, // Entry instance
+            entry ?? null, // Entry instance
             "", // Title
             EntryPropertyType.Attribute, // Type
             FacadeTypeAttribute // Property name
@@ -274,7 +274,8 @@ export function createEntryFacade(
         id: entry ? entry.id : null,
         type: facadeType,
         fields,
-        parentID: entry ? entry.getGroup().id : null,
+        // A facade without an entry has no parent until it's saved
+        parentID: entry ? entry.getGroup().id : (null as unknown as GroupID),
         _history: [], // deprecated
         _changes: entry ? entry.getChanges() : []
     };
@@ -343,11 +344,11 @@ export function getEntryFacadePath(entryID: EntryID, facade: VaultFacade): Array
     if (!entry) {
         throw new Error(`No entry facade found for ID: ${entryID}`);
     }
-    let targetGroupID: GroupID = null;
+    let targetGroupID: GroupID | null = null;
     const path: Array<GroupID> = [];
     do {
         targetGroupID = targetGroupID
-            ? facade.groups.find((g) => g.id === targetGroupID).parentID
+            ? facade.groups.find((g) => g.id === targetGroupID)!.parentID
             : entry.parentID;
         if (targetGroupID && targetGroupID != "0") {
             path.unshift(targetGroupID);
@@ -412,7 +413,7 @@ function setEntryValue(
     propertyType: EntryPropertyType,
     property: string,
     value: string,
-    valueType?: EntryPropertyValueType
+    valueType?: EntryPropertyValueType | null
 ) {
     switch (propertyType) {
         case "property":

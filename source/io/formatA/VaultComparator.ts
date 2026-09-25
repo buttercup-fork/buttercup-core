@@ -1,6 +1,6 @@
 import { Vault } from "../../core/Vault.js";
 import { createVaultFacade } from "../../facades/vault.js";
-import { History } from "../../types.js";
+import { History, VaultFacade } from "../../types.js";
 
 const PRIMATIVES = ["string", "number", "boolean", "undefined"];
 
@@ -56,7 +56,10 @@ export interface HistoryDifferences {
  * @returns Returns null if no common base is found, or the command
  *  differences as two arrays
  */
-function calculateHistoryDifferences(historyA: History, historyB: History): HistoryDifferences {
+function calculateHistoryDifferences(
+    historyA: History,
+    historyB: History
+): HistoryDifferences | null {
     const workingA = [...historyA];
     const workingB = [...historyB];
     const commonIndexes = calculateCommonRecentCommand(workingA, workingB);
@@ -130,7 +133,10 @@ function different(object1: Object, object2: Object): boolean {
  * Vault comparison class
  */
 export default class VaultComparator {
-    static calculateHistoryDifferences(historyA: History, historyB: History): HistoryDifferences {
+    static calculateHistoryDifferences(
+        historyA: History,
+        historyB: History
+    ): HistoryDifferences | null {
         return calculateHistoryDifferences(historyA, historyB);
     }
 
@@ -153,7 +159,7 @@ export default class VaultComparator {
      *  differences as two arrays
      * @memberof VaultComparator
      */
-    calculateDifferences(): HistoryDifferences {
+    calculateDifferences(): HistoryDifferences | null {
         return VaultComparator.calculateHistoryDifferences(
             this._vaultA.format.history,
             this._vaultB.format.history
@@ -166,8 +172,8 @@ export default class VaultComparator {
      * @memberof VaultComparator
      */
     vaultsDiffer(): boolean {
-        const objA = createVaultFacade(this._vaultA);
-        const objB = createVaultFacade(this._vaultB);
+        const objA: Partial<VaultFacade> = createVaultFacade(this._vaultA);
+        const objB: Partial<VaultFacade> = createVaultFacade(this._vaultB);
         // ignore the IDs
         delete objA.id;
         delete objB.id;

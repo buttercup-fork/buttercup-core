@@ -31,7 +31,7 @@ export class MemoryDatasource extends TextDatasource {
      */
     constructor(credentials: Credentials) {
         super(credentials);
-        const { data: credentialData } = getCredentials(credentials.id);
+        const { data: credentialData } = getCredentials(credentials.id)!;
         const { datasource: datasourceConfig } = credentialData as {
             datasource: DatasourceConfigurationMemory;
         };
@@ -62,10 +62,10 @@ export class MemoryDatasource extends TextDatasource {
      */
     getAttachment(vaultID: VaultID, attachmentID: string): Promise<BufferLike> {
         return this._ensureAttachmentsPaths(vaultID).then(() => {
-            if (!this._store.attachments[vaultID][attachmentID]) {
+            if (!this._store.attachments![vaultID][attachmentID]) {
                 throw new Error(`No attachment found for ID: ${attachmentID}`);
             }
-            return this._store.attachments[vaultID][attachmentID];
+            return this._store.attachments![vaultID][attachmentID];
         });
     }
 
@@ -109,7 +109,7 @@ export class MemoryDatasource extends TextDatasource {
         details: AttachmentDetails
     ): Promise<void> {
         return this._ensureAttachmentsPaths(vaultID).then(() => {
-            this._store.attachments[vaultID][attachmentID] = buffer;
+            this._store.attachments![vaultID][attachmentID] = buffer;
         });
     }
 
@@ -121,8 +121,8 @@ export class MemoryDatasource extends TextDatasource {
      */
     removeAttachment(vaultID: VaultID, attachmentID: string): Promise<void> {
         return this._ensureAttachmentsPaths(vaultID).then(() => {
-            this._store.attachments[vaultID][attachmentID] = null;
-            delete this._store.attachments[vaultID][attachmentID];
+            this._store.attachments![vaultID][attachmentID] = null;
+            delete this._store.attachments![vaultID][attachmentID];
         });
     }
 

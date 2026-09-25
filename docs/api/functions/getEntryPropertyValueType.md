@@ -14,7 +14,7 @@ Get the entry value type
 
 ### entry
 
-[`Entry`](../classes/Entry.md)
+[`Entry`](../classes/Entry.md) \| `null`
 
 Entry instance
 

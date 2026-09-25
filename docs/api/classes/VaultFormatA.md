@@ -401,7 +401,7 @@ The resulting separated histories. The object will
 
 ### findEntryByID()
 
-> **findEntryByID**(`id`): [`FormatAEntry`](../interfaces/FormatAEntry.md)
+> **findEntryByID**(`id`): [`FormatAEntry`](../interfaces/FormatAEntry.md) \| `null`
 
 #### Parameters
 
@@ -411,7 +411,7 @@ The resulting separated histories. The object will
 
 #### Returns
 
-[`FormatAEntry`](../interfaces/FormatAEntry.md)
+[`FormatAEntry`](../interfaces/FormatAEntry.md) \| `null`
 
 #### Overrides
 
@@ -421,7 +421,7 @@ The resulting separated histories. The object will
 
 ### findGroupByID()
 
-> **findGroupByID**(`id`): [`FormatAGroup`](../interfaces/FormatAGroup.md)
+> **findGroupByID**(`id`): [`FormatAGroup`](../interfaces/FormatAGroup.md) \| `null`
 
 #### Parameters
 
@@ -431,7 +431,7 @@ The resulting separated histories. The object will
 
 #### Returns
 
-[`FormatAGroup`](../interfaces/FormatAGroup.md)
+[`FormatAGroup`](../interfaces/FormatAGroup.md) \| `null`
 
 #### Overrides
 
@@ -441,7 +441,7 @@ The resulting separated histories. The object will
 
 ### findGroupContainingEntryID()
 
-> **findGroupContainingEntryID**(`id`): [`FormatAGroup`](../interfaces/FormatAGroup.md)
+> **findGroupContainingEntryID**(`id`): [`FormatAGroup`](../interfaces/FormatAGroup.md) \| `null`
 
 #### Parameters
 
@@ -451,7 +451,7 @@ The resulting separated histories. The object will
 
 #### Returns
 
-[`FormatAGroup`](../interfaces/FormatAGroup.md)
+[`FormatAGroup`](../interfaces/FormatAGroup.md) \| `null`
 
 #### Overrides
 
@@ -461,7 +461,7 @@ The resulting separated histories. The object will
 
 ### findGroupContainingGroupID()
 
-> **findGroupContainingGroupID**(`id`): [`FormatAGroup`](../interfaces/FormatAGroup.md)
+> **findGroupContainingGroupID**(`id`): [`FormatAGroup`](../interfaces/FormatAGroup.md) \| `null`
 
 #### Parameters
 
@@ -471,7 +471,7 @@ The resulting separated histories. The object will
 
 #### Returns
 
-[`FormatAGroup`](../interfaces/FormatAGroup.md)
+[`FormatAGroup`](../interfaces/FormatAGroup.md) \| `null`
 
 #### Overrides
 
@@ -501,7 +501,7 @@ The resulting separated histories. The object will
 
 ##### parentID?
 
-`string` = `null`
+`string` \| `null`
 
 #### Returns
 
@@ -521,7 +521,7 @@ The resulting separated histories. The object will
 
 ##### parentID?
 
-`string` = `null`
+`string` \| `null`
 
 #### Returns
 

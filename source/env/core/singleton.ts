@@ -17,5 +17,5 @@ export function getSharedAppEnv(): AppEnv {
         const appEnv = createAppEnv();
         assignObjImmutableProp(globalRef, GLOBAL_INSTANCE_REF, appEnv);
     }
-    return globalRef[GLOBAL_INSTANCE_REF];
+    return globalRef[GLOBAL_INSTANCE_REF]!;
 }

@@ -42,7 +42,7 @@ Get all keys as an array
 
 ### getValue()
 
-> **getValue**(`name`): `Promise`\<`string`\>
+> **getValue**(`name`): `Promise`\<`string` \| `null`\>
 
 Get a value for a key
 
@@ -54,7 +54,7 @@ Get a value for a key
 
 #### Returns
 
-`Promise`\<`string`\>
+`Promise`\<`string` \| `null`\>
 
 ***
 
@@ -90,7 +90,7 @@ Set a value for a key
 
 ##### value
 
-`string`
+`string` \| `null`
 
 #### Returns
 

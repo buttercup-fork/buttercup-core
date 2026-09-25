@@ -91,7 +91,8 @@ const VALID_COMMAND_EXP = /^[a-z]{3}\s.+$/;
 
 function emptyVault(): FormatAVault {
     return {
-        id: null,
+        // Set by generateID()
+        id: null as unknown as VaultID,
         groups: []
     };
 }
@@ -299,15 +300,15 @@ export class VaultFormatA extends VaultFormat {
         this.emit("commandsExecuted");
     }
 
-    findEntryByID(id: EntryID): FormatAEntry {
+    findEntryByID(id: EntryID): FormatAEntry | null {
         return this.getAllEntries().find((entry) => entry.id === id) || null;
     }
 
-    findGroupByID(id: GroupID): FormatAGroup {
+    findGroupByID(id: GroupID): FormatAGroup | null {
         return this.getAllGroups().find((group) => group.id === id) || null;
     }
 
-    findGroupContainingEntryID(id: EntryID): FormatAGroup {
+    findGroupContainingEntryID(id: EntryID): FormatAGroup | null {
         const matchingEntry = this.getAllEntries().find((entry) => entry.id === id);
         if (matchingEntry) {
             return this.getAllGroups().find((group) => group.id === matchingEntry.parentID) || null;
@@ -315,8 +316,8 @@ export class VaultFormatA extends VaultFormat {
         return null;
     }
 
-    findGroupContainingGroupID(id: GroupID): FormatAGroup {
-        const searchGroups = (groups: Array<FormatAGroup>): FormatAGroup => {
+    findGroupContainingGroupID(id: GroupID): FormatAGroup | null {
+        const searchGroups = (groups: Array<FormatAGroup>): FormatAGroup | null => {
             for (const group of groups) {
                 if (group.id === id) return null;
                 const children = group.groups || [];
@@ -336,16 +337,16 @@ export class VaultFormatA extends VaultFormat {
         );
     }
 
-    getAllEntries(parentID: GroupID = null): Array<FormatAEntry> {
+    getAllEntries(parentID: GroupID | null = null): Array<FormatAEntry> {
         return getAllEntries(this.source, parentID);
     }
 
-    getAllGroups(parentID: GroupID = null): Array<FormatAGroup> {
+    getAllGroups(parentID: GroupID | null = null): Array<FormatAGroup> {
         return getAllGroups(this.source, parentID);
     }
 
     getEntryAttributes(entrySource: FormatAEntry): PropertyKeyValueObject {
-        return entrySource.attributes;
+        return entrySource.attributes!;
     }
 
     getEntryChanges(entrySource: FormatAEntry): Array<EntryChange> {
@@ -370,7 +371,7 @@ export class VaultFormatA extends VaultFormat {
     }
 
     getEntryProperties(entrySource: FormatAEntry): PropertyKeyValueObject {
-        return entrySource.properties;
+        return entrySource.properties!;
     }
 
     getFormat(): any {
@@ -378,7 +379,7 @@ export class VaultFormatA extends VaultFormat {
     }
 
     getGroupAttributes(groupSource: FormatAGroup): PropertyKeyValueObject {
-        return groupSource.attributes;
+        return groupSource.attributes!;
     }
 
     getGroupTitle(groupSource: FormatAGroup): string {
@@ -502,7 +503,7 @@ export class VaultFormatA extends VaultFormat {
                 /^\$([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/.exec(
                     currentCommand
                 );
-            shareID = shareMatch[1];
+            shareID = shareMatch![1];
             currentCommand = currentCommand.replace(SHARE_COMMAND_EXP, "");
         }
         if (!VALID_COMMAND_EXP.test(currentCommand)) {
@@ -513,7 +514,7 @@ export class VaultFormatA extends VaultFormat {
             return;
         }
         const commandComponents = extractCommandComponents(currentCommand);
-        const commandKey = commandComponents.shift().toLowerCase();
+        const commandKey = commandComponents.shift()!.toLowerCase();
         const executeCommand = COMMANDS[commandKey];
         try {
             executeCommand.apply(null, [
@@ -526,7 +527,7 @@ export class VaultFormatA extends VaultFormat {
             ]);
             this.history.push(command);
         } catch (err) {
-            throw new Layerr(err, `Failed executing vault command: ${commandKey}`);
+            throw new Layerr(err as Error, `Failed executing vault command: ${commandKey}`);
         }
     }
 
@@ -538,7 +539,7 @@ export class VaultFormatA extends VaultFormat {
         const friendlyCommand = Object.keys(COMMAND_MANIFEST).find((manifestKey) => {
             return COMMAND_MANIFEST[manifestKey].s === commandKey;
         });
-        const commandDescriptor = COMMAND_MANIFEST[friendlyCommand];
+        const commandDescriptor = friendlyCommand ? COMMAND_MANIFEST[friendlyCommand] : undefined;
         if (!commandDescriptor) {
             throw new Error(
                 `Cannot process command parameters: no command found for key: ${commandKey}`

@@ -43,7 +43,7 @@ export class AttachmentManager {
             throw new Error(`Attachment not available: ${attachmentID}`);
         }
         const credentials = await this._getAttachmentsCredentials();
-        const data = await this._source._datasource.getAttachment(
+        const data = await this._source._datasource!.getAttachment(
             this._source.vault.id,
             attachmentID
         );
@@ -56,7 +56,10 @@ export class AttachmentManager {
      * @param attachmentID The attachment ID
      * @returns The details or null if the attachment isn't found
      */
-    async getAttachmentDetails(entry: Entry, attachmentID: string): Promise<AttachmentDetails> {
+    async getAttachmentDetails(
+        entry: Entry,
+        attachmentID: string
+    ): Promise<AttachmentDetails | null> {
         this._checkAttachmentSupport();
         const attributeKey = `${Entry.Attributes.AttachmentPrefix}${attachmentID}`;
         const payloadRaw = entry.getAttribute(attributeKey) as string;
@@ -86,7 +89,7 @@ export class AttachmentManager {
         this._checkAttachmentSupport();
         const attributeKey = `${Entry.Attributes.AttachmentPrefix}${attachmentID}`;
         // Remove data
-        await this._source._datasource.removeAttachment(this._source.vault.id, attachmentID);
+        await this._source._datasource!.removeAttachment(this._source.vault.id, attachmentID);
         // Remove in entry
         entry.deleteAttribute(attributeKey);
     }
@@ -127,7 +130,7 @@ export class AttachmentManager {
         const sizeIncrease = existingDetails
             ? Math.max(0, encryptedSize - existingDetails.sizeEncrypted)
             : encryptedSize;
-        const spaceAvailable = await this._source._datasource.getAvailableStorage();
+        const spaceAvailable = await this._source._datasource!.getAvailableStorage();
         if (spaceAvailable !== null && sizeIncrease > spaceAvailable) {
             throw new Error(
                 `Not enough space to update attachment: needed = ${sizeIncrease} B, available = ${spaceAvailable} B`
@@ -145,7 +148,7 @@ export class AttachmentManager {
             updated: now
         };
         // Write attachment
-        await this._source._datasource.putAttachment(
+        await this._source._datasource!.putAttachment(
             this._source.vault.id,
             attachmentID,
             encryptedAttachmentData,

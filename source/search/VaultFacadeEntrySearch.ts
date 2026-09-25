@@ -11,17 +11,18 @@ import { isValidTag } from "../tools/tag.js";
  * IDs of the Trash group and every group inside it
  */
 function getTrashGroupIDs(facade: VaultFacade): Set<GroupID> {
+    // Facade groups from a vault always have IDs
     const trashIDs = new Set<GroupID>(
         facade.groups
             .filter((group) => group.attributes?.[Group.Attribute.Role] === "trash")
-            .map((group) => group.id)
+            .map((group) => group.id!)
     );
     let added = trashIDs.size > 0;
     while (added) {
         added = false;
         for (const group of facade.groups) {
-            if (!trashIDs.has(group.id) && trashIDs.has(group.parentID)) {
-                trashIDs.add(group.id);
+            if (!trashIDs.has(group.id!) && trashIDs.has(group.parentID)) {
+                trashIDs.add(group.id!);
                 added = true;
             }
         }
@@ -48,17 +49,17 @@ async function extractEntries(
         if (trashGroupIDs.has(nextEntry.parentID)) return entries;
         const attributes = fieldsToAttributes(nextEntry.fields);
         const tags = attributes[Entry.Attributes.Tags]
-            ? attributes[Entry.Attributes.Tags].split(",").reduce((output, tag) => {
+            ? attributes[Entry.Attributes.Tags].split(",").reduce((output: Array<string>, tag) => {
                   return isValidTag(tag) ? [...output, tag] : output;
               }, [])
             : [];
         const properties = fieldsToProperties(nextEntry.fields);
         const urls = getEntryURLs(properties, EntryURLType.General);
         entries.push({
-            domainScores: vaultScore[nextEntry.id] || {},
+            domainScores: vaultScore[nextEntry.id!] || {},
             entryType: nextEntry.type,
             groupID: nextEntry.parentID,
-            id: nextEntry.id,
+            id: nextEntry.id!,
             properties,
             tags,
             urls,

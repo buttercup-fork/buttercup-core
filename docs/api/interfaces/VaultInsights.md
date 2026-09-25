@@ -40,13 +40,13 @@
 
 ### longPassLen
 
-> **longPassLen**: `number`
+> **longPassLen**: `number` \| `null`
 
 ***
 
 ### shortPassLen
 
-> **shortPassLen**: `number`
+> **shortPassLen**: `number` \| `null`
 
 ***
 

@@ -38,7 +38,7 @@ export function buildClient(token: string) {
         readFile: (remotePath: string, options: object | Callback, callback?: Callback) => {
             const encrypt = getSharedAppEnv().getProperty("crypto/v1/encryptText");
             const decrypt = getSharedAppEnv().getProperty("crypto/v1/decryptText");
-            const cb = typeof options === "function" ? (options as Callback) : callback;
+            const cb = (typeof options === "function" ? options : callback) as Callback;
             const url = joinURL(BASE_URL, "/get/file");
             encrypt(remotePath, token)
                 .then((payload: string) =>
@@ -72,7 +72,7 @@ export function buildClient(token: string) {
             callback?: Callback
         ) => {
             const encrypt = getSharedAppEnv().getProperty("crypto/v1/encryptText");
-            const cb = typeof options === "function" ? (options as Callback) : callback;
+            const cb = (typeof options === "function" ? options : callback) as Callback;
             if (typeof data !== "string") {
                 throw new Error("Failed writing file: Expected data to be of type string");
             }

@@ -20,7 +20,7 @@
 
 ### id
 
-> **id**: `string`
+> **id**: `string` \| `null`
 
 ***
 

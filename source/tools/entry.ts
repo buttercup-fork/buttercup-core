@@ -14,7 +14,7 @@ const URL_PROP = /(^|[a-zA-Z0-9_-]|\b)(ur[li]|UR[LI]|Ur[li])(\b|$|[_-])/;
 const URL_PROP_ICON = /icon[\s_-]*ur[li]/i;
 
 export function getEntryPath(entry: Entry): Array<GroupID> {
-    let lastParent: Group = null;
+    let lastParent: Group | null = null;
     const path: Array<GroupID> = [];
     do {
         lastParent = lastParent ? lastParent.getParentGroup() : entry.getGroup();

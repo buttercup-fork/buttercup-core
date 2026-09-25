@@ -18,8 +18,8 @@ export function generateVaultInsights(vault: Vault): VaultInsights {
         entryCount = 0,
         trashEntryCount = 0,
         trashGroupCount = 0,
-        longestPasswordLength: number = null,
-        shortestPasswordLength: number = null,
+        longestPasswordLength: number | null = null,
+        shortestPasswordLength: number | null = null,
         weakPasswords = 0,
         expiredPasswords = 0;
     const passwordCounts: { [password: string]: number } = {};

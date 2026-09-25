@@ -46,7 +46,7 @@ export function createFieldDescriptor(
         title,
         propertyType: entryPropertyType,
         property: entryPropertyName,
-        value,
+        value: value!,
         valueType: valueType
             ? valueType
             : entryPropertyType === "attribute"
@@ -106,9 +106,9 @@ export function getEntryPropertyValueType(
  *  existing one
  * @param id The ID to check
  */
-export function idSignifiesNew(id: string, mergeMode: boolean = false): boolean {
-    if (/^\d+$/.test(id) === false) return mergeMode;
-    const numerical = parseInt(id, 10);
+export function idSignifiesNew(id: string | null, mergeMode: boolean = false): boolean {
+    if (/^\d+$/.test(String(id)) === false) return mergeMode;
+    const numerical = parseInt(id!, 10);
     return !isNaN(numerical) && numerical > 0 && numerical <= 999999;
 }
 

@@ -256,7 +256,7 @@ An array of found extries
 
 ### findEntryByID()
 
-> **findEntryByID**(`id`): [`Entry`](Entry.md)
+> **findEntryByID**(`id`): [`Entry`](Entry.md) \| `null`
 
 Find an entry by its ID
 
@@ -270,7 +270,7 @@ The ID to search for
 
 #### Returns
 
-[`Entry`](Entry.md)
+[`Entry`](Entry.md) \| `null`
 
 Null if not found, or the Entry instance
 
@@ -278,7 +278,7 @@ Null if not found, or the Entry instance
 
 ### findGroupByID()
 
-> **findGroupByID**(`id`): `Group`
+> **findGroupByID**(`id`): `Group` \| `null`
 
 Find a group by its ID
 
@@ -292,7 +292,7 @@ The group ID to search for
 
 #### Returns
 
-`Group`
+`Group` \| `null`
 
 The group or null if not found
 
@@ -360,7 +360,7 @@ getGroups
 
 ### getAttribute()
 
-> **getAttribute**(`attribute?`): `string` \| `Object`
+> **getAttribute**(`attribute?`): `string` \| `Object` \| `undefined`
 
 Get an attribute
 
@@ -375,7 +375,7 @@ The name of the attribute. If none provided
 
 #### Returns
 
-`string` \| `Object`
+`string` \| `Object` \| `undefined`
 
 Returns the attribute or undefined if not found.
  If no attribute name is provided an object containing all attributes is returned.
@@ -412,13 +412,13 @@ An array of child groups
 
 ### getParentGroup()
 
-> **getParentGroup**(): `Group`
+> **getParentGroup**(): `Group` \| `null`
 
 Get the parent group
 
 #### Returns
 
-`Group`
+`Group` \| `null`
 
 Returns the parent group instance or null if the parent
  is the archive

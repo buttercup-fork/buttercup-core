@@ -90,7 +90,7 @@ export class Credentials {
         if (credentialsPassword !== masterPassword) {
             throw new Error("Master password does not match that of the credentials to be cloned");
         }
-        const newData = JSON.parse(JSON.stringify(credentialsData.data));
+        const newData = JSON.parse(JSON.stringify(credentialsData!.data));
         return new Credentials(newData, masterPassword);
     }
 
@@ -104,7 +104,7 @@ export class Credentials {
      */
     static fromDatasource(
         datasourceConfig: DatasourceConfiguration,
-        masterPassword: string = null
+        masterPassword: string | null = null
     ): Credentials {
         return new Credentials(
             {
@@ -125,7 +125,7 @@ export class Credentials {
      *  to store alongside the credentials. Used to create secure
      *  strings.
      */
-    static fromPassword(password: string, masterPassword: string = null): Credentials {
+    static fromPassword(password: string, masterPassword: string | null = null): Credentials {
         const masterPass = masterPassword || password;
         return new Credentials({ password }, masterPass);
     }
@@ -180,7 +180,7 @@ export class Credentials {
      * @param masterPassword Optional master password to store with
      *  the credentials data, which is used for generating secure strings.
      */
-    constructor(obj: CredentialsData = {}, masterPassword: string = null) {
+    constructor(obj: CredentialsData = {}, masterPassword: string | null = null) {
         const id = generateUUID();
         Object.defineProperty(this, "id", {
             writable: false,
@@ -202,7 +202,7 @@ export class Credentials {
      */
     getCredentialsData(): CredentialsData | null {
         const isClosedEnv = getSharedAppEnv().getProperty("env/v1/isClosedEnv")();
-        const payload = getCredentials(this.id);
+        const payload = getCredentials(this.id)!;
         if (isClosedEnv || payload.open === true) {
             return payload.data;
         }
@@ -214,7 +214,7 @@ export class Credentials {
      */
     getData(): CredentialsPayload | null {
         const isClosedEnv = getSharedAppEnv().getProperty("env/v1/isClosedEnv")();
-        const payload = getCredentials(this.id);
+        const payload = getCredentials(this.id)!;
         if (isClosedEnv || payload.open === true) {
             return payload;
         }
@@ -238,7 +238,7 @@ export class Credentials {
      *  // like encrypting datasource changes.
      */
     restrictPurposes(allowedPurposes: Array<string>): this {
-        const creds = getCredentials(this.id);
+        const creds = getCredentials(this.id)!;
         const { purposes } = creds;
         // Filter out purposes which have already been restricted
         const finalPurposes = allowedPurposes.filter((newPurpose) => purposes.includes(newPurpose));
@@ -257,7 +257,7 @@ export class Credentials {
      */
     setCredentialsData(data: CredentialsData): void {
         const isClosedEnv = getSharedAppEnv().getProperty("env/v1/isClosedEnv")();
-        const payload = getCredentials(this.id);
+        const payload = getCredentials(this.id)!;
         if (!isClosedEnv && payload.open !== true) {
             throw new Error("Unable to set data: Insecure environment and payload is not open");
         }
@@ -279,7 +279,7 @@ export class Credentials {
             throw new Error("Credential purposes don't allow for secure exports");
         }
         const encrypt = getSharedAppEnv().getProperty("crypto/v1/encryptText");
-        const { data } = getCredentials(this.id);
+        const { data } = getCredentials(this.id)!;
         const masterPassword = getMasterPassword(this.id);
         if (typeof masterPassword !== "string") {
             throw new Error(

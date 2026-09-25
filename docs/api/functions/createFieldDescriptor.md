@@ -14,7 +14,7 @@ Create a descriptor for a field to be used within a facade
 
 ### entry
 
-[`Entry`](../classes/Entry.md)
+[`Entry`](../classes/Entry.md) \| `null`
 
 The entry instance to process or null if the initial value
  should be empty

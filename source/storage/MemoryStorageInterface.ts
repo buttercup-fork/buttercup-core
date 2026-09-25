@@ -6,7 +6,7 @@ import { StorageInterface } from "./StorageInterface.js";
  * @memberof module:Buttercup
  */
 export class MemoryStorageInterface extends StorageInterface {
-    _store: { [property: string]: string } = {};
+    _store: { [property: string]: string | null } = {};
 
     /**
      * Get all keys from storage
@@ -35,7 +35,6 @@ export class MemoryStorageInterface extends StorageInterface {
      * @memberof MemoryStorageInterface
      */
     removeKey(name: string): Promise<void> {
-        this._store[name] = undefined;
         delete this._store[name];
         return Promise.resolve();
     }

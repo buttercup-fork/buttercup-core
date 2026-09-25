@@ -392,7 +392,7 @@
 
 ### findEntryByID()
 
-> **findEntryByID**(`id`): [`FormatBEntry`](../interfaces/FormatBEntry.md)
+> **findEntryByID**(`id`): [`FormatBEntry`](../interfaces/FormatBEntry.md) \| `null`
 
 #### Parameters
 
@@ -402,7 +402,7 @@
 
 #### Returns
 
-[`FormatBEntry`](../interfaces/FormatBEntry.md)
+[`FormatBEntry`](../interfaces/FormatBEntry.md) \| `null`
 
 #### Overrides
 
@@ -412,7 +412,7 @@
 
 ### findGroupByID()
 
-> **findGroupByID**(`id`): [`FormatBGroup`](../interfaces/FormatBGroup.md)
+> **findGroupByID**(`id`): [`FormatBGroup`](../interfaces/FormatBGroup.md) \| `null`
 
 #### Parameters
 
@@ -422,7 +422,7 @@
 
 #### Returns
 
-[`FormatBGroup`](../interfaces/FormatBGroup.md)
+[`FormatBGroup`](../interfaces/FormatBGroup.md) \| `null`
 
 #### Overrides
 
@@ -432,7 +432,7 @@
 
 ### findGroupContainingEntryID()
 
-> **findGroupContainingEntryID**(`id`): [`FormatBGroup`](../interfaces/FormatBGroup.md)
+> **findGroupContainingEntryID**(`id`): [`FormatBGroup`](../interfaces/FormatBGroup.md) \| `null`
 
 #### Parameters
 
@@ -442,7 +442,7 @@
 
 #### Returns
 
-[`FormatBGroup`](../interfaces/FormatBGroup.md)
+[`FormatBGroup`](../interfaces/FormatBGroup.md) \| `null`
 
 #### Overrides
 
@@ -452,7 +452,7 @@
 
 ### findGroupContainingGroupID()
 
-> **findGroupContainingGroupID**(`id`): [`FormatBGroup`](../interfaces/FormatBGroup.md)
+> **findGroupContainingGroupID**(`id`): [`FormatBGroup`](../interfaces/FormatBGroup.md) \| `null`
 
 #### Parameters
 
@@ -462,7 +462,7 @@
 
 #### Returns
 
-[`FormatBGroup`](../interfaces/FormatBGroup.md)
+[`FormatBGroup`](../interfaces/FormatBGroup.md) \| `null`
 
 #### Overrides
 
@@ -492,7 +492,7 @@
 
 ##### parentID?
 
-`string` = `null`
+`string` \| `null`
 
 #### Returns
 
@@ -512,7 +512,7 @@
 
 ##### parentID?
 
-`string` = `null`
+`string` \| `null`
 
 #### Returns
 

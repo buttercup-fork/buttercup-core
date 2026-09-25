@@ -42,7 +42,8 @@ const DELETION_LIST_TTL = 12 * 7 * 24 * 60 * 60 * 1000; // 12 weeks
 
 function emptyVault(): FormatBVault {
     return {
-        id: null,
+        // Set by generateID()
+        id: null as unknown as VaultID,
         a: {},
         g: [],
         e: [],
@@ -177,14 +178,14 @@ export class VaultFormatB extends VaultFormat {
     }
 
     deleteEntryAttribute(entryID: EntryID, attribute: string) {
-        const entry = this.source.e.find((e: FormatBEntry) => e.id === entryID);
+        const entry = this.source.e.find((e: FormatBEntry) => e.id === entryID)!;
         if (!entry.a[attribute]) return;
         entry.a[attribute].deleted = nextDeleteTimestamp(entry.a[attribute]);
         this.emit("commandsExecuted");
     }
 
     deleteEntryProperty(entryID: EntryID, property: string) {
-        const entry = this.source.e.find((e) => e.id === entryID);
+        const entry = this.source.e.find((e) => e.id === entryID)!;
         if (!entry.p[property]) return;
         entry.p[property].deleted = nextDeleteTimestamp(entry.p[property]);
         this.emit("commandsExecuted");
@@ -200,7 +201,7 @@ export class VaultFormatB extends VaultFormat {
     }
 
     deleteGroupAttribute(groupID: GroupID, attribute: string) {
-        const group = this.source.g.find((g) => g.id === groupID);
+        const group = this.source.g.find((g) => g.id === groupID)!;
         if (!group.a[attribute]) return;
         group.a[attribute].deleted = nextDeleteTimestamp(group.a[attribute]);
         this.emit("commandsExecuted");
@@ -256,15 +257,15 @@ export class VaultFormatB extends VaultFormat {
         this.emit("commandsExecuted");
     }
 
-    findEntryByID(id: EntryID): FormatBEntry {
+    findEntryByID(id: EntryID): FormatBEntry | null {
         return this.source.e.find((entry) => entry.id === id) || null;
     }
 
-    findGroupByID(id: GroupID): FormatBGroup {
+    findGroupByID(id: GroupID): FormatBGroup | null {
         return this.source.g.find((group) => group.id === id) || null;
     }
 
-    findGroupContainingEntryID(id: EntryID): FormatBGroup {
+    findGroupContainingEntryID(id: EntryID): FormatBGroup | null {
         const matchingEntry = this.getAllEntries().find((entry) => entry.id === id);
         if (matchingEntry) {
             return this.getAllGroups().find((group) => group.id === matchingEntry.g) || null;
@@ -272,7 +273,7 @@ export class VaultFormatB extends VaultFormat {
         return null;
     }
 
-    findGroupContainingGroupID(id: GroupID): FormatBGroup {
+    findGroupContainingGroupID(id: GroupID): FormatBGroup | null {
         const groups = this.getAllGroups();
         const matchingGroup = groups.find((group) => group.id === id);
         if (!matchingGroup) return null;
@@ -284,12 +285,12 @@ export class VaultFormatB extends VaultFormat {
         this.emit("commandsExecuted");
     }
 
-    getAllEntries(parentID: GroupID = null): Array<FormatBEntry> {
+    getAllEntries(parentID: GroupID | null = null): Array<FormatBEntry> {
         const source = this.source as FormatBVault;
         return parentID === null ? source.e : source.e.filter((entry) => entry.g === parentID);
     }
 
-    getAllGroups(parentID: GroupID = null): Array<FormatBGroup> {
+    getAllGroups(parentID: GroupID | null = null): Array<FormatBGroup> {
         const source = this.source as FormatBVault;
         return parentID === null ? source.g : source.g.filter((group) => group.g === parentID);
     }
@@ -300,7 +301,7 @@ export class VaultFormatB extends VaultFormat {
 
     getEntryChanges(entrySource: FormatBEntry): Array<EntryChange> {
         return Object.keys(entrySource.p).reduce(
-            (changes, property) => [
+            (changes: Array<EntryChange>, property) => [
                 ...changes,
                 ...entrySource.p[property].history.map((histItem: FormatBValueHistoryItem) => {
                     const change: EntryChange = {
@@ -389,13 +390,13 @@ export class VaultFormatB extends VaultFormat {
     }
 
     moveEntry(entryID: EntryID, groupID: GroupID) {
-        const entry = this.source.e.find((e: FormatBEntry) => e.id === entryID);
+        const entry = this.source.e.find((e: FormatBEntry) => e.id === entryID)!;
         entry.g = groupID;
         this.emit("commandsExecuted");
     }
 
     moveGroup(groupID: GroupID, newParentID: GroupID) {
-        const group = this.source.g.find((g: FormatBGroup) => g.id === groupID);
+        const group = this.source.g.find((g: FormatBGroup) => g.id === groupID)!;
         group.g = newParentID;
         this.emit("commandsExecuted");
     }
@@ -445,7 +446,9 @@ export class VaultFormatB extends VaultFormat {
     }
 
     prepareOrphansGroup(): FormatBGroup {
-        let orphansGroup = this.getAllGroups().find((g) => g.t === ORPHANS_GROUP_TITLE);
+        let orphansGroup: FormatBGroup | null | undefined = this.getAllGroups().find(
+            (g) => g.t === ORPHANS_GROUP_TITLE
+        );
         if (!orphansGroup) {
             const id = generateUUID();
             this.createGroup("0", id);
@@ -459,7 +462,7 @@ export class VaultFormatB extends VaultFormat {
     }
 
     setEntryAttribute(entryID: EntryID, attribute: string, value: string) {
-        const entry = this.source.e.find((e: FormatBEntry) => e.id === entryID);
+        const entry = this.source.e.find((e: FormatBEntry) => e.id === entryID)!;
         if (!entry.a[attribute]) {
             entry.a[attribute] = newRawValue(value);
         } else {
@@ -474,7 +477,7 @@ export class VaultFormatB extends VaultFormat {
     }
 
     setEntryProperty(entryID: EntryID, property: string, value: string) {
-        const entry = this.source.e.find((e: FormatBEntry) => e.id === entryID);
+        const entry = this.source.e.find((e: FormatBEntry) => e.id === entryID)!;
         if (!entry.p[property]) {
             entry.p[property] = newRawValue(value);
         } else {
@@ -489,7 +492,7 @@ export class VaultFormatB extends VaultFormat {
     }
 
     setGroupAttribute(groupID: GroupID, attribute: string, value: string) {
-        const group = this.source.g.find((g: FormatBGroup) => g.id === groupID);
+        const group = this.source.g.find((g: FormatBGroup) => g.id === groupID)!;
         if (!group.a[attribute]) {
             group.a[attribute] = newRawValue(value);
         } else {
@@ -504,7 +507,7 @@ export class VaultFormatB extends VaultFormat {
     }
 
     setGroupTitle(groupID: GroupID, title: string) {
-        const group = this.source.g.find((g: FormatBGroup) => g.id === groupID);
+        const group = this.source.g.find((g: FormatBGroup) => g.id === groupID)!;
         group.t = title;
         this.emit("commandsExecuted");
     }

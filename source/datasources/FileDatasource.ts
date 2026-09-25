@@ -36,7 +36,7 @@ export class FileDatasource extends TextDatasource {
      */
     constructor(credentials: Credentials) {
         super(credentials);
-        const { data: credentialData } = getCredentials(credentials.id);
+        const { data: credentialData } = getCredentials(credentials.id)!;
         const { datasource: datasourceConfig } = credentialData as {
             datasource: DatasourceConfigurationFile;
         };

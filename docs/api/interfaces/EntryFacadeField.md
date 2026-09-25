@@ -52,4 +52,4 @@
 
 ### valueType
 
-> **valueType**: [`EntryPropertyValueType`](../enumerations/EntryPropertyValueType.md)
+> **valueType**: [`EntryPropertyValueType`](../enumerations/EntryPropertyValueType.md) \| `null`

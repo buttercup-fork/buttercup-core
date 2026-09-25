@@ -31,7 +31,7 @@ Object data representing some credentials
 
 ##### masterPassword?
 
-`string` = `null`
+`string` \| `null`
 
 Optional master password to store with
  the credentials data, which is used for generating secure strings.
@@ -133,7 +133,7 @@ The configuration for the
 
 ##### masterPassword?
 
-`string` = `null`
+`string` \| `null`
 
 Optional master password to
  store alongside the credentials. Used to create secure strings.
@@ -164,7 +164,7 @@ The password to store
 
 ##### masterPassword?
 
-`string` = `null`
+`string` \| `null`
 
 Optional master password
  to store alongside the credentials. Used to create secure
@@ -206,13 +206,13 @@ A promise that resolves with the new instance
 
 ### getCredentialsData()
 
-> **getCredentialsData**(): [`CredentialsData`](../interfaces/CredentialsData.md)
+> **getCredentialsData**(): [`CredentialsData`](../interfaces/CredentialsData.md) \| `null`
 
 Get raw credentials data (only available in specialised environments)
 
 #### Returns
 
-[`CredentialsData`](../interfaces/CredentialsData.md)
+[`CredentialsData`](../interfaces/CredentialsData.md) \| `null`
 
 Credentials data object, or null if not available
 
@@ -220,13 +220,13 @@ Credentials data object, or null if not available
 
 ### getData()
 
-> **getData**(): [`CredentialsPayload`](../interfaces/CredentialsPayload.md)
+> **getData**(): [`CredentialsPayload`](../interfaces/CredentialsPayload.md) \| `null`
 
 Get raw credentials data (only available in specialised environments)
 
 #### Returns
 
-[`CredentialsPayload`](../interfaces/CredentialsPayload.md)
+[`CredentialsPayload`](../interfaces/CredentialsPayload.md) \| `null`
 
 ***
 
