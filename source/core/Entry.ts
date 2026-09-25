@@ -28,8 +28,16 @@ export class Entry extends VaultItem {
         FieldTypePrefix: "BC_ENTRY_FIELD_TYPE:",
         PropertyLinkPrefix: "BC_ENTRY_PROPERTY_LINK:",
         RecoveryCodesPrefix: "BC_ENTRY_RECOVERY_CODES:",
+        SingleUsePasswords: "BC_ENTRY_SINGLE_USE_PASSWORDS",
         Tags: "BC_ENTRY_TAGS"
     });
+
+    /**
+     * The property holding the queued single-use passwords, after the
+     * current one in the password property
+     * @see Entry.setSingleUsePasswords
+     */
+    static SingleUsePasswordsProperty = "Single-use passwords";
 
     /**
      * Create a new Entry instance within a vault
@@ -238,6 +246,23 @@ export class Entry extends VaultItem {
     }
 
     /**
+     * Get the single-use passwords of the entry
+     * @returns The current password followed by the queued ones, or `null`
+     *  if the entry doesn't use single-use passwords
+     * @see Entry.setSingleUsePasswords
+     */
+    getSingleUsePasswords(): Array<string> | null {
+        if (!this.hasSingleUsePasswords()) return null;
+        const current = this.getProperty("password");
+        return [
+            ...(typeof current === "string" && current.length > 0 ? [current] : []),
+            ...parseSingleUsePasswords(
+                (this.getProperty(Entry.SingleUsePasswordsProperty) as string) || ""
+            )
+        ];
+    }
+
+    /**
      * Get the codes of a recovery codes property
      * @param property The property name
      * @returns The codes in their stored order, each with whether it was
@@ -346,6 +371,14 @@ export class Entry extends VaultItem {
         return Object.keys(properties).some(
             (property) => this.getPropertyOrder(property) !== Infinity
         );
+    }
+
+    /**
+     * Check if the entry uses single-use passwords
+     * @returns True if set up with {@link Entry.setSingleUsePasswords}
+     */
+    hasSingleUsePasswords(): boolean {
+        return typeof this.getAttribute(Entry.Attributes.SingleUsePasswords) === "string";
     }
 
     /**
@@ -553,6 +586,37 @@ export class Entry extends VaultItem {
     }
 
     /**
+     * Use a list of single-use passwords for the entry, used in order
+     * The first password goes in the password property, and the rest are
+     * queued one per line in the {@link Entry.SingleUsePasswordsProperty}
+     * property (a password field, so apps hide it). Use
+     * {@link Entry.popSingleUsePassword} once the current password was used.
+     * @param passwords The passwords, in the order they are to be used.
+     *  Empty passwords are dropped.
+     * @returns Self
+     * @throws {Error} Throws if there are no passwords or a password contains
+     *  a line break
+     */
+    setSingleUsePasswords(passwords: Array<string>): this {
+        const list = passwords.filter((password) => password.length > 0);
+        if (list.length === 0) {
+            throw new Error("Cannot set single-use passwords: No passwords provided");
+        }
+        if (list.some((password) => /[\r\n]/.test(password))) {
+            throw new Error("Cannot set single-use passwords: A password contains a line break");
+        }
+        const [first, ...queued] = list;
+        if (this.getProperty("password") !== first || this.getPropertyLink("password")) {
+            this.setProperty("password", first);
+        }
+        this._setSingleUsePasswordQueue(queued);
+        if (!this.hasSingleUsePasswords()) {
+            this.setAttribute(Entry.Attributes.SingleUsePasswords, "1");
+        }
+        return this;
+    }
+
+    /**
      * Make a property hold a list of recovery codes (eg. 2FA backup codes)
      * The codes are stored one per line in the property's value, and the
      * property becomes a password field, so apps without recovery codes
@@ -607,6 +671,27 @@ export class Entry extends VaultItem {
     }
 
     /**
+     * Discard the current single-use password and move the next queued one
+     * into the password property
+     * When the last password is used, the password property is left empty
+     * and the entry keeps using single-use passwords, so more can be added.
+     * The used password stays in the entry's history.
+     * @returns The new current password, or `null` if none are left
+     * @throws {Error} Throws if the entry doesn't use single-use passwords
+     */
+    popSingleUsePassword(): string | null {
+        if (!this.hasSingleUsePasswords()) {
+            throw new Error("Cannot pop password: Entry doesn't use single-use passwords");
+        }
+        const [next = null, ...queued] = parseSingleUsePasswords(
+            (this.getProperty(Entry.SingleUsePasswordsProperty) as string) || ""
+        );
+        this.setProperty("password", next === null ? "" : next);
+        this._setSingleUsePasswordQueue(queued);
+        return next;
+    }
+
+    /**
      * Remove the display order of all properties
      * @returns Self
      */
@@ -616,6 +701,21 @@ export class Entry extends VaultItem {
                 this.deleteAttribute(attribute);
             }
         });
+        return this;
+    }
+
+    /**
+     * Stop using single-use passwords
+     * The current password stays, and the queued ones are removed.
+     * @returns Self
+     */
+    unsetSingleUsePasswords(): this {
+        if (typeof this.getProperty(Entry.SingleUsePasswordsProperty) === "string") {
+            this.deleteProperty(Entry.SingleUsePasswordsProperty);
+        }
+        if (this.hasSingleUsePasswords()) {
+            this.deleteAttribute(Entry.Attributes.SingleUsePasswords);
+        }
         return this;
     }
 
@@ -747,6 +847,23 @@ export class Entry extends VaultItem {
         }
     }
 
+    _setSingleUsePasswordQueue(passwords: Array<string>) {
+        const property = Entry.SingleUsePasswordsProperty;
+        if (passwords.length === 0) {
+            if (typeof this.getProperty(property) === "string") {
+                this.deleteProperty(property);
+            }
+            return;
+        }
+        const value = passwords.join("\n");
+        if (this.getProperty(property) !== value || this.getPropertyLink(property)) {
+            this.setProperty(property, value);
+        }
+        if (this.getPropertyValueType(property) !== EntryPropertyValueType.Password) {
+            this.setPropertyValueType(property, EntryPropertyValueType.Password);
+        }
+    }
+
     _updateRefs() {
         this._source = this.vault.format.findEntryByID(this.id);
     }
@@ -759,6 +876,14 @@ export class Entry extends VaultItem {
             }
         });
     }
+}
+
+/**
+ * Split a queued single-use passwords value into its passwords: one per
+ * line, without empty lines. Passwords aren't trimmed.
+ */
+function parseSingleUsePasswords(value: string): Array<string> {
+    return value.split(/\r?\n/).filter((password) => password.length > 0);
 }
 
 /**

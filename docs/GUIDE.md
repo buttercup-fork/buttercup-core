@@ -14,6 +14,7 @@ A task-oriented guide to using `buttercup` as a library: opening a vault, and li
     - [Updating an entry](#updating-an-entry)
     - [Hiding a custom field](#hiding-a-custom-field)
     - [Storing recovery codes](#storing-recovery-codes)
+    - [Single-use passwords](#single-use-passwords)
     - [Ordering fields](#ordering-fields)
     - [Linking a field to another entry](#linking-a-field-to-another-entry)
     - [Deleting an entry](#deleting-an-entry)
@@ -258,6 +259,21 @@ entry.setRecoveryCodes("Backup codes");
 ```
 
 The codes are stored one per line as the field's value, and the field becomes a password field, so apps without recovery codes support still hide it. Which codes are used is kept in a `BC_ENTRY_RECOVERY_CODES:<property>` attribute. Pass `false` as a third argument to `markRecoveryCodeUsed` to mark a code as unused again. `isRecoveryCodesProperty(property)` tells recovery codes apart from other password fields, and `unsetRecoveryCodes(property)` turns the field back into a plain password field.
+
+### Single-use passwords
+
+Some services hand out a list of passwords (eg. transaction numbers) that are each used once, in order:
+
+```javascript
+entry.setSingleUsePasswords(["K7-2Q9", "M3-8XP", "R5-1LW"]);
+entry.getProperty("password"); // "K7-2Q9"
+
+// Once the current password was used:
+entry.popSingleUsePassword(); // "M3-8XP", now in the password field
+entry.getSingleUsePasswords(); // ["M3-8XP", "R5-1LW"]
+```
+
+The current password is kept in the `password` field, so it works like any other password, and the rest are queued one per line in a `Single-use passwords` field (`Entry.SingleUsePasswordsProperty`), which is a password field so apps hide it. A `BC_ENTRY_SINGLE_USE_PASSWORDS` attribute marks the entry (`hasSingleUsePasswords()`). Once the last password is used, `popSingleUsePassword()` returns `null` and leaves the password field empty, ready for a new list. Used passwords stay in the entry's history. `unsetSingleUsePasswords()` keeps the current password and drops the queue.
 
 ### Ordering fields
 

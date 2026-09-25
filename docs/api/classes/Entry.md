@@ -47,7 +47,20 @@ Remote source object reference
 
 ### Attributes
 
-> `static` **Attributes**: `Readonly`\<\{ `AttachmentPrefix`: `"BC_ENTRY_ATTACHMENT:"`; `FacadeType`: `"BC_ENTRY_FACADE_TYPE"`; `FieldOrderPrefix`: `"BC_ENTRY_FIELD_ORDER:"`; `FieldTypePrefix`: `"BC_ENTRY_FIELD_TYPE:"`; `PropertyLinkPrefix`: `"BC_ENTRY_PROPERTY_LINK:"`; `RecoveryCodesPrefix`: `"BC_ENTRY_RECOVERY_CODES:"`; `Tags`: `"BC_ENTRY_TAGS"`; \}\>
+> `static` **Attributes**: `Readonly`\<\{ `AttachmentPrefix`: `"BC_ENTRY_ATTACHMENT:"`; `FacadeType`: `"BC_ENTRY_FACADE_TYPE"`; `FieldOrderPrefix`: `"BC_ENTRY_FIELD_ORDER:"`; `FieldTypePrefix`: `"BC_ENTRY_FIELD_TYPE:"`; `PropertyLinkPrefix`: `"BC_ENTRY_PROPERTY_LINK:"`; `RecoveryCodesPrefix`: `"BC_ENTRY_RECOVERY_CODES:"`; `SingleUsePasswords`: `"BC_ENTRY_SINGLE_USE_PASSWORDS"`; `Tags`: `"BC_ENTRY_TAGS"`; \}\>
+
+***
+
+### SingleUsePasswordsProperty
+
+> `static` **SingleUsePasswordsProperty**: `string` = `"Single-use passwords"`
+
+The property holding the queued single-use passwords, after the
+current one in the password property
+
+#### See
+
+Entry.setSingleUsePasswords
 
 ## Accessors
 
@@ -484,6 +497,25 @@ Entry.setRecoveryCodes
 
 ***
 
+### getSingleUsePasswords()
+
+> **getSingleUsePasswords**(): `string`[]
+
+Get the single-use passwords of the entry
+
+#### Returns
+
+`string`[]
+
+The current password followed by the queued ones, or `null`
+ if the entry doesn't use single-use passwords
+
+#### See
+
+Entry.setSingleUsePasswords
+
+***
+
 ### getTags()
 
 > **getTags**(): `string`[]
@@ -600,6 +632,20 @@ Check if any of the entry's properties has a display order
 
 True if the properties were ordered with
  [Entry.setPropertyOrder](#setpropertyorder) or [Entry.setPropertyOrders](#setpropertyorders)
+
+***
+
+### hasSingleUsePasswords()
+
+> **hasSingleUsePasswords**(): `boolean`
+
+Check if the entry uses single-use passwords
+
+#### Returns
+
+`boolean`
+
+True if set up with [Entry.setSingleUsePasswords](#setsingleusepasswords)
 
 ***
 
@@ -768,6 +814,28 @@ The target group
 `this`
 
 Returns self
+
+***
+
+### popSingleUsePassword()
+
+> **popSingleUsePassword**(): `string`
+
+Discard the current single-use password and move the next queued one
+into the password property
+When the last password is used, the password property is left empty
+and the entry keeps using single-use passwords, so more can be added.
+The used password stays in the entry's history.
+
+#### Returns
+
+`string`
+
+The new current password, or `null` if none are left
+
+#### Throws
+
+Throws if the entry doesn't use single-use passwords
 
 ***
 
@@ -1035,6 +1103,38 @@ Throws if there are no codes, or a code contains a line
 
 ***
 
+### setSingleUsePasswords()
+
+> **setSingleUsePasswords**(`passwords`): `this`
+
+Use a list of single-use passwords for the entry, used in order
+The first password goes in the password property, and the rest are
+queued one per line in the [Entry.SingleUsePasswordsProperty](#singleusepasswordsproperty)
+property (a password field, so apps hide it). Use
+[Entry.popSingleUsePassword](#popsingleusepassword) once the current password was used.
+
+#### Parameters
+
+##### passwords
+
+`string`[]
+
+The passwords, in the order they are to be used.
+ Empty passwords are dropped.
+
+#### Returns
+
+`this`
+
+Self
+
+#### Throws
+
+Throws if there are no passwords or a password contains
+ a line break
+
+***
+
 ### unlinkProperty()
 
 > **unlinkProperty**(`property`, `options?`): `this`
@@ -1082,6 +1182,21 @@ forgotten.
 `string`
 
 The property name
+
+#### Returns
+
+`this`
+
+Self
+
+***
+
+### unsetSingleUsePasswords()
+
+> **unsetSingleUsePasswords**(): `this`
+
+Stop using single-use passwords
+The current password stays, and the queued ones are removed.
 
 #### Returns
 
