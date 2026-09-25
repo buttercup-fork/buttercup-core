@@ -15,6 +15,7 @@ A task-oriented guide to using `buttercup` as a library: opening a vault, and li
     - [Hiding a custom field](#hiding-a-custom-field)
     - [Storing recovery codes](#storing-recovery-codes)
     - [Single-use passwords](#single-use-passwords)
+    - [Password expiry](#password-expiry)
     - [Ordering fields](#ordering-fields)
     - [Linking a field to another entry](#linking-a-field-to-another-entry)
     - [Deleting an entry](#deleting-an-entry)
@@ -274,6 +275,26 @@ entry.getSingleUsePasswords(); // ["M3-8XP", "R5-1LW"]
 ```
 
 The current password is kept in the `password` field, so it works like any other password, and the rest are queued one per line in a `Single-use passwords` field (`Entry.SingleUsePasswordsProperty`), which is a password field so apps hide it. A `BC_ENTRY_SINGLE_USE_PASSWORDS` attribute marks the entry (`hasSingleUsePasswords()`). Once the last password is used, `popSingleUsePassword()` returns `null` and leaves the password field empty, ready for a new list. Used passwords stay in the entry's history. `unsetSingleUsePasswords()` keeps the current password and drops the queue.
+
+### Password expiry
+
+An entry's password can be set to expire a number of days after it was last changed:
+
+```javascript
+entry.setPasswordExpiry(90);
+entry.hasExpiredPassword(); // false, until 90 days after the last change
+entry.getPasswordExpiryTime(); // when it expires (UTC timestamp in milliseconds)
+
+// Changing the password starts the 90 days again:
+entry.setProperty("password", "n3wP4ss");
+
+// Entries with expired passwords, outside of Trash:
+vault.findEntriesByExpiredPassword();
+// Or those that will have expired in two weeks:
+vault.findEntriesByExpiredPassword(Date.now() + 14 * 24 * 60 * 60 * 1000);
+```
+
+Whenever the password is set to a new value, its change time is stored in a `BC_ENTRY_PASSWORD_CHANGED` attribute (`getPasswordChangedTime()`), including changes made through entry facades. Passwords last changed before this was recorded have no change time, so `setPasswordExpiry` starts their period from now. The period is stored in a `BC_ENTRY_PASSWORD_EXPIRY` attribute, and `setPasswordExpiry(null)` removes it. A password linked to another entry's password (see [Linking a field to another entry](#linking-a-field-to-another-entry)) uses that one's change time. Vault insights count expired passwords as `expiredPasswords`.
 
 ### Ordering fields
 

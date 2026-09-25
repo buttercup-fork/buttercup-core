@@ -167,8 +167,21 @@ export function consumeEntryFacade(
                     field.value !== properties[field.property]
             )
             .map((field) => `${Entry.Attributes.PropertyLinkPrefix}${field.property}`);
+        // A changed password records its own change time, which the facade's
+        // older copy mustn't overwrite
+        const passwordEdited = facadeFields.some(
+            (field) =>
+                field.propertyType === "property" &&
+                field.property === "password" &&
+                field.value !== properties["password"]
+        );
         const fields = facadeFields.filter(
-            (field) => !(field.propertyType === "attribute" && editedLinks.includes(field.property))
+            (field) =>
+                !(
+                    field.propertyType === "attribute" &&
+                    (editedLinks.includes(field.property) ||
+                        (passwordEdited && field.property === Entry.Attributes.PasswordChanged))
+                )
         );
         // update data
         fields.forEach((field) => applyFieldDescriptor(entry, field));
@@ -186,6 +199,10 @@ export function consumeEntryFacade(
             if (mergeMode && attrKey.indexOf(Entry.Attributes.AttachmentPrefix) === 0) {
                 // Never touch existing attachment attributes on the target
                 // entry during a merge - they weren't part of the merge input.
+                return;
+            }
+            if (passwordEdited && attrKey === Entry.Attributes.PasswordChanged) {
+                // Just recorded by the password change
                 return;
             }
             const correspondingField = fields.find(

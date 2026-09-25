@@ -334,6 +334,7 @@ export interface VaultInsights {
     avgPassLen: number; // Average password length
     duplicatePasswords: number; // Number of duplicate passwords
     entries: number; // Number of entries in the vault
+    expiredPasswords: number; // Number of expired passwords (see Entry#setPasswordExpiry)
     groups: number; // Number of groups in the vault
     longPassLen: number; // Longest password length
     shortPassLen: number; // Shortest password length

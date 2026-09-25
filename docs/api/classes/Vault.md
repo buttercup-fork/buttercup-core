@@ -206,6 +206,33 @@ Self
 
 ***
 
+### findEntriesByExpiredPassword()
+
+> **findEntriesByExpiredPassword**(`at?`): [`Entry`](Entry.md)[]
+
+Find entries whose password has expired, outside of Trash
+
+#### Parameters
+
+##### at?
+
+`number` = `...`
+
+The time to check at, as a UTC timestamp in milliseconds.
+ Defaults to now. Pass a later time to find passwords that expire soon.
+
+#### Returns
+
+[`Entry`](Entry.md)[]
+
+An array of entries
+
+#### See
+
+Entry.setPasswordExpiry
+
+***
+
 ### findEntriesByProperty()
 
 > **findEntriesByProperty**(`property`, `value`): [`Entry`](Entry.md)[]

@@ -47,7 +47,7 @@ Remote source object reference
 
 ### Attributes
 
-> `static` **Attributes**: `Readonly`\<\{ `AttachmentPrefix`: `"BC_ENTRY_ATTACHMENT:"`; `FacadeType`: `"BC_ENTRY_FACADE_TYPE"`; `FieldOrderPrefix`: `"BC_ENTRY_FIELD_ORDER:"`; `FieldTypePrefix`: `"BC_ENTRY_FIELD_TYPE:"`; `PropertyLinkPrefix`: `"BC_ENTRY_PROPERTY_LINK:"`; `RecoveryCodesPrefix`: `"BC_ENTRY_RECOVERY_CODES:"`; `SingleUsePasswords`: `"BC_ENTRY_SINGLE_USE_PASSWORDS"`; `Tags`: `"BC_ENTRY_TAGS"`; \}\>
+> `static` **Attributes**: `Readonly`\<\{ `AttachmentPrefix`: `"BC_ENTRY_ATTACHMENT:"`; `FacadeType`: `"BC_ENTRY_FACADE_TYPE"`; `FieldOrderPrefix`: `"BC_ENTRY_FIELD_ORDER:"`; `FieldTypePrefix`: `"BC_ENTRY_FIELD_TYPE:"`; `PasswordChanged`: `"BC_ENTRY_PASSWORD_CHANGED"`; `PasswordExpiry`: `"BC_ENTRY_PASSWORD_EXPIRY"`; `PropertyLinkPrefix`: `"BC_ENTRY_PROPERTY_LINK:"`; `RecoveryCodesPrefix`: `"BC_ENTRY_RECOVERY_CODES:"`; `SingleUsePasswords`: `"BC_ENTRY_SINGLE_USE_PASSWORDS"`; `Tags`: `"BC_ENTRY_TAGS"`; \}\>
 
 ***
 
@@ -324,6 +324,58 @@ Throws if no parent group found
 
 ***
 
+### getPasswordChangedTime()
+
+> **getPasswordChangedTime**(): `number`
+
+Get when the entry's password was last changed
+Recorded whenever the password property is set to a new value. For a
+password linked to another entry's password, it's when that one was
+last changed.
+
+#### Returns
+
+`number`
+
+A UTC timestamp in milliseconds, or `null` if not known (eg.
+ the password was last changed before this was recorded)
+
+***
+
+### getPasswordExpiry()
+
+> **getPasswordExpiry**(): `number`
+
+Get the password expiry period
+
+#### Returns
+
+`number`
+
+The number of days after a password change that the password
+ expires, or `null` if it doesn't expire
+
+#### See
+
+Entry.setPasswordExpiry
+
+***
+
+### getPasswordExpiryTime()
+
+> **getPasswordExpiryTime**(): `number`
+
+Get when the entry's password expires
+
+#### Returns
+
+`number`
+
+A UTC timestamp in milliseconds, or `null` if the password
+ doesn't expire or its last change isn't known
+
+***
+
 ### getProperties()
 
 > **getProperties**(`propertyExpression?`): [`PropertyKeyValueObject`](../interfaces/PropertyKeyValueObject.md)
@@ -593,6 +645,33 @@ The permission to grant
 #### Inherited from
 
 `VaultItem.grantPermission`
+
+***
+
+### hasExpiredPassword()
+
+> **hasExpiredPassword**(`at?`): `boolean`
+
+Check if the entry's password has expired
+
+#### Parameters
+
+##### at?
+
+`number` = `...`
+
+The time to check at, as a UTC timestamp in milliseconds.
+ Defaults to now. Pass a later time to find passwords that expire soon.
+
+#### Returns
+
+`boolean`
+
+True if the password has an expiry period and has expired
+
+#### See
+
+Entry.setPasswordExpiry
 
 ***
 
@@ -940,6 +1019,37 @@ The value to set
 `this`
 
 Returns self
+
+***
+
+### setPasswordExpiry()
+
+> **setPasswordExpiry**(`days`): `this`
+
+Set how long the entry's password stays valid after it's changed
+The password expires the given number of days after it was last
+changed, and changing it starts the period again. If the last change
+isn't known (eg. it was before this was recorded), the period starts
+now.
+
+#### Parameters
+
+##### days
+
+`number`
+
+The number of days (a whole number of at least 1), or
+ `null` to stop the password expiring
+
+#### Returns
+
+`this`
+
+Self
+
+#### Throws
+
+Throws if the number of days isn't valid
 
 ***
 

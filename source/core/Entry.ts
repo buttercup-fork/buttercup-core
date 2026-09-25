@@ -26,6 +26,8 @@ export class Entry extends VaultItem {
         FacadeType: "BC_ENTRY_FACADE_TYPE",
         FieldOrderPrefix: "BC_ENTRY_FIELD_ORDER:",
         FieldTypePrefix: "BC_ENTRY_FIELD_TYPE:",
+        PasswordChanged: "BC_ENTRY_PASSWORD_CHANGED",
+        PasswordExpiry: "BC_ENTRY_PASSWORD_EXPIRY",
         PropertyLinkPrefix: "BC_ENTRY_PROPERTY_LINK:",
         RecoveryCodesPrefix: "BC_ENTRY_RECOVERY_CODES:",
         SingleUsePasswords: "BC_ENTRY_SINGLE_USE_PASSWORDS",
@@ -219,6 +221,42 @@ export class Entry extends VaultItem {
     }
 
     /**
+     * Get when the entry's password was last changed
+     * Recorded whenever the password property is set to a new value. For a
+     * password linked to another entry's password, it's when that one was
+     * last changed.
+     * @returns A UTC timestamp in milliseconds, or `null` if not known (eg.
+     *  the password was last changed before this was recorded)
+     */
+    getPasswordChangedTime(): number | null {
+        return this._getPasswordChangedTime(new Set());
+    }
+
+    /**
+     * Get the password expiry period
+     * @returns The number of days after a password change that the password
+     *  expires, or `null` if it doesn't expire
+     * @see Entry.setPasswordExpiry
+     */
+    getPasswordExpiry(): number | null {
+        const value = this.getAttribute(Entry.Attributes.PasswordExpiry);
+        const days = typeof value === "string" && /^\d+$/.test(value) ? parseInt(value, 10) : 0;
+        return days > 0 ? days : null;
+    }
+
+    /**
+     * Get when the entry's password expires
+     * @returns A UTC timestamp in milliseconds, or `null` if the password
+     *  doesn't expire or its last change isn't known
+     */
+    getPasswordExpiryTime(): number | null {
+        const days = this.getPasswordExpiry();
+        const changed = this.getPasswordChangedTime();
+        if (days === null || changed === null) return null;
+        return changed + days * DAY_MS;
+    }
+
+    /**
      * Get the display order of a property
      * @param property The property name
      * @returns The 0-based order, or `Infinity` if the property has no order
@@ -359,6 +397,18 @@ export class Entry extends VaultItem {
     isInTrash(): boolean {
         const group = this.getGroup();
         return group.isTrash() || group.isInTrash();
+    }
+
+    /**
+     * Check if the entry's password has expired
+     * @param at The time to check at, as a UTC timestamp in milliseconds.
+     *  Defaults to now. Pass a later time to find passwords that expire soon.
+     * @returns True if the password has an expiry period and has expired
+     * @see Entry.setPasswordExpiry
+     */
+    hasExpiredPassword(at: number = Date.now()): boolean {
+        const expires = this.getPasswordExpiryTime();
+        return expires !== null && expires <= at;
     }
 
     /**
@@ -521,15 +571,49 @@ export class Entry extends VaultItem {
     }
 
     /**
+     * Set how long the entry's password stays valid after it's changed
+     * The password expires the given number of days after it was last
+     * changed, and changing it starts the period again. If the last change
+     * isn't known (eg. it was before this was recorded), the period starts
+     * now.
+     * @param days The number of days (a whole number of at least 1), or
+     *  `null` to stop the password expiring
+     * @returns Self
+     * @throws {Error} Throws if the number of days isn't valid
+     */
+    setPasswordExpiry(days: number | null): this {
+        if (days === null) {
+            if (typeof this.getAttribute(Entry.Attributes.PasswordExpiry) === "string") {
+                this.deleteAttribute(Entry.Attributes.PasswordExpiry);
+            }
+            return this;
+        }
+        if (typeof days !== "number" || !Number.isInteger(days) || days < 1) {
+            throw new Error(`Cannot set password expiry: Invalid number of days: ${days}`);
+        }
+        this.setAttribute(Entry.Attributes.PasswordExpiry, `${days}`);
+        if (this._getOwnPasswordChangedTime() === null) {
+            this.setAttribute(Entry.Attributes.PasswordChanged, `${Date.now()}`);
+        }
+        return this;
+    }
+
+    /**
      * Set a property on the entry
      * @param property The property name
      * @param value The property value
      * @returns Returns self
      */
     setProperty(property: string, value: string): this {
+        const passwordChanged =
+            property === "password" &&
+            this.vault.format.getEntryProperties(this._source)[property] !== value;
         // Setting a linked property replaces the link with its own value
         this._deletePropertyLink(property);
         this.vault.format.setEntryProperty(this.id, property, value);
+        if (passwordChanged) {
+            this.setAttribute(Entry.Attributes.PasswordChanged, `${Date.now()}`);
+        }
         return this;
     }
 
@@ -828,6 +912,24 @@ export class Entry extends VaultItem {
         }
     }
 
+    _getOwnPasswordChangedTime(): number | null {
+        const value = this.getAttribute(Entry.Attributes.PasswordChanged);
+        return typeof value === "string" && /^\d+$/.test(value) ? parseInt(value, 10) : null;
+    }
+
+    _getPasswordChangedTime(visited: Set<string>): number | null {
+        const link = this.getPropertyLink("password");
+        if (link && link.property === "password" && !visited.has(this.id)) {
+            visited.add(this.id);
+            const target = this.vault.findEntryByID(link.entryID);
+            if (target && !target.isInTrash()) {
+                const changed = target._getPasswordChangedTime(visited);
+                if (changed !== null) return changed;
+            }
+        }
+        return this._getOwnPasswordChangedTime();
+    }
+
     _getUsedRecoveryCodes(property: string): Array<string> {
         const value = this.getAttribute(`${Entry.Attributes.RecoveryCodesPrefix}${property}`);
         if (typeof value !== "string") return [];
@@ -877,6 +979,8 @@ export class Entry extends VaultItem {
         });
     }
 }
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Split a queued single-use passwords value into its passwords: one per

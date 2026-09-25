@@ -26,6 +26,12 @@
 
 ***
 
+### expiredPasswords
+
+> **expiredPasswords**: `number`
+
+***
+
 ### groups
 
 > **groups**: `number`

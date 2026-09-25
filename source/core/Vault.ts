@@ -202,6 +202,19 @@ export class Vault extends EventEmitter {
     }
 
     /**
+     * Find entries whose password has expired, outside of Trash
+     * @param at The time to check at, as a UTC timestamp in milliseconds.
+     *  Defaults to now. Pass a later time to find passwords that expire soon.
+     * @returns An array of entries
+     * @see Entry.setPasswordExpiry
+     */
+    findEntriesByExpiredPassword(at: number = Date.now()): Array<Entry> {
+        return this.getAllEntries().filter(
+            (entry) => entry.hasExpiredPassword(at) && !entry.isInTrash()
+        );
+    }
+
+    /**
      * Find entries of a certain type (eg. logins, credit cards). Entries
      * without a type set are logins.
      * @param type The entry type
