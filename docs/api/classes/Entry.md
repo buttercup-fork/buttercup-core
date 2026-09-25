@@ -47,7 +47,7 @@ Remote source object reference
 
 ### Attributes
 
-> `static` **Attributes**: `Readonly`\<\{ `AttachmentPrefix`: `"BC_ENTRY_ATTACHMENT:"`; `FacadeType`: `"BC_ENTRY_FACADE_TYPE"`; `FieldTypePrefix`: `"BC_ENTRY_FIELD_TYPE:"`; `PropertyLinkPrefix`: `"BC_ENTRY_PROPERTY_LINK:"`; `Tags`: `"BC_ENTRY_TAGS"`; \}\>
+> `static` **Attributes**: `Readonly`\<\{ `AttachmentPrefix`: `"BC_ENTRY_ATTACHMENT:"`; `FacadeType`: `"BC_ENTRY_FACADE_TYPE"`; `FieldTypePrefix`: `"BC_ENTRY_FIELD_TYPE:"`; `PropertyLinkPrefix`: `"BC_ENTRY_PROPERTY_LINK:"`; `RecoveryCodesPrefix`: `"BC_ENTRY_RECOVERY_CODES:"`; `Tags`: `"BC_ENTRY_TAGS"`; \}\>
 
 ## Accessors
 
@@ -409,6 +409,34 @@ The property value type
 
 ***
 
+### getRecoveryCodes()
+
+> **getRecoveryCodes**(`property`): [`EntryRecoveryCode`](../interfaces/EntryRecoveryCode.md)[]
+
+Get the codes of a recovery codes property
+
+#### Parameters
+
+##### property
+
+`string`
+
+The property name
+
+#### Returns
+
+[`EntryRecoveryCode`](../interfaces/EntryRecoveryCode.md)[]
+
+The codes in their stored order, each with whether it was
+ marked as used, or `null` if the property isn't a recovery codes
+ property
+
+#### See
+
+Entry.setRecoveryCodes
+
+***
+
 ### getTags()
 
 > **getTags**(): `string`[]
@@ -552,6 +580,29 @@ True if the property is linked and the link is broken
 
 ***
 
+### isRecoveryCodesProperty()
+
+> **isRecoveryCodesProperty**(`property`): `boolean`
+
+Check if a property holds recovery codes
+
+#### Parameters
+
+##### property
+
+`string`
+
+The property name
+
+#### Returns
+
+`boolean`
+
+True if the property was made a recovery codes property with
+ [Entry.setRecoveryCodes](#setrecoverycodes) and is still a password field
+
+***
+
 ### linkProperty()
 
 > **linkProperty**(`property`, `target`, `targetProperty?`): `this`
@@ -594,6 +645,45 @@ Self
 
 Throws if the target is in another vault or in Trash,
  doesn't have the property, or the link would create a loop
+
+***
+
+### markRecoveryCodeUsed()
+
+> **markRecoveryCodeUsed**(`property`, `code`, `used?`): `this`
+
+Mark a recovery code as used, or as unused again
+
+#### Parameters
+
+##### property
+
+`string`
+
+The recovery codes property
+
+##### code
+
+`string`
+
+The code, as returned by [Entry.getRecoveryCodes](#getrecoverycodes)
+
+##### used?
+
+`boolean` = `true`
+
+Whether the code is used (default) or not
+
+#### Returns
+
+`this`
+
+Self
+
+#### Throws
+
+Throws if the property isn't a recovery codes property
+ or doesn't contain the code
 
 ***
 
@@ -765,6 +855,45 @@ Returns self
 
 ***
 
+### setRecoveryCodes()
+
+> **setRecoveryCodes**(`property`, `codes?`): `this`
+
+Make a property hold a list of recovery codes (eg. 2FA backup codes)
+The codes are stored one per line in the property's value, and the
+property becomes a password field, so apps without recovery codes
+support still hide it. Which codes are used is stored in a
+`BC_ENTRY_RECOVERY_CODES:<property>` attribute.
+
+#### Parameters
+
+##### property
+
+`string`
+
+The property name
+
+##### codes?
+
+`string`[]
+
+The codes. If omitted, the property's current value is
+ used, one code per line. Surrounding whitespace and empty lines are
+ dropped.
+
+#### Returns
+
+`this`
+
+Self
+
+#### Throws
+
+Throws if there are no codes, or a code contains a line
+ break
+
+***
+
 ### unlinkProperty()
 
 > **unlinkProperty**(`property`, `options?`): `this`
@@ -788,6 +917,30 @@ Unlink options. `keepValue` (default `true`) keeps the
 ###### keepValue?
 
 `boolean`
+
+#### Returns
+
+`this`
+
+Self
+
+***
+
+### unsetRecoveryCodes()
+
+> **unsetRecoveryCodes**(`property`): `this`
+
+Turn a recovery codes property back into a plain password field
+The codes stay in the property's value, and which were used is
+forgotten.
+
+#### Parameters
+
+##### property
+
+`string`
+
+The property name
 
 #### Returns
 

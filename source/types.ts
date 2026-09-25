@@ -172,6 +172,11 @@ export interface EntryPropertyLink {
     property: string;
 }
 
+export interface EntryRecoveryCode {
+    code: string;
+    used: boolean;
+}
+
 export enum EntryPropertyValueType {
     Note = "note",
     OTP = "otp",

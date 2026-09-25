@@ -9,6 +9,7 @@ import {
     EntryID,
     EntryPropertyLink,
     EntryPropertyValueType,
+    EntryRecoveryCode,
     EntryType,
     GroupID,
     PropertyKeyValueObject
@@ -25,6 +26,7 @@ export class Entry extends VaultItem {
         FacadeType: "BC_ENTRY_FACADE_TYPE",
         FieldTypePrefix: "BC_ENTRY_FIELD_TYPE:",
         PropertyLinkPrefix: "BC_ENTRY_PROPERTY_LINK:",
+        RecoveryCodesPrefix: "BC_ENTRY_RECOVERY_CODES:",
         Tags: "BC_ENTRY_TAGS"
     });
 
@@ -120,6 +122,7 @@ export class Entry extends VaultItem {
     deleteProperty(property: string): this {
         this.vault.format.deleteEntryProperty(this.id, property);
         this._deletePropertyLink(property);
+        this._deleteRecoveryCodesMarker(property);
         return this;
     }
 
@@ -200,6 +203,23 @@ export class Entry extends VaultItem {
             entryID: value.slice(0, separator),
             property: value.slice(separator + 1)
         };
+    }
+
+    /**
+     * Get the codes of a recovery codes property
+     * @param property The property name
+     * @returns The codes in their stored order, each with whether it was
+     *  marked as used, or `null` if the property isn't a recovery codes
+     *  property
+     * @see Entry.setRecoveryCodes
+     */
+    getRecoveryCodes(property: string): Array<EntryRecoveryCode> | null {
+        if (!this.isRecoveryCodesProperty(property)) return null;
+        const used = this._getUsedRecoveryCodes(property);
+        return parseRecoveryCodes(this.getProperty(property) as string).map((code) => ({
+            code,
+            used: used.includes(code)
+        }));
     }
 
     /**
@@ -285,6 +305,21 @@ export class Entry extends VaultItem {
     }
 
     /**
+     * Check if a property holds recovery codes
+     * @param property The property name
+     * @returns True if the property was made a recovery codes property with
+     *  {@link Entry.setRecoveryCodes} and is still a password field
+     */
+    isRecoveryCodesProperty(property: string): boolean {
+        return (
+            typeof this.getAttribute(`${Entry.Attributes.RecoveryCodesPrefix}${property}`) ===
+                "string" &&
+            typeof this.getProperty(property) === "string" &&
+            this.getPropertyValueType(property) === EntryPropertyValueType.Password
+        );
+    }
+
+    /**
      * Check if a linked property's link is broken
      * A link is broken when the linked entry was deleted or is in Trash, or
      * no longer has the linked property. A broken link shows the value the
@@ -346,6 +381,33 @@ export class Entry extends VaultItem {
     }
 
     /**
+     * Mark a recovery code as used, or as unused again
+     * @param property The recovery codes property
+     * @param code The code, as returned by {@link Entry.getRecoveryCodes}
+     * @param used Whether the code is used (default) or not
+     * @returns Self
+     * @throws {Error} Throws if the property isn't a recovery codes property
+     *  or doesn't contain the code
+     */
+    markRecoveryCodeUsed(property: string, code: string, used: boolean = true): this {
+        const codes = this.getRecoveryCodes(property);
+        if (!codes) {
+            throw new Error(
+                `Cannot mark recovery code: Not a recovery codes property: ${property}`
+            );
+        }
+        const target = code.trim();
+        if (!codes.some((item) => item.code === target)) {
+            throw new Error("Cannot mark recovery code: Code not found");
+        }
+        const usedCodes = codes
+            .filter((item) => (item.code === target ? used : item.used))
+            .map((item) => item.code);
+        this._setUsedRecoveryCodes(property, usedCodes);
+        return this;
+    }
+
+    /**
      * Move the entry to another group
      * @returns Returns self
      * @param group The target group
@@ -395,6 +457,45 @@ export class Entry extends VaultItem {
     }
 
     /**
+     * Make a property hold a list of recovery codes (eg. 2FA backup codes)
+     * The codes are stored one per line in the property's value, and the
+     * property becomes a password field, so apps without recovery codes
+     * support still hide it. Which codes are used is stored in a
+     * `BC_ENTRY_RECOVERY_CODES:<property>` attribute.
+     * @param property The property name
+     * @param codes The codes. If omitted, the property's current value is
+     *  used, one code per line. Surrounding whitespace and empty lines are
+     *  dropped.
+     * @returns Self
+     * @throws {Error} Throws if there are no codes, or a code contains a line
+     *  break
+     */
+    setRecoveryCodes(property: string, codes?: Array<string>): this {
+        let newCodes: Array<string>;
+        if (typeof codes === "undefined") {
+            newCodes = parseRecoveryCodes((this.getProperty(property) as string) || "");
+        } else {
+            newCodes = codes.map((code) => code.trim()).filter((code) => code.length > 0);
+            if (newCodes.some((code) => /[\r\n]/.test(code))) {
+                throw new Error("Cannot set recovery codes: A code contains a line break");
+            }
+        }
+        if (newCodes.length === 0) {
+            throw new Error("Cannot set recovery codes: No codes provided");
+        }
+        const usedCodes = this._getUsedRecoveryCodes(property).filter((code) =>
+            newCodes.includes(code)
+        );
+        const value = newCodes.join("\n");
+        if (this.getProperty(property) !== value || this.getPropertyLink(property)) {
+            this.setProperty(property, value);
+        }
+        this.setPropertyValueType(property, EntryPropertyValueType.Password);
+        this._setUsedRecoveryCodes(property, usedCodes);
+        return this;
+    }
+
+    /**
      * Set the value type of an entry property
      * @param property The property to set the value type for
      * @param valueType The new value type to set, or `null` to remove
@@ -406,6 +507,18 @@ export class Entry extends VaultItem {
         } else {
             this.setAttribute(`${Entry.Attributes.FieldTypePrefix}${property}`, valueType);
         }
+        return this;
+    }
+
+    /**
+     * Turn a recovery codes property back into a plain password field
+     * The codes stay in the property's value, and which were used is
+     * forgotten.
+     * @param property The property name
+     * @returns Self
+     */
+    unsetRecoveryCodes(property: string): this {
+        this._deleteRecoveryCodesMarker(property);
         return this;
     }
 
@@ -432,6 +545,13 @@ export class Entry extends VaultItem {
 
     _deletePropertyLink(property: string) {
         const attribute = `${Entry.Attributes.PropertyLinkPrefix}${property}`;
+        if (typeof this.getAttribute(attribute) === "string") {
+            this.deleteAttribute(attribute);
+        }
+    }
+
+    _deleteRecoveryCodesMarker(property: string) {
+        const attribute = `${Entry.Attributes.RecoveryCodesPrefix}${property}`;
         if (typeof this.getAttribute(attribute) === "string") {
             this.deleteAttribute(attribute);
         }
@@ -499,7 +619,37 @@ export class Entry extends VaultItem {
         }
     }
 
+    _getUsedRecoveryCodes(property: string): Array<string> {
+        const value = this.getAttribute(`${Entry.Attributes.RecoveryCodesPrefix}${property}`);
+        if (typeof value !== "string") return [];
+        try {
+            const used = JSON.parse(value);
+            return Array.isArray(used) ? used.filter((code) => typeof code === "string") : [];
+        } catch (err) {
+            return [];
+        }
+    }
+
+    _setUsedRecoveryCodes(property: string, codes: Array<string>) {
+        const attribute = `${Entry.Attributes.RecoveryCodesPrefix}${property}`;
+        const value = JSON.stringify(codes);
+        if (this.getAttribute(attribute) !== value) {
+            this.setAttribute(attribute, value);
+        }
+    }
+
     _updateRefs() {
         this._source = this.vault.format.findEntryByID(this.id);
     }
+}
+
+/**
+ * Split a recovery codes value into its codes: one per line, trimmed,
+ * without empty lines
+ */
+function parseRecoveryCodes(value: string): Array<string> {
+    return value
+        .split(/\r?\n/)
+        .map((code) => code.trim())
+        .filter((code) => code.length > 0);
 }

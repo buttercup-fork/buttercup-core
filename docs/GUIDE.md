@@ -13,6 +13,7 @@ A task-oriented guide to using `buttercup` as a library: opening a vault, and li
     - [Creating an entry](#creating-an-entry)
     - [Updating an entry](#updating-an-entry)
     - [Hiding a custom field](#hiding-a-custom-field)
+    - [Storing recovery codes](#storing-recovery-codes)
     - [Linking a field to another entry](#linking-a-field-to-another-entry)
     - [Deleting an entry](#deleting-an-entry)
 - [Saving and locking](#saving-and-locking)
@@ -234,6 +235,28 @@ entry.getPropertyValueType("Security answer"); // "password"
 ```
 
 The value type is stored in a `BC_ENTRY_FIELD_TYPE:<property>` attribute and shows up as the field's `valueType` in entry facades. Other value types are `note` (multi-line), `otp` (a one-time password URI) and `text`, the default. `setPropertyValueType(property, null)` resets it to `text`.
+
+### Storing recovery codes
+
+A field can hold a list of recovery codes (eg. a service's 2FA backup codes), each of which can be marked as used:
+
+```javascript
+entry.setRecoveryCodes("Recovery codes", ["a1b2-c3d4", "e5f6-g7h8", "i9j0-k1l2"]);
+entry.markRecoveryCodeUsed("Recovery codes", "e5f6-g7h8");
+
+entry.getRecoveryCodes("Recovery codes");
+// [
+//   { code: "a1b2-c3d4", used: false },
+//   { code: "e5f6-g7h8", used: true },
+//   { code: "i9j0-k1l2", used: false }
+// ]
+
+// Or turn an existing field into recovery codes, one code per line:
+entry.setProperty("Backup codes", "one two three\nfour five six");
+entry.setRecoveryCodes("Backup codes");
+```
+
+The codes are stored one per line as the field's value, and the field becomes a password field, so apps without recovery codes support still hide it. Which codes are used is kept in a `BC_ENTRY_RECOVERY_CODES:<property>` attribute. Pass `false` as a third argument to `markRecoveryCodeUsed` to mark a code as unused again. `isRecoveryCodesProperty(property)` tells recovery codes apart from other password fields, and `unsetRecoveryCodes(property)` turns the field back into a plain password field.
 
 ### Linking a field to another entry
 
