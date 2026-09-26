@@ -3,7 +3,7 @@
 ## Unreleased (codekunde fork)
 
  * **Breaking**:
-   * Requires NodeJS 20 or newer (was 14+). NodeJS 14, 16 and 18 are end-of-life and no longer receive security fixes, and the test tooling already needed 18+. CI now tests on NodeJS 20, 22 and 24
+   * Requires NodeJS 22 or newer (was 14+). NodeJS 14 to 20 are end-of-life and no longer receive security fixes (20 since April 2026), and current releases of several dependencies need 22+. CI now tests on NodeJS 22 and 24
  * **Security**:
    * Cleared 9 of 10 `npm audit` findings (5 critical, 2 high, 2 moderate, 1 low) via `overrides`: `pbkdf2` (used by `iocane` for vault key derivation), `sha.js`, `min-document`, and a nested `webdav > minimatch` override. The remaining `uuid` finding is fixed by the bump below.
    * `npm audit` is now clean (0 findings). Bumped `uuid` 9 → 14 (GHSA-w5hq-g745-h8pq; used only for internal ID generation, not part of the public API; now ESM-only, imported the same way in the NodeJS and web builds). Dev tooling: `mocha` 10 → 12 (its `serialize-javascript` dependency had a high-severity RCE advisory, GHSA-5c6j-r48x-rmvq), and test coverage moved from `nyc` to `c8` (V8's built-in coverage), since even the latest `nyc` still depends on a vulnerable `uuid` through `istanbul-lib-processinfo`.
