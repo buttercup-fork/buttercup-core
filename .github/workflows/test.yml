@@ -25,15 +25,6 @@ jobs:
         node-version: [22.x]
     steps:
       - uses: actions/checkout@v5
-      # Firefox from Mozilla's APT repository, so apt installs everything it
-      # depends on (the runner image has no desktop libraries)
-      - name: Install Firefox
-        run: |
-          install -d -m 0755 /etc/apt/keyrings
-          curl -fsSL https://packages.mozilla.org/apt/repo-signing-key.gpg -o /etc/apt/keyrings/packages.mozilla.org.asc
-          echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main" > /etc/apt/sources.list.d/mozilla.list
-          printf 'Package: *\nPin: origin packages.mozilla.org\nPin-Priority: 1000\n' > /etc/apt/preferences.d/mozilla
-          apt-get update && apt-get install -y firefox
       # Full GitHub URL: this Forgejo instance's default action source
       # (data.forgejo.org) doesn't mirror browser-actions/*. Runs before
       # setup-node so it uses the image's newer Node.
@@ -49,8 +40,10 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: npm
       - run: npm ci
+      # Playwright's Firefox build, plus the system libraries it needs (the
+      # runner image has no desktop libraries)
+      - run: npx playwright install --with-deps firefox
       - run: npm run test:web
         env:
           CI: true
-          MOZ_HEADLESS: 1
           CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}

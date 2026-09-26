@@ -44,8 +44,8 @@
     "test:node": "npm run build:node && mocha -r test/index.js --timeout 15000 'test/{unit,integration}/**/*.spec.js'",
     "test:unit": "npm run build:node && mocha -r test/index.js 'test/unit/**/*.spec.js'",
     "test:unit:watch": "nodemon --exec 'npm run test:unit' --watch source --watch test",
-    "test:web": "karma start karma.conf.cjs",
-    "test:web:production": "BUNDLE=production karma start"
+    "test:web": "webpack --config webpack.test.config.cjs && wtr",
+    "test:web:production": "BUNDLE=production npm run test:web"
   },
   "files": [
     "dist/**/*.js",
@@ -111,19 +111,15 @@
   },
   "devDependencies": {
     "@types/node": "^22.20.4",
+    "@web/test-runner": "^1.0.0",
+    "@web/test-runner-chrome": "^1.0.1",
+    "@web/test-runner-playwright": "^1.0.0",
     "arraybuffer-loader": "^1.0.8",
     "base64-js": "^1.5.1",
     "c8": "^12.0.0",
     "chai": "^6.2.2",
     "concurrently": "^10.0.5",
     "husky": "^9.1.7",
-    "karma": "^6.4.2",
-    "karma-chrome-launcher": "^3.2.0",
-    "karma-firefox-launcher": "^2.1.2",
-    "karma-mocha": "^2.0.1",
-    "karma-sinon": "^1.0.5",
-    "karma-spec-reporter": "^0.0.37",
-    "karma-webpack": "^5.0.0",
     "lint-staged": "^17.5.1",
     "mocha": "^12.0.2",
     "nested-property": "^4.0.0",
