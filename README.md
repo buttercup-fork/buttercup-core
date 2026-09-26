@@ -179,7 +179,7 @@ Buttercup will automatically transition to using Format B as the default in some
 
 Buttercup's compatibility is defined as the following:
 
- * NodeJS version 12 and up
+ * NodeJS version 22 and up
  * Current versions of the following browsers:
    * Google Chrome
    * Mozilla Firefox
