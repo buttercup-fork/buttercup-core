@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import { readFileSync } from "node:fs";
 import { getSharedAppEnv } from "../../../dist/node/index.js";
 
 describe("appEnv", function () {
@@ -17,6 +18,22 @@ describe("appEnv", function () {
                 const compressed = compress("ატრიბუტი\nความคุ้มค่า");
                 const decompressed = decompress(compressed);
                 expect(decompressed).to.equal("ატრიბუტი\nความคุ้มค่า");
+            });
+
+            // Format A vaults saved before the pako 3 upgrade hold pako 1 output
+            describe("pako 1 output", function () {
+                const fixtures = JSON.parse(
+                    readFileSync(
+                        new URL("../../resources/compression/pako1-v1.json", import.meta.url),
+                        "utf8"
+                    )
+                );
+
+                fixtures.forEach(({ text, v1 }, index) => {
+                    it(`decompresses fixture ${index + 1} (${text.length} characters)`, function () {
+                        expect(decompress(v1)).to.equal(text);
+                    });
+                });
             });
         });
 

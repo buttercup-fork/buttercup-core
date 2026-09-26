@@ -39,6 +39,7 @@
  * **Dependencies**:
    * `fuse.js` 6 → 7 (search); same options, search tests unchanged
    * Removed `is-promise`: its one check is now inline
+   * `pako` 1 → 3 (vault compression). pako 2+ dropped "binary string" output, which Format A's compression v1 stores, so core now converts gzip bytes to and from binary strings itself (`source/tools/binaryString.ts`), exactly as pako 1 did. Existing Format A vaults open unchanged, and vaults saved now open with older versions of core. New tests decompress stored pako 1 output. The compressed bytes can differ slightly from pako 1 (newer zlib encoder), but both are standard gzip and decompress to the same text
  * **Bugfix**:
    * `Vault#emptyTrash()` returned `undefined` instead of the vault when there was no Trash group (documented as returning self)
    * `TextDatasource#hasContent` returned `""` instead of `false` for empty content

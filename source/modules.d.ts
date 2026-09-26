@@ -25,21 +25,6 @@ declare module "iocane/web" {
     export * from "iocane";
 }
 
-declare module "pako" {
-    interface Options {
-        level?: number;
-    }
-    export function gzip(data: string | Uint8Array, options: Options & { to: "string" }): string;
-    export function gzip(data: string | Uint8Array, options?: Options): Uint8Array;
-    export function ungzip(data: string | Uint8Array, options: { to: "string" }): string;
-    export function ungzip(data: string | Uint8Array): Uint8Array;
-    const pako: {
-        gzip: typeof gzip;
-        ungzip: typeof ungzip;
-    };
-    export default pako;
-}
-
 declare module "path-posix" {
     import { posix } from "path";
     export default posix;
