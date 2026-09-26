@@ -42,6 +42,7 @@
    * `layerr` 2 → 3 (error wrapping): only removes `Layerr#cause()`, which neither core nor the apps call
    * `crypto-random-string` 5 → 6 (NodeJS random strings): same API, needs NodeJS 22+
    * `pako` 1 → 3 (vault compression). pako 2+ dropped "binary string" output, which Format A's compression v1 stores, so core now converts gzip bytes to and from binary strings itself (`source/tools/binaryString.ts`), exactly as pako 1 did. Existing Format A vaults open unchanged, and vaults saved now open with older versions of core. New tests decompress stored pako 1 output. The compressed bytes can differ slightly from pako 1 (newer zlib encoder), but both are standard gzip and decompress to the same text
+   * HTTP requests (Dropbox, Google Drive, OneDrive, WebDAV) now use NodeJS's built-in `fetch` instead of `node-fetch`. `@buttercup/dropbox-client` and `@buttercup/googledrive-client` now come from the CodeKunde forks, which use `fetch` directly, and `@buttercup/fetch` is overridden with the CodeKunde fork (0.3.0), which re-exports the built-in `fetch` on every platform. `node-fetch` is still installed because `webdav` lists it as a dependency, but nothing uses it
  * **Bugfix**:
    * `Vault#emptyTrash()` returned `undefined` instead of the vault when there was no Trash group (documented as returning self)
    * `TextDatasource#hasContent` returned `""` instead of `false` for empty content
