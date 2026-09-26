@@ -1,4 +1,4 @@
-import EventEmitter from "eventemitter3";
+import { EventEmitter } from "eventemitter3";
 import { forEachAsync } from "foreachasync";
 import globals from "global";
 import { TextDatasource } from "./TextDatasource.js";

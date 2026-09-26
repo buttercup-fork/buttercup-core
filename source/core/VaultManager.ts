@@ -1,6 +1,5 @@
-import EventEmitter from "eventemitter3";
+import { EventEmitter } from "eventemitter3";
 import { Layerr } from "layerr";
-import isPromise from "is-promise";
 import { ChannelQueue } from "@buttercup/channel-queue";
 import { MemoryStorageInterface } from "../storage/MemoryStorageInterface.js";
 import { VaultSource } from "./VaultSource.js";
@@ -31,6 +30,15 @@ const NOOP = () => {};
 const STORAGE_KEY_PREFIX = "bcup_vaultmgr_";
 const STORAGE_KEY_PREFIX_TEST =
     /^bcup_vaultmgr_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
+
+// Same check as the `is-promise` package, which this replaces
+function isThenable(value: unknown): value is PromiseLike<unknown> {
+    return (
+        !!value &&
+        (typeof value === "object" || typeof value === "function") &&
+        typeof (value as PromiseLike<unknown>).then === "function"
+    );
+}
 
 /**
  * Vault manager, to manage vault sources and their vaults
@@ -236,7 +244,7 @@ export class VaultManager extends EventEmitter {
                     restoreAutoUpdating();
                     throw err;
                 }
-                if (!isPromise(retVal)) {
+                if (!isThenable(retVal)) {
                     // No promise, so restore immediately:
                     restoreAutoUpdating();
                     return retVal;

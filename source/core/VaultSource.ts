@@ -1,4 +1,4 @@
-import EventEmitter from "eventemitter3";
+import { EventEmitter } from "eventemitter3";
 import { ChannelQueue } from "@buttercup/channel-queue";
 import { Layerr } from "layerr";
 import { Vault } from "./Vault.js";

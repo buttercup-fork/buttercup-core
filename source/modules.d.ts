@@ -1,11 +1,12 @@
 // Type declarations for dependencies that don't ship their own, covering only
-// what this library uses
+// what this library uses. These are CommonJS packages, so under ESM their
+// `module.exports` is the default export.
 
 declare module "fast-levenshtein" {
     const levenshtein: {
         get(str1: string, str2: string, options?: { useCollator?: boolean }): number;
     };
-    export = levenshtein;
+    export default levenshtein;
 }
 
 declare module "foreachasync" {
@@ -17,7 +18,7 @@ declare module "foreachasync" {
 
 declare module "global" {
     const globals: { [key: string]: unknown };
-    export = globals;
+    export default globals;
 }
 
 declare module "iocane/web" {
@@ -25,26 +26,21 @@ declare module "iocane/web" {
 }
 
 declare module "pako" {
-    namespace pako {
-        interface Options {
-            level?: number;
-        }
-        function gzip(data: string | Uint8Array, options: Options & { to: "string" }): string;
-        function gzip(data: string | Uint8Array, options?: Options): Uint8Array;
-        function ungzip(data: string | Uint8Array, options: { to: "string" }): string;
-        function ungzip(data: string | Uint8Array): Uint8Array;
+    interface Options {
+        level?: number;
     }
-    export = pako;
+    export function gzip(data: string | Uint8Array, options: Options & { to: "string" }): string;
+    export function gzip(data: string | Uint8Array, options?: Options): Uint8Array;
+    export function ungzip(data: string | Uint8Array, options: { to: "string" }): string;
+    export function ungzip(data: string | Uint8Array): Uint8Array;
+    const pako: {
+        gzip: typeof gzip;
+        ungzip: typeof ungzip;
+    };
+    export default pako;
 }
 
 declare module "path-posix" {
     import { posix } from "path";
-    export = posix;
-}
-
-declare module "uuid" {
-    namespace uuid {
-        function v4(): string;
-    }
-    export = uuid;
+    export default posix;
 }

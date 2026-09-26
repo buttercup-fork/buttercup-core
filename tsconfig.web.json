@@ -4,8 +4,9 @@
         "forceConsistentCasingInFileNames": true,
         "esModuleInterop": true,
         "outDir": "./dist/web",
+        "rootDir": "./source",
         "module": "es2020",
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "declaration": true,
         "target": "es2020",
         "strict": true

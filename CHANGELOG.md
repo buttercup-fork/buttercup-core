@@ -35,6 +35,10 @@
    * `Entry#getProperty()` gets overloads like `getAttribute()`: no argument returns `PropertyKeyValueObject`, a property name returns `string | undefined`
    * `BaseSearch` is generic (`BaseSearch<Vault>`, `BaseSearch<VaultFacade>`)
    * Unchanged on purpose, to avoid breaking strict apps: `VaultSource#vault` / `#attachmentManager` and `VaultItem#vault` stay non-null although they're `null` while locked/cleaned up
+   * Built with TypeScript 6. The NodeJS build type-checks with `moduleResolution: "nodenext"` (Node's real ESM rules), the web build with `"bundler"`, replacing the deprecated `"node"` (removed in TypeScript 7). `eventemitter3` is imported by its named export, which is the same class, so `Vault`, `VaultSource`, `VaultManager` etc. still extend the same `EventEmitter`
+ * **Dependencies**:
+   * `fuse.js` 6 → 7 (search); same options, search tests unchanged
+   * Removed `is-promise`: its one check is now inline
  * **Bugfix**:
    * `Vault#emptyTrash()` returned `undefined` instead of the vault when there was no Trash group (documented as returning self)
    * `TextDatasource#hasContent` returned `""` instead of `false` for empty content
