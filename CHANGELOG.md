@@ -3,9 +3,10 @@
 ## Unreleased (codekunde fork)
 
  * **Breaking**:
-   * Requires NodeJS 20 or newer (was 14+). NodeJS 14, 16 and 18 are end-of-life and no longer receive security fixes, and the test tooling already needed 18+. CI now tests on NodeJS 20, 22 and 24
+   * Requires NodeJS 22 or newer (was 14+). NodeJS 14 to 20 are end-of-life and no longer receive security fixes (20 since April 2026), and current releases of several dependencies need 22+. CI now tests on NodeJS 22 and 24
  * **Security**:
-   * Cleared 9 of 10 `npm audit` findings (5 critical, 2 high, 2 moderate, 1 low) via `overrides`: `pbkdf2` (used by `iocane` for vault key derivation), `sha.js`, `min-document`, and a nested `webdav > minimatch` override. The remaining `uuid` finding needs a breaking v9→v14 bump and is tracked separately (internal ID generation only, not part of the public API).
+   * Cleared 9 of 10 `npm audit` findings (5 critical, 2 high, 2 moderate, 1 low) via `overrides`: `pbkdf2` (used by `iocane` for vault key derivation), `sha.js`, `min-document`, and a nested `webdav > minimatch` override. The remaining `uuid` finding is fixed by the bump below.
+   * `npm audit` is now clean (0 findings). Bumped `uuid` 9 → 14 (GHSA-w5hq-g745-h8pq; used only for internal ID generation, not part of the public API; now ESM-only, imported the same way in the NodeJS and web builds). Dev tooling: `mocha` 10 → 12 (its `serialize-javascript` dependency had a high-severity RCE advisory, GHSA-5c6j-r48x-rmvq), and test coverage moved from `nyc` to `c8` (V8's built-in coverage), since even the latest `nyc` still depends on a vulnerable `uuid` through `istanbul-lib-processinfo`. `nyc` never measured the ESM build (its reports were 0%), so coverage is now a separate `npm run test:coverage`; `test:node` runs without instrumentation, as before.
    * Raised the PBKDF2 derivation round count from 125,000 to 250,000 (`CRYPTO_PBKDF2_ROUNDS`), matching `iocane`'s own built-in default and OWASP's compromise range. Fully backwards compatible - the round count is stored per-vault in the encrypted blob's own header, so existing vaults keep decrypting exactly as before; only new saves pick up the higher count (buttercup/buttercup-core#325).
    * Switched default vault encryption from AES-CBC (+ separate HMAC-SHA256) to AES-GCM, an authenticated cipher with hardware acceleration and a smaller/simpler attack surface. Also backwards compatible for the same reason - the algorithm used is stored per-vault in the header, so existing CBC-encrypted vaults keep decrypting fine (buttercup/buttercup-core#201).
  * **Features**:
@@ -34,6 +35,13 @@
    * `Entry#getProperty()` gets overloads like `getAttribute()`: no argument returns `PropertyKeyValueObject`, a property name returns `string | undefined`
    * `BaseSearch` is generic (`BaseSearch<Vault>`, `BaseSearch<VaultFacade>`)
    * Unchanged on purpose, to avoid breaking strict apps: `VaultSource#vault` / `#attachmentManager` and `VaultItem#vault` stay non-null although they're `null` while locked/cleaned up
+   * Built with TypeScript 6. The NodeJS build type-checks with `moduleResolution: "nodenext"` (Node's real ESM rules), the web build with `"bundler"`, replacing the deprecated `"node"` (removed in TypeScript 7). `eventemitter3` is imported by its named export, which is the same class, so `Vault`, `VaultSource`, `VaultManager` etc. still extend the same `EventEmitter`
+ * **Dependencies**:
+   * `fuse.js` 6 → 7 (search); same options, search tests unchanged
+   * Removed `is-promise`: its one check is now inline
+   * `layerr` 2 → 3 (error wrapping): only removes `Layerr#cause()`, which neither core nor the apps call
+   * `crypto-random-string` 5 → 6 (NodeJS random strings): same API, needs NodeJS 22+
+   * `pako` 1 → 3 (vault compression). pako 2+ dropped "binary string" output, which Format A's compression v1 stores, so core now converts gzip bytes to and from binary strings itself (`source/tools/binaryString.ts`), exactly as pako 1 did. Existing Format A vaults open unchanged, and vaults saved now open with older versions of core. New tests decompress stored pako 1 output. The compressed bytes can differ slightly from pako 1 (newer zlib encoder), but both are standard gzip and decompress to the same text
  * **Bugfix**:
    * `Vault#emptyTrash()` returned `undefined` instead of the vault when there was no Trash group (documented as returning self)
    * `TextDatasource#hasContent` returned `""` instead of `false` for empty content

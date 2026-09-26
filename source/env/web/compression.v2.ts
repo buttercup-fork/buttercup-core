@@ -22,7 +22,7 @@ async function compress(text: string): Promise<string> {
  */
 async function decompress(text: string): Promise<string> {
     return Promise.resolve().then(() => {
-        return ungzip(base64ToBytes(text), { to: "string" });
+        return ungzip(base64ToBytes(text), { toText: true });
     });
 }
 

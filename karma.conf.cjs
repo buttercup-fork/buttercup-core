@@ -10,26 +10,6 @@ webpackConfig.module.rules.push({
     use: "arraybuffer-loader"
 });
 // BEGIN typescript support
-webpackConfig.module.rules.unshift({
-    test: /\.js$/,
-    use: [{
-        loader: "babel-loader",
-        options: {
-            "presets": [
-                ["@babel/preset-env", {
-                    "useBuiltIns": false,
-                    "targets": {
-                        "firefox": "70"
-                    }
-                }]
-            ],
-            "plugins": [
-                "@babel/plugin-proposal-class-properties",
-                "@babel/plugin-proposal-object-rest-spread"
-            ]
-        }
-    }]
-});
 const tsRule = webpackConfig.module.rules.find(rule => rule.test && /\.ts/.test(rule.test.toString()));
 tsRule.use.options.configFile = tsRule.use.options.configFile.replace("tsconfig.web.json", "tsconfig.web.test.json");
 // END typescript support

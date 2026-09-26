@@ -1,4 +1,4 @@
-import EventEmitter from "eventemitter3";
+import { EventEmitter } from "eventemitter3";
 import { Credentials } from "../credentials/Credentials.js";
 import { Vault } from "../core/Vault.js";
 import {

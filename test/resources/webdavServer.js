@@ -42,7 +42,14 @@ export function createServer(dir, authType /* "basic" | "digest" */) {
         start: function start() {
             return new Promise(function (resolve) {
                 server.setFileSystem(PATH, new ws.PhysicalFileSystem(dir), function () {
-                    server.start(resolve);
+                    server.start(function (httpServer) {
+                        // Node closes idle keep-alive sockets after 5s. Tests that block the
+                        // event loop for longer (the consistency spec under V8 coverage) then
+                        // race: the client reuses the socket as the server destroys it,
+                        // giving ECONNRESET. Keep idle sockets open longer than any test blocks.
+                        httpServer.keepAliveTimeout = 60000;
+                        resolve();
+                    });
                 });
             });
         },

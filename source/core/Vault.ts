@@ -1,4 +1,4 @@
-import EventEmitter from "eventemitter3";
+import { EventEmitter } from "eventemitter3";
 import { getDefaultFormat } from "../io/formatRouter.js";
 import { findGroupsByTitle } from "../search/groups.js";
 import { findEntriesByProperty } from "../search/entries.js";
