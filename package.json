@@ -34,7 +34,7 @@
     "format": "prettier --write '{source,test}/**/*.{js,ts}'",
     "generate:docs": "typedoc",
     "generate:vault": "npm run build:node && node scripts/gen_vault_format_a.js && node scripts/gen_vault_format_b.js",
-    "prepare": "run-s build",
+    "prepare": "husky && run-s build",
     "prepublishOnly": "run-s build",
     "test": "run-s test:node test:web test:format",
     "test:format": "prettier --check '{source,test}/**/*.{js,ts}'",
@@ -58,11 +58,6 @@
     "{source,test}/**/*.{js,ts}": [
       "prettier --write"
     ]
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
   },
   "repository": {
     "type": "git",
@@ -119,7 +114,7 @@
     "c8": "^12.0.0",
     "chai": "^6.2.2",
     "concurrently": "^10.0.5",
-    "husky": "^4.3.8",
+    "husky": "^9.1.7",
     "karma": "^6.4.2",
     "karma-chrome-launcher": "^3.2.0",
     "karma-firefox-launcher": "^2.1.2",
@@ -127,7 +122,7 @@
     "karma-sinon": "^1.0.5",
     "karma-spec-reporter": "^0.0.37",
     "karma-webpack": "^5.0.0",
-    "lint-staged": "^15.2.0",
+    "lint-staged": "^17.5.1",
     "mocha": "^12.0.2",
     "nested-property": "^4.0.0",
     "nodemon": "^3.0.2",
