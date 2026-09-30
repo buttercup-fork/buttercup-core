@@ -90,16 +90,25 @@ export class Vault extends EventEmitter {
         return vault;
     }
 
-    _entries: Array<Entry> = [];
+    // Entry and Group instances for the format's items. They're brought up to
+    // date lazily (see _syncItems): a change only marks them stale, so a burst
+    // of property writes (an import) doesn't rescan the whole vault each time.
+    __entries: Array<Entry> = [];
+
+    __groups: Array<Group> = [];
+
+    __itemsStale: boolean = false;
 
     // Set by _updateFormat(), called from the constructor
     _format!: VaultFormat;
 
-    _groups: Array<Group> = [];
-
     _onCommandExec!: () => void;
 
     _tagMap: Map<string, Array<EntryID>> = new Map();
+
+    // The tag map is rebuilt when it's next read, not on every change: reading
+    // every entry's tags after each property write made large imports O(n^2)
+    _tagMapStale: boolean = true;
 
     /**
      * The vault format
@@ -283,7 +292,7 @@ export class Vault extends EventEmitter {
         const tagLower = tag.toLowerCase();
         if (!exact) {
             const entryIDs = new Set<string>();
-            for (const [currentTag, currentIDs] of this._tagMap.entries()) {
+            for (const [currentTag, currentIDs] of this._getTagMap().entries()) {
                 if (currentTag.toLowerCase().indexOf(tagLower) === 0) {
                     for (const id of currentIDs) {
                         entryIDs.add(id);
@@ -292,7 +301,8 @@ export class Vault extends EventEmitter {
             }
             return [...entryIDs].map((id) => this.findEntryByID(id)!);
         }
-        const entryIDs = this._tagMap.has(tagLower) ? this._tagMap.get(tagLower)! : [];
+        const tagMap = this._getTagMap();
+        const entryIDs = tagMap.has(tagLower) ? tagMap.get(tagLower)! : [];
         return entryIDs.map((id) => this.findEntryByID(id)!);
     }
 
@@ -351,7 +361,7 @@ export class Vault extends EventEmitter {
      * @returns An array of tag strings
      */
     getAllTags(): Array<string> {
-        return [...this._tagMap.keys()];
+        return [...this._getTagMap().keys()];
     }
 
     /**
@@ -411,24 +421,63 @@ export class Vault extends EventEmitter {
         this._entries.forEach((entry) => entry._updatePropertyLinkCopies());
     }
 
+    get _entries(): Array<Entry> {
+        this._syncItems();
+        return this.__entries;
+    }
+
+    set _entries(entries: Array<Entry>) {
+        this.__entries = entries;
+    }
+
+    get _groups(): Array<Group> {
+        this._syncItems();
+        return this.__groups;
+    }
+
+    set _groups(groups: Array<Group>) {
+        this.__groups = groups;
+    }
+
+    _getTagMap(): Map<string, Array<EntryID>> {
+        if (this._tagMapStale) {
+            this._rebuildTags();
+        }
+        return this._tagMap;
+    }
+
+    // Runs after every change: only marks the items and tags stale. Rebuilding
+    // them here (with a lookup per item) made each change O(n^2) and a large
+    // import O(n^3)
     _rebuild(clear: boolean = false) {
         if (clear) {
-            this._groups = [];
-            this._entries = [];
+            this.__groups = [];
+            this.__entries = [];
         }
+        this.__itemsStale = true;
+        this._tagMapStale = true;
+    }
+
+    // Add Entry/Group instances for items the format has gained
+    _syncItems() {
+        if (!this.__itemsStale) return;
+        this.__itemsStale = false;
+        const groupIDs = new Set(this.__groups.map((group) => group.id));
         this.format.getAllGroups().forEach((rawGroup: FormatAGroup | FormatBGroup) => {
             const id = this.format.getItemID(rawGroup);
-            if (!this._groups.find((g) => g.id === id)) {
-                this._groups.push(new Group(this, rawGroup));
+            if (!groupIDs.has(id)) {
+                groupIDs.add(id);
+                this.__groups.push(new Group(this, rawGroup));
             }
         });
+        const entryIDs = new Set(this.__entries.map((entry) => entry.id));
         this.format.getAllEntries().forEach((rawEntry: FormatAEntry | FormatBEntry) => {
             const id = this.format.getItemID(rawEntry);
-            if (!this._entries.find((e) => e.id === id)) {
-                this._entries.push(new Entry(this, rawEntry));
+            if (!entryIDs.has(id)) {
+                entryIDs.add(id);
+                this.__entries.push(new Entry(this, rawEntry));
             }
         });
-        this._rebuildTags();
     }
 
     _rebuildTags() {
@@ -446,6 +495,7 @@ export class Vault extends EventEmitter {
                 this._tagMap.set(tagLower, existingIDs);
             }
         });
+        this._tagMapStale = false;
     }
 
     /**
