@@ -322,14 +322,21 @@ export class VaultFormatB extends VaultFormat {
     }
 
     getEntryChanges(entrySource: FormatBEntry): Array<EntryChange> {
-        return Object.keys(entrySource.p).reduce(
-            (changes: Array<EntryChange>, property) => [
+        return Object.keys(entrySource.p).reduce((changes: Array<EntryChange>, property) => {
+            const item = entrySource.p[property];
+            // History holds previous values, newest first. A deleted property's
+            // last value isn't current any more, so it is a previous value too.
+            const values: Array<FormatBValueHistoryItem> = [...item.history].reverse();
+            if (item.deleted) {
+                values.push({ value: item.value, updated: item.updated });
+            }
+            return [
                 ...changes,
-                ...entrySource.p[property].history.map((histItem: FormatBValueHistoryItem) => {
+                ...values.map((histItem) => {
                     const change: EntryChange = {
                         property,
                         type:
-                            histItem.updated === entrySource.p[property].created
+                            histItem.updated === item.created
                                 ? EntryChangeType.Created
                                 : EntryChangeType.Modified,
                         ts: histItem.updated,
@@ -337,19 +344,18 @@ export class VaultFormatB extends VaultFormat {
                     };
                     return change;
                 }),
-                ...(entrySource.p[property].deleted
+                ...(item.deleted
                     ? [
                           {
                               property,
                               type: EntryChangeType.Deleted,
-                              ts: entrySource.p[property].deleted,
+                              ts: item.deleted,
                               value: null
                           }
                       ]
                     : [])
-            ],
-            []
-        );
+            ];
+        }, []);
     }
 
     getEntryProperties(entrySource: FormatBEntry): PropertyKeyValueObject {

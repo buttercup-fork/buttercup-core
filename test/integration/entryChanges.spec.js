@@ -1,50 +1,67 @@
 import { expect } from "chai";
 import { EntryChangeType, Vault, VaultFormatA, VaultFormatB } from "../../dist/node/index.js";
 
+// Entry#getChanges lists previous values only, oldest first - the current
+// value is the field itself (desktop shows the changes as "Previous Value")
+function noteChanges(entry) {
+    return entry
+        .getChanges()
+        .filter((change) => change.property === "note")
+        .map((change) => [change.type, change.value]);
+}
+
 [
     ["Format A", VaultFormatA],
     ["Format B", VaultFormatB]
 ].forEach(([formatName, Format]) => {
     describe(`${formatName}: Entry#getChanges`, function () {
         beforeEach(function () {
-            const vault = Vault.createWithDefaults(Format);
-            this.entry = vault.getGroups()[0].createEntry("Test");
+            this.vault = Vault.createWithDefaults(Format);
+            this.entry = this.vault.getGroups()[0].createEntry("Test");
+        });
+
+        it("has no changes for a value set once", function () {
+            this.entry.setProperty("note", "one");
+            expect(noteChanges(this.entry)).to.deep.equal([]);
+        });
+
+        it("lists previous values oldest first, without the current one", function () {
+            this.entry.setProperty("note", "one");
+            this.entry.setProperty("note", "two");
+            this.entry.setProperty("note", "three");
+            expect(noteChanges(this.entry)).to.deep.equal([
+                [EntryChangeType.Created, "one"],
+                [EntryChangeType.Modified, "two"]
+            ]);
+        });
+
+        it("keeps the last value of a deleted property, then the deletion", function () {
             this.entry.setProperty("note", "one");
             this.entry.setProperty("note", "two");
             this.entry.deleteProperty("note");
-            this.changes = this.entry.getChanges().filter((change) => change.property === "note");
+            expect(noteChanges(this.entry)).to.deep.equal([
+                [EntryChangeType.Created, "one"],
+                [EntryChangeType.Modified, "two"],
+                [EntryChangeType.Deleted, null]
+            ]);
         });
 
-        // Format B only reports previous values (its history), not the current
-        // one, so it has no "modified" change for "two" here - see TODO.md.
-        it("reports creation and deletion", function () {
-            const types = this.changes.map((change) => change.type);
-            expect(types).to.include(EntryChangeType.Created);
-            expect(types).to.include(EntryChangeType.Deleted);
+        it("reports a value deleted straight after being set", function () {
+            this.entry.setProperty("note", "one");
+            this.entry.deleteProperty("note");
+            expect(noteChanges(this.entry)).to.deep.equal([
+                [EntryChangeType.Created, "one"],
+                [EntryChangeType.Deleted, null]
+            ]);
         });
 
-        it("gives a created change its value", function () {
-            const created = this.changes.find((change) => change.type === EntryChangeType.Created);
-            expect(created).to.have.property("value", "one");
+        it("survives a history round trip", function () {
+            this.entry.setProperty("note", "one");
+            this.entry.setProperty("note", "two");
+            const copy = Vault.createFromHistory(this.vault.format.getHistory(), Format);
+            expect(noteChanges(copy.findEntryByID(this.entry.id))).to.deep.equal([
+                [EntryChangeType.Created, "one"]
+            ]);
         });
-
-        it("gives a deletion a null value", function () {
-            const deleted = this.changes.find((change) => change.type === EntryChangeType.Deleted);
-            expect(deleted).to.have.property("value", null);
-        });
-    });
-});
-
-describe("Format A: Entry#getChanges", function () {
-    it("reports every value, including the current one", function () {
-        const vault = Vault.createWithDefaults(VaultFormatA);
-        const entry = vault.getGroups()[0].createEntry("Test");
-        entry.setProperty("note", "one");
-        entry.setProperty("note", "two");
-        const changes = entry.getChanges().filter((change) => change.property === "note");
-        expect(changes.map((change) => [change.type, change.value])).to.deep.equal([
-            [EntryChangeType.Created, "one"],
-            [EntryChangeType.Modified, "two"]
-        ]);
     });
 });

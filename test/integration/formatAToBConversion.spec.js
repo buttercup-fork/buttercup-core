@@ -18,6 +18,7 @@ async function createTextSourceCredentials() {
         .setProperty("username", "user")
         .setProperty("password", "test");
     loginEntry.setProperty("password", "passw0rd");
+    loginEntry.setProperty("password", "s3cret");
     const tds = new TextDatasource(Credentials.fromDatasource({ type: "text" }, "test"));
     const encrypted = await tds.save(vault.format.getHistory(), Credentials.fromPassword("test"));
     return Credentials.fromDatasource(
@@ -59,7 +60,15 @@ describe("vault conversion: A to B", function () {
     it("retains entry property history", function () {
         const [loginEntry] = this.vaultSource.vault.findEntriesByProperty("title", "Login");
         const changes = loginEntry.getChanges().filter((change) => change.property === "password");
-        expect(changes).to.have.lengthOf(2);
+        // Previous values only, oldest first: "s3cret" is the current value
         expect(changes.map((change) => change.value)).to.deep.equal(["test", "passw0rd"]);
+        expect(loginEntry.getProperty("password")).to.equal("s3cret");
+    });
+
+    it("keeps entry property history in order after further changes", function () {
+        const [loginEntry] = this.vaultSource.vault.findEntriesByProperty("title", "Login");
+        loginEntry.setProperty("password", "n3w");
+        const changes = loginEntry.getChanges().filter((change) => change.property === "password");
+        expect(changes.map((change) => change.value)).to.deep.equal(["test", "passw0rd", "s3cret"]);
     });
 });

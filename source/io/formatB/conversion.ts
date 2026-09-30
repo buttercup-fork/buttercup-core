@@ -17,8 +17,29 @@ import {
     PropertyKeyValueObject
 } from "../../types.js";
 
+// Format A's history lists every value oldest first, including deletions and
+// the current value. Format B's lists only previous values, newest first.
+function previousValues(
+    entry: FormatAEntry,
+    key: string,
+    propertyType: EntryPropertyType,
+    current: string
+): Array<FormatBValueHistoryItem> {
+    const values = (entry.history || [])
+        .filter(
+            (change) =>
+                change.property === key &&
+                change.propertyType === propertyType &&
+                typeof change.newValue === "string"
+        )
+        .map((change) => change.newValue as string);
+    if (values[values.length - 1] === current) {
+        values.pop();
+    }
+    return values.reverse().map((value) => ({ value, updated: null }));
+}
+
 export function convertFormatAEntry(entry: FormatAEntry): FormatBEntry {
-    const changes = entry.history || [];
     const formatBEntry = {
         id: entry.id,
         a: flatKeyValueObjectToValuesObject(entry.attributes || {}),
@@ -26,24 +47,12 @@ export function convertFormatAEntry(entry: FormatAEntry): FormatBEntry {
         g: entry.parentID
     };
     for (const key in formatBEntry.a) {
-        const propChanges = changes.filter(
-            (change) =>
-                change.property === key && change.propertyType === EntryPropertyType.Attribute
-        );
-        formatBEntry.a[key].history = propChanges.map((propChange): FormatBValueHistoryItem => ({
-            value: propChange.newValue,
-            updated: null
-        }));
+        const item = formatBEntry.a[key];
+        item.history = previousValues(entry, key, EntryPropertyType.Attribute, item.value);
     }
     for (const key in formatBEntry.p) {
-        const propChanges = changes.filter(
-            (change) =>
-                change.property === key && change.propertyType === EntryPropertyType.Property
-        );
-        formatBEntry.p[key].history = propChanges.map((propChange): FormatBValueHistoryItem => ({
-            value: propChange.newValue,
-            updated: null
-        }));
+        const item = formatBEntry.p[key];
+        item.history = previousValues(entry, key, EntryPropertyType.Property, item.value);
     }
     return formatBEntry;
 }
