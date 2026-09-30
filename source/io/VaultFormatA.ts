@@ -51,6 +51,7 @@ import {
     EntryChange,
     EntryChangeType,
     EntryID,
+    EntryLegacyHistoryItem,
     FormatAEntry,
     FormatAGroup,
     FormatAVault,
@@ -61,7 +62,7 @@ import {
     VaultID,
     EntryPropertyType
 } from "../types.js";
-import { assertValidPropertyName } from "../tools/object.js";
+import { assertValidPropertyName, hasOwn } from "../tools/object.js";
 
 const COMMANDS: { [command: string]: Function } = {
     aid: executeArchiveID,
@@ -352,8 +353,24 @@ export class VaultFormatA extends VaultFormat {
     }
 
     getEntryChanges(entrySource: FormatAEntry): Array<EntryChange> {
-        return (entrySource.history || [])
-            .filter((item) => item.propertyType === EntryPropertyType.Property)
+        const items = (entrySource.history || []).filter(
+            (item) => item.propertyType === EntryPropertyType.Property
+        );
+        // Only previous values count, as in Format B: the last write to a
+        // property that is still set is its current value, not a change
+        const properties = entrySource.properties || {};
+        const current = new Set<EntryLegacyHistoryItem>();
+        const seen = new Set<string>();
+        for (let i = items.length - 1; i >= 0; i -= 1) {
+            const item = items[i];
+            if (seen.has(item.property)) continue;
+            seen.add(item.property);
+            if (hasOwn(properties, item.property) && typeof item.newValue === "string") {
+                current.add(item);
+            }
+        }
+        return items
+            .filter((item) => !current.has(item))
             .map((item) => {
                 const type = !item.originalValue
                     ? EntryChangeType.Created
