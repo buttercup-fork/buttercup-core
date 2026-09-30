@@ -23,7 +23,11 @@ export enum ErrorCode {
      * Vaults can't be merged: they are different vaults (their IDs differ),
      * not copies of the same one
      */
-    VaultMismatch = "VAULT_MISMATCH"
+    VaultMismatch = "VAULT_MISMATCH",
+    /**
+     * A property or attribute name can't be stored (currently only `__proto__`)
+     */
+    InvalidPropertyName = "INVALID_PROPERTY_NAME"
 }
 
 // What a wrong password looks like, per algorithm/environment:

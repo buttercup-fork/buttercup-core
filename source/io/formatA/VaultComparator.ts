@@ -1,6 +1,7 @@
 import { Vault } from "../../core/Vault.js";
 import { createVaultFacade } from "../../facades/vault.js";
 import { History, VaultFacade } from "../../types.js";
+import { hasOwn } from "../../tools/object.js";
 
 const PRIMATIVES = ["string", "number", "boolean", "undefined"];
 
@@ -113,7 +114,7 @@ function different(object1: Object, object2: Object): boolean {
         }
         let allKeys = dedupe([...Object.keys(object1), ...Object.keys(object2)]),
             isMissingAKey = allKeys.some(function (key) {
-                return !(object1.hasOwnProperty(key) && object2.hasOwnProperty(key));
+                return !(hasOwn(object1, key) && hasOwn(object2, key));
             });
         if (!isMissingAKey) {
             return allKeys.some(function (key) {
