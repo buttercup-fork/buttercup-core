@@ -1,4 +1,5 @@
 import { cloneValue, mergeValues } from "./history.js";
+import { hasOwn } from "../../tools/object.js";
 import {
     EntryPropertyType,
     FormatBEntry,
@@ -32,12 +33,15 @@ function mergeProperties(
 ): FormatBKeyValueObject {
     const allKeys = [...new Set([...Object.keys(propsA), ...Object.keys(propsB)])];
     return allKeys.reduce((output: FormatBKeyValueObject, nextKey) => {
-        if ((propsA[nextKey] && !propsB[nextKey]) || (!propsA[nextKey] && propsB[nextKey])) {
+        // Only own keys count: names are user-controlled (see tools/object.ts)
+        const valueA = hasOwn(propsA, nextKey) ? propsA[nextKey] : null;
+        const valueB = hasOwn(propsB, nextKey) ? propsB[nextKey] : null;
+        if ((valueA && !valueB) || (!valueA && valueB)) {
             // Item is only on one props object
-            output[nextKey] = cloneValue(propsA[nextKey] || propsB[nextKey]);
+            output[nextKey] = cloneValue((valueA || valueB)!);
         } else {
             // Item exists on both objects, so merge
-            output[nextKey] = mergeValues(propsA[nextKey], propsB[nextKey], type);
+            output[nextKey] = mergeValues(valueA!, valueB!, type);
         }
         return output;
     }, {});

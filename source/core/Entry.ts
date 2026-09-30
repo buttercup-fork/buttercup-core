@@ -15,6 +15,7 @@ import {
     GroupID,
     PropertyKeyValueObject
 } from "../types.js";
+import { hasOwn } from "../tools/object.js";
 
 /**
  * Entry class - some secret item, login or perhaps
@@ -160,7 +161,7 @@ export class Entry extends VaultItem {
             // No property, return entire object
             return Object.assign({}, attributes);
         }
-        return attributes.hasOwnProperty(attribute) ? attributes[attribute] : undefined;
+        return hasOwn(attributes, attribute) ? attributes[attribute] : undefined;
     }
 
     /**
@@ -200,7 +201,7 @@ export class Entry extends VaultItem {
             return this._getResolvedProperties();
         }
         const raw = this.vault.format.getEntryProperties(this._source);
-        if (!raw.hasOwnProperty(property)) return undefined;
+        if (!hasOwn(raw, property)) return undefined;
         const linkedValue = this._followPropertyLink(property);
         return linkedValue !== null ? linkedValue : raw[property];
     }
@@ -953,7 +954,7 @@ export class Entry extends VaultItem {
         const target = this.vault.findEntryByID(link.entryID);
         if (!target || target.isInTrash()) return null;
         const targetRaw = this.vault.format.getEntryProperties(target._source);
-        if (!targetRaw.hasOwnProperty(link.property)) return null;
+        if (!hasOwn(targetRaw, link.property)) return null;
         // The target may itself be linked: if its link is broken, it shows
         // its own stored value
         const next = target._followPropertyLink(link.property, visited);
@@ -967,7 +968,7 @@ export class Entry extends VaultItem {
         for (const attribute of Object.keys(attributes)) {
             if (attribute.indexOf(Entry.Attributes.PropertyLinkPrefix) !== 0) continue;
             const property = attribute.slice(Entry.Attributes.PropertyLinkPrefix.length);
-            if (!raw.hasOwnProperty(property)) continue;
+            if (!hasOwn(raw, property)) continue;
             const linkedValue = this._followPropertyLink(property);
             if (linkedValue !== null) {
                 linkedValues[property] = linkedValue;

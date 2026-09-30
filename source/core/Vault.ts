@@ -16,6 +16,7 @@ import {
     GroupID,
     History
 } from "../types.js";
+import { hasOwn } from "../tools/object.js";
 
 export interface VaultDefaultsOptions {
     /**
@@ -365,7 +366,7 @@ export class Vault extends EventEmitter {
         if (!attributeName) {
             return Object.assign({}, attributes);
         }
-        if (attributes.hasOwnProperty(attributeName)) {
+        if (hasOwn(attributes, attributeName)) {
             return attributes[attributeName];
         }
         return undefined;

@@ -61,6 +61,7 @@ import {
     VaultID,
     EntryPropertyType
 } from "../types.js";
+import { assertValidPropertyName } from "../tools/object.js";
 
 const COMMANDS: { [command: string]: Function } = {
     aid: executeArchiveID,
@@ -359,14 +360,13 @@ export class VaultFormatA extends VaultFormat {
                     : typeof item.newValue === "string"
                       ? EntryChangeType.Modified
                       : EntryChangeType.Deleted;
+                // A deletion has no value: null, as in Format B
                 const change: EntryChange = {
                     property: item.property,
                     type,
-                    ts: null
+                    ts: null,
+                    value: type === EntryChangeType.Deleted ? null : item.newValue
                 };
-                if (type === EntryChangeType.Created || EntryChangeType.Modified) {
-                    change.value = item.newValue;
-                }
                 return change;
             });
     }
@@ -449,6 +449,7 @@ export class VaultFormatA extends VaultFormat {
     }
 
     setEntryAttribute(entryID: EntryID, attribute: string, value: string) {
+        assertValidPropertyName(attribute);
         this.execute(
             Inigo.create(Inigo.Command.SetEntryAttribute)
                 .addArgument(entryID)
@@ -459,6 +460,7 @@ export class VaultFormatA extends VaultFormat {
     }
 
     setEntryProperty(entryID: EntryID, property: string, value: string) {
+        assertValidPropertyName(property);
         this.execute(
             Inigo.create(Inigo.Command.SetEntryProperty)
                 .addArgument(entryID)
@@ -469,6 +471,7 @@ export class VaultFormatA extends VaultFormat {
     }
 
     setGroupAttribute(groupID: GroupID, attribute: string, value: string) {
+        assertValidPropertyName(attribute);
         this.execute(
             Inigo.create(Inigo.Command.SetGroupAttribute)
                 .addArgument(groupID)
@@ -488,6 +491,7 @@ export class VaultFormatA extends VaultFormat {
     }
 
     setVaultAttribute(key: string, value: string) {
+        assertValidPropertyName(key);
         this.execute(
             Inigo.create(Inigo.Command.SetArchiveAttribute)
                 .addArgument(key)

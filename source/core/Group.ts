@@ -6,6 +6,7 @@ import { moveGroupBetweenVaults } from "../tools/sharing.js";
 import { findGroupsByTitle, getAllChildGroups } from "../search/groups.js";
 import { findEntriesByProperty, getAllChildEntries } from "../search/entries.js";
 import { EntryID, GroupID } from "../types.js";
+import { hasOwn } from "../tools/object.js";
 
 /**
  * Group class - contains Entrys
@@ -181,7 +182,7 @@ export class Group extends VaultItem {
         if (typeof attribute === "undefined") {
             return Object.assign({}, attributes);
         }
-        return attributes.hasOwnProperty(attribute) ? attributes[attribute] : undefined;
+        return hasOwn(attributes, attribute) ? attributes[attribute] : undefined;
     }
 
     /**

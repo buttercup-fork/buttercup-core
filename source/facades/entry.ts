@@ -17,6 +17,7 @@ import {
     PropertyKeyValueObject,
     VaultFacade
 } from "../types.js";
+import { hasOwn } from "../tools/object.js";
 
 export interface ConsumeEntryFacadeOptions {
     mergeMode?: boolean;
@@ -222,9 +223,7 @@ export function consumeEntryFacade(
         const kept = shownOrder.filter((property) => moved.includes(property));
         if (moved.some((property, index) => kept[index] !== property)) {
             const existing = entry.getProperty();
-            entry.setPropertyOrders(
-                newOrder.filter((property) => existing.hasOwnProperty(property))
-            );
+            entry.setPropertyOrders(newOrder.filter((property) => hasOwn(existing, property)));
         }
         return;
     }

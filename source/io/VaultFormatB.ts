@@ -23,12 +23,14 @@ import {
     valueToHistoryItem
 } from "./formatB/history.js";
 import { getDateString } from "../tools/date.js";
+import { assertValidPropertyName, hasOwn } from "../tools/object.js";
 import {
     EntryChange,
     EntryChangeType,
     EntryID,
     FormatBEntry,
     FormatBGroup,
+    FormatBKeyValueObject,
     FormatBValueHistoryItem,
     FormatBVault,
     GroupID,
@@ -53,6 +55,29 @@ function emptyVault(): FormatBVault {
             g: {}
         }
     };
+}
+
+// Values are keyed by user-controlled names, so only own keys count: see
+// tools/object.ts.
+
+function deleteRawValue(values: FormatBKeyValueObject, key: string): boolean {
+    if (!hasOwn(values, key)) return false;
+    values[key].deleted = nextDeleteTimestamp(values[key]);
+    return true;
+}
+
+function setRawValue(values: FormatBKeyValueObject, key: string, value: string) {
+    assertValidPropertyName(key);
+    if (!hasOwn(values, key)) {
+        values[key] = newRawValue(value);
+        return;
+    }
+    const item = values[key];
+    item.history.unshift(valueToHistoryItem(item));
+    item.value = value;
+    item.updated = nextUpdateTimestamp(item);
+    // Writing a value un-deletes it
+    delete item.deleted;
 }
 
 export class VaultFormatB extends VaultFormat {
@@ -180,15 +205,13 @@ export class VaultFormatB extends VaultFormat {
 
     deleteEntryAttribute(entryID: EntryID, attribute: string) {
         const entry = this.source.e.find((e: FormatBEntry) => e.id === entryID)!;
-        if (!entry.a[attribute]) return;
-        entry.a[attribute].deleted = nextDeleteTimestamp(entry.a[attribute]);
+        if (!deleteRawValue(entry.a, attribute)) return;
         this.emit("commandsExecuted");
     }
 
     deleteEntryProperty(entryID: EntryID, property: string) {
         const entry = this.source.e.find((e) => e.id === entryID)!;
-        if (!entry.p[property]) return;
-        entry.p[property].deleted = nextDeleteTimestamp(entry.p[property]);
+        if (!deleteRawValue(entry.p, property)) return;
         this.emit("commandsExecuted");
     }
 
@@ -203,14 +226,12 @@ export class VaultFormatB extends VaultFormat {
 
     deleteGroupAttribute(groupID: GroupID, attribute: string) {
         const group = this.source.g.find((g) => g.id === groupID)!;
-        if (!group.a[attribute]) return;
-        group.a[attribute].deleted = nextDeleteTimestamp(group.a[attribute]);
+        if (!deleteRawValue(group.a, attribute)) return;
         this.emit("commandsExecuted");
     }
 
     deleteVaultAttribute(attribute: string) {
-        if (!this.source.a[attribute]) return;
-        this.source.a[attribute].deleted = nextDeleteTimestamp(this.source.a[attribute]);
+        if (!deleteRawValue(this.source.a, attribute)) return;
         this.emit("commandsExecuted");
     }
 
@@ -464,46 +485,19 @@ export class VaultFormatB extends VaultFormat {
 
     setEntryAttribute(entryID: EntryID, attribute: string, value: string) {
         const entry = this.source.e.find((e: FormatBEntry) => e.id === entryID)!;
-        if (!entry.a[attribute]) {
-            entry.a[attribute] = newRawValue(value);
-        } else {
-            const item = entry.a[attribute];
-            item.history.unshift(valueToHistoryItem(item));
-            item.value = value;
-            item.updated = nextUpdateTimestamp(item);
-            // Writing a value un-deletes it
-            delete item.deleted;
-        }
+        setRawValue(entry.a, attribute, value);
         this.emit("commandsExecuted");
     }
 
     setEntryProperty(entryID: EntryID, property: string, value: string) {
         const entry = this.source.e.find((e: FormatBEntry) => e.id === entryID)!;
-        if (!entry.p[property]) {
-            entry.p[property] = newRawValue(value);
-        } else {
-            const item = entry.p[property];
-            item.history.unshift(valueToHistoryItem(item));
-            item.value = value;
-            item.updated = nextUpdateTimestamp(item);
-            // Writing a value un-deletes it
-            delete item.deleted;
-        }
+        setRawValue(entry.p, property, value);
         this.emit("commandsExecuted");
     }
 
     setGroupAttribute(groupID: GroupID, attribute: string, value: string) {
         const group = this.source.g.find((g: FormatBGroup) => g.id === groupID)!;
-        if (!group.a[attribute]) {
-            group.a[attribute] = newRawValue(value);
-        } else {
-            const item = group.a[attribute];
-            item.history.unshift(valueToHistoryItem(item));
-            item.value = value;
-            item.updated = nextUpdateTimestamp(item);
-            // Writing a value un-deletes it
-            delete item.deleted;
-        }
+        setRawValue(group.a, attribute, value);
         this.emit("commandsExecuted");
     }
 
@@ -514,16 +508,7 @@ export class VaultFormatB extends VaultFormat {
     }
 
     setVaultAttribute(key: string, value: string) {
-        if (!this.source.a[key]) {
-            this.source.a[key] = newRawValue(value);
-        } else {
-            const item = this.source.a[key];
-            item.history.unshift(valueToHistoryItem(item));
-            item.value = value;
-            item.updated = nextUpdateTimestamp(item);
-            // Writing a value un-deletes it
-            delete item.deleted;
-        }
+        setRawValue(this.source.a, key, value);
         this.emit("commandsExecuted");
     }
 }

@@ -12,6 +12,7 @@ import {
     PropertyKeyValueObject,
     VaultFacade
 } from "../types.js";
+import { hasOwn } from "../tools/object.js";
 
 export interface ConsumeVaultFacadeOptions {
     mergeMode?: boolean;
@@ -56,7 +57,7 @@ export function consumeGroupFacade(group: Group, facade: GroupFacade) {
     }
     // Check attributes
     Object.keys(existingAttributes)
-        .filter((attr) => !attributes.hasOwnProperty(attr))
+        .filter((attr) => !hasOwn(attributes, attr))
         .forEach((attr) => {
             // Remove missing
             group.deleteAttribute(attr);
@@ -236,7 +237,7 @@ export function consumeVaultFacade(
     });
     // Check attributes
     Object.keys(currentAttributes)
-        .filter((attr) => !attributes.hasOwnProperty(attr))
+        .filter((attr) => !hasOwn(attributes, attr))
         .forEach((attr) => {
             // Remove missing
             vault.deleteAttribute(attr);

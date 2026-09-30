@@ -14,6 +14,7 @@ import {
     GroupID,
     VaultID
 } from "../../types.js";
+import { hasOwn } from "../../tools/object.js";
 
 export function executeArchiveID(vault: FormatAVault, opts: any, id: VaultID) {
     if (opts.shareID) {
@@ -85,7 +86,7 @@ export function executeCreateGroup(
 
 export function executeDeleteArchiveAttribute(archive: FormatAVault, opts: any, attribute: string) {
     const attributes = archive.attributes || {};
-    if (attributes.hasOwnProperty(attribute) !== true) {
+    if (hasOwn(attributes, attribute) !== true) {
         throw new Error(`Vault contains no such attribute: ${attribute}`);
     }
     const deleted = delete attributes[attribute];
@@ -115,7 +116,7 @@ export function executeDeleteEntryAttribute(
         throw new Error("Entry not found for ID");
     }
     entry.attributes = entry.attributes || {};
-    const value = entry.attributes[attribute];
+    const value = hasOwn(entry.attributes, attribute) ? entry.attributes[attribute] : undefined;
     const deleted = delete entry.attributes[attribute];
     if (!deleted) {
         throw new Error("Failed deleting attribute");
@@ -138,7 +139,7 @@ export function executeDeleteEntryProperty(
         throw new Error(`Entry not found for ID: ${entryID}`);
     }
     entry.properties = entry.properties || {};
-    const value = entry.properties[property];
+    const value = hasOwn(entry.properties, property) ? entry.properties[property] : undefined;
     const deleted = delete entry.properties[property];
     if (!deleted) {
         throw new Error(`Failed deleting property: ${property}`);

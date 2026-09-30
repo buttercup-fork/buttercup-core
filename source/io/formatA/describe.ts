@@ -1,5 +1,6 @@
 import { InigoCommand as Inigo } from "./tools.js";
 import { FormatAGroup, FormatAVault, GroupID, History } from "../../types.js";
+import { hasOwn } from "../../tools/object.js";
 
 const { Command } = Inigo;
 
@@ -62,7 +63,7 @@ export function describeVaultDataset(
         }
         if (dataset.attributes) {
             for (var attributeName in dataset.attributes) {
-                if (dataset.attributes.hasOwnProperty(attributeName)) {
+                if (hasOwn(dataset.attributes, attributeName)) {
                     commands.push(
                         Inigo.create(Command.SetGroupAttribute)
                             .addArgument(currentGroupID)
@@ -95,7 +96,7 @@ export function describeVaultDataset(
         }
         if (entry.attributes) {
             for (var attributeName in entry.attributes) {
-                if (entry.attributes.hasOwnProperty(attributeName)) {
+                if (hasOwn(entry.attributes, attributeName)) {
                     commands.push(
                         Inigo.create(Command.SetEntryAttribute)
                             .addArgument(entry.id)
