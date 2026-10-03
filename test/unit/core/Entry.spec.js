@@ -273,6 +273,7 @@ describe("core/Entry", function () {
                     this.entry.moveToGroup(this.otherGroup);
                     expect(this.group.getEntries()).to.have.lengthOf(0);
                     expect(this.otherGroup.getEntries()).to.have.lengthOf(1);
+                    expect(this.entry.getGroup()).to.equal(this.otherGroup);
                 });
             });
 

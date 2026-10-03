@@ -177,12 +177,14 @@ export class Entry extends VaultItem {
      * @throws {Error} Throws if no parent group found
      */
     getGroup(): Group {
-        const parentGroup = this.vault.format.findGroupContainingEntryID(this.id);
+        // Read the parent ID from the entry's own record rather than searching
+        // every entry in the vault for it
+        const parentID = this.vault.format.getItemParentID(this._source);
+        const parentGroup = this.vault._groups.find((group) => group.id === parentID);
         if (!parentGroup) {
             throw new Error(`No parent group found for entry: ${this.id}`);
         }
-        const parentID = this.vault.format.getItemID(parentGroup);
-        return this.vault._groups.find((group) => group.id === parentID)!;
+        return parentGroup;
     }
 
     /**
