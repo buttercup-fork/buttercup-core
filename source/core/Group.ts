@@ -213,7 +213,9 @@ export class Group extends VaultItem {
      * @memberof Group
      */
     getEntries(): Array<Entry> {
-        return this.vault._entries.filter((entry) => entry.getGroup() === this);
+        return this.vault._entries.filter(
+            (entry) => this.vault.format.getItemParentID(entry._source) === this.id
+        );
     }
 
     /**
