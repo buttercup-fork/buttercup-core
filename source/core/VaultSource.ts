@@ -483,6 +483,10 @@ export class VaultSource extends EventEmitter {
             );
         }
         await this._enqueueStateChange(async () => {
+            // Another lock queued before this one already locked it: locking
+            // again would fail half-way and leave the source "unlocked" with
+            // no vault, so it could never be unlocked again (buttercup-desktop#1317)
+            if (this.status === VaultSource.STATUS_LOCKED) return;
             this._status = VaultSource.STATUS_PENDING;
             const currentCredentials = this._credentials;
             const currentVault = this._vault;

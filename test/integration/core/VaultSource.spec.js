@@ -146,6 +146,37 @@ describe("VaultSource", function () {
                     });
                 });
 
+                describe("lock", function () {
+                    it("locks once when asked twice at the same time (buttercup-desktop#1317)", async function () {
+                        const results = await Promise.allSettled([
+                            this.vaultSource.lock(),
+                            this.vaultSource.lock()
+                        ]);
+                        expect(results.map((result) => result.status)).to.deep.equal([
+                            "fulfilled",
+                            "fulfilled"
+                        ]);
+                        expect(this.vaultSource.status).to.equal(VaultSourceStatus.Locked);
+                        await this.vaultSource.unlock(Credentials.fromPassword("test"));
+                        expect(this.vaultSource.status).to.equal(VaultSourceStatus.Unlocked);
+                        expect(this.vaultSource.vault).to.be.an.instanceOf(Vault);
+                    });
+
+                    it("still refuses to lock a locked source", async function () {
+                        await this.vaultSource.lock();
+                        let lockError = null;
+                        try {
+                            await this.vaultSource.lock();
+                        } catch (err) {
+                            lockError = err;
+                        }
+                        expect(lockError)
+                            .to.be.an("error")
+                            .with.property("message")
+                            .that.matches(/invalid state \(locked\)/);
+                    });
+                });
+
                 describe("testMasterPassword", function () {
                     it("returns true for matching password", async function () {
                         const res = await this.vaultSource.testMasterPassword("test");
