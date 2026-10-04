@@ -177,14 +177,33 @@ export function consumeEntryFacade(
                 field.property === "password" &&
                 field.value !== properties["password"]
         );
-        const fields = facadeFields.filter(
-            (field) =>
-                !(
-                    field.propertyType === "attribute" &&
-                    (editedLinks.includes(field.property) ||
-                        (passwordEdited && field.property === Entry.Attributes.PasswordChanged))
-                )
+        // A field's type is also carried as a type attribute field, applied
+        // after the field itself: it follows the field's valueType, which is
+        // what apps change, or it would undo the change (buttercup-desktop#1218).
+        // Type attributes of fields that don't exist (left by renamed or
+        // deleted fields) are dropped
+        const propertyFields = new Map(
+            facadeFields
+                .filter((field) => field.propertyType === EntryPropertyType.Property)
+                .map((field) => [field.property, field])
         );
+        const fields = facadeFields.flatMap((field) => {
+            if (field.propertyType !== EntryPropertyType.Attribute) return [field];
+            if (
+                editedLinks.includes(field.property) ||
+                (passwordEdited && field.property === Entry.Attributes.PasswordChanged)
+            ) {
+                return [];
+            }
+            if (field.property.indexOf(Entry.Attributes.FieldTypePrefix) !== 0) return [field];
+            const propertyField = propertyFields.get(
+                field.property.slice(Entry.Attributes.FieldTypePrefix.length)
+            );
+            if (!propertyField) return [];
+            return propertyField.valueType
+                ? [{ ...field, value: propertyField.valueType }]
+                : [field];
+        });
         // update data
         fields.forEach((field) => applyFieldDescriptor(entry, field));
         // remove missing properties
