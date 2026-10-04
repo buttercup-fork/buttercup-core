@@ -1,3 +1,4 @@
+import { readFile, writeFile } from "fs/promises";
 import { join } from "path";
 import { expect } from "chai";
 import sinon from "sinon";
@@ -106,6 +107,55 @@ describe("VaultManager", function () {
                 const localGroup = source.vault.findGroupsByTitle("Local")[0];
                 expect(remoteGroup).to.be.an.instanceOf(Group, "Remote item should be a group");
                 expect(localGroup).to.be.an.instanceOf(Group, "Local item should be a group");
+            });
+
+            it("can restore a damaged vault file from the offline copy", async function () {
+                const vaultPath = join(this.tmpDir, "vault.bcup");
+                const creds = Credentials.fromDatasource({ type: "file", path: vaultPath }, "test");
+                const source = new VaultSource("Test", "file", await creds.toSecureString());
+                await this.vaultManager.addSource(source);
+                await source.unlock(Credentials.fromPassword("test"), { initialiseRemote: true });
+                source.vault.createGroup("Kept");
+                await source.save();
+                await source.lock();
+                // Cut the file off before the salt, as an interrupted write would
+                const content = await readFile(vaultPath, "utf8");
+                await writeFile(vaultPath, content.slice(0, 40));
+                let unlockError = null;
+                try {
+                    await source.unlock(Credentials.fromPassword("test"));
+                } catch (err) {
+                    unlockError = err;
+                }
+                expect(unlockError).to.be.an("error");
+                expect(await source.checkOfflineCopy()).to.equal(true);
+                await source.unlock(Credentials.fromPassword("test"), { loadOfflineCopy: true });
+                await source.restoreOfflineCopy();
+                expect(source.vault.format.readOnly).to.equal(false);
+                source.vault.createGroup("After restore");
+                await source.save();
+                await source.lock();
+                await source.unlock(Credentials.fromPassword("test"));
+                expect(source.vault.findGroupsByTitle("Kept")).to.have.lengthOf(1);
+                expect(source.vault.findGroupsByTitle("After restore")).to.have.lengthOf(1);
+            });
+
+            it("refuses to restore when not unlocked from an offline copy", async function () {
+                const vaultPath = join(this.tmpDir, "vault.bcup");
+                const creds = Credentials.fromDatasource({ type: "file", path: vaultPath }, "test");
+                const source = new VaultSource("Test", "file", await creds.toSecureString());
+                await this.vaultManager.addSource(source);
+                await source.unlock(Credentials.fromPassword("test"), { initialiseRemote: true });
+                let restoreError = null;
+                try {
+                    await source.restoreOfflineCopy();
+                } catch (err) {
+                    restoreError = err;
+                }
+                expect(restoreError)
+                    .to.be.an("error")
+                    .with.property("message")
+                    .that.matches(/not unlocked from an offline copy/);
             });
         });
     });
