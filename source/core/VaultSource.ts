@@ -680,6 +680,51 @@ export class VaultSource extends EventEmitter {
         this.emit("updated");
     }
 
+    /**
+     * Write the offline copy that the source was unlocked from back to the
+     * remote, replacing what is there (eg. a damaged vault file). The remote
+     * isn't read or merged first, so changes saved elsewhere since the copy
+     * was stored are lost. The vault is editable again afterwards.
+     * @memberof VaultSource
+     */
+    async restoreOfflineCopy() {
+        if (this.status !== VaultSource.STATUS_UNLOCKED || !this.vault.format.readOnly) {
+            throw new Layerr(
+                `Failed restoring offline copy: Source not unlocked from an offline copy: ${this.id}`
+            );
+        }
+        await this._enqueueStateChange(async () => {
+            let encryptedContent: string | null = null;
+            const encryptedCallback = ({ content }: { content: string }) => {
+                encryptedContent = content;
+            };
+            this._datasource!.once("encryptedContent", encryptedCallback);
+            try {
+                await this._datasource!.save(
+                    this._vault!.format.history,
+                    prepareDatasourceCredentials(
+                        this._credentials as Credentials,
+                        this._datasource!.type
+                    )
+                );
+            } catch (err) {
+                this._datasource!.off("encryptedContent", encryptedCallback);
+                throw err;
+            }
+            this._vault!.format._readOnly = false;
+            this._vault!.format.dirty = false;
+            if (encryptedContent) {
+                await storeSourceOfflineCopy(
+                    this._vaultManager!._cacheStorage,
+                    this.id,
+                    encryptedContent
+                );
+            }
+            await this._updateInsights();
+        }, /* stack */ "saving");
+        this.emit("updated");
+    }
+
     supportsAttachments(): boolean {
         if (this.status !== VaultSource.STATUS_UNLOCKED) return false;
         return this._datasource!.supportsAttachments();
