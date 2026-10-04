@@ -16,6 +16,31 @@ import {
     VaultID
 } from "../types.js";
 
+const RENAME_ATTEMPTS = 10;
+
+function isAccessError(err: unknown): boolean {
+    const { code } = err as NodeJS.ErrnoException;
+    return code === "EPERM" || code === "EACCES" || code === "EBUSY";
+}
+
+/**
+ * Rename a file over another one. On Windows a virus scanner, indexer or sync
+ * tool may briefly hold the target open, so retry for a moment.
+ */
+async function renameReplacing(source: string, target: string): Promise<void> {
+    for (let attempt = 1; ; attempt += 1) {
+        try {
+            await fs.promises.rename(source, target);
+            return;
+        } catch (err) {
+            if (!isAccessError(err) || process.platform !== "win32" || attempt >= RENAME_ATTEMPTS) {
+                throw err;
+            }
+            await new Promise((resolve) => setTimeout(resolve, attempt * 50));
+        }
+    }
+}
+
 /**
  * File datasource for loading and saving files
  * @augments TextDatasource
@@ -166,9 +191,52 @@ export class FileDatasource extends TextDatasource {
      * @memberof FileDatasource
      */
     save(history: History, credentials: Credentials): Promise<EncryptedContent> {
-        return super
-            .save(history, credentials)
-            .then((encrypted) => this.writeFile(this.path, encrypted));
+        return super.save(history, credentials).then(async (encrypted) => {
+            await this._writeVaultFile(encrypted);
+            return encrypted;
+        });
+    }
+
+    /**
+     * Write the vault file without ever leaving it half-written: write a
+     * temporary file next to it, flush it to disk and rename it over the
+     * vault. Writing the vault in place left it cut off when the app was
+     * killed, the power went or a sync tool copied it mid-write, and a cut-off
+     * vault no longer unlocks ("Failed deriving key: Salt must be provided",
+     * buttercup/buttercup-desktop#1233).
+     * @param content The encrypted vault
+     * @memberof FileDatasource
+     */
+    async _writeVaultFile(content: string): Promise<void> {
+        const target = this.path;
+        let mode: number | undefined;
+        try {
+            mode = (await fs.promises.stat(target)).mode & 0o777;
+            // Still refuse to save over a read-only vault file
+            await fs.promises.access(target, fs.constants.W_OK);
+        } catch (err) {
+            if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+        }
+        const tempPath = path.join(
+            path.dirname(target),
+            `.${path.basename(target)}.${process.pid}-${Date.now()}.tmp`
+        );
+        try {
+            const file = await fs.promises.open(tempPath, "w", mode);
+            try {
+                await file.writeFile(content, "utf8");
+                await file.sync();
+            } finally {
+                await file.close();
+            }
+            await renameReplacing(tempPath, target);
+        } catch (err) {
+            await fs.promises.unlink(tempPath).catch(() => {});
+            if (!isAccessError(err)) throw err;
+            // The folder doesn't allow new files, or (Windows) another program
+            // holds the vault open: write it in place, as before
+            await this.writeFile(target, content);
+        }
     }
 
     /**
