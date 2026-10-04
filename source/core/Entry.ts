@@ -137,9 +137,15 @@ export class Entry extends VaultItem {
         this.vault.format.deleteEntryProperty(this.id, property);
         this._deletePropertyLink(property);
         this._deleteRecoveryCodesMarker(property);
-        const orderAttribute = `${Entry.Attributes.FieldOrderPrefix}${property}`;
-        if (typeof this.getAttribute(orderAttribute) === "string") {
-            this.deleteAttribute(orderAttribute);
+        // A field added later under the same name mustn't inherit these
+        for (const prefix of [
+            Entry.Attributes.FieldOrderPrefix,
+            Entry.Attributes.FieldTypePrefix
+        ]) {
+            const attribute = `${prefix}${property}`;
+            if (typeof this.getAttribute(attribute) === "string") {
+                this.deleteAttribute(attribute);
+            }
         }
         return this;
     }
