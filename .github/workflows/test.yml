@@ -25,15 +25,16 @@ jobs:
         node-version: [22.x]
     steps:
       - uses: actions/checkout@v5
-      # Full GitHub URL: this Forgejo instance's default action source
-      # (data.forgejo.org) doesn't mirror browser-actions/*. Runs before
-      # setup-node so it uses the image's newer Node.
+      # Runs before setup-node so it uses the image's newer Node. A short
+      # name works on both GitHub and our Forgejo (its default action
+      # source is github.com).
       - name: Setup Chrome
         id: setup-chrome
-        uses: https://github.com/browser-actions/setup-chrome@v1
+        uses: browser-actions/setup-chrome@v1
         with:
           install-dependencies: true
-          no-sudo: true
+          # The Forgejo runner is root and has no sudo; GitHub's runner needs it
+          no-sudo: ${{ github.server_url != 'https://github.com' }}
       - name: Node.js web specs ${{ matrix.node-version }}
         uses: actions/setup-node@v5
         with:
