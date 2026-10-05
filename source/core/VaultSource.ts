@@ -6,7 +6,7 @@ import { Credentials } from "../credentials/Credentials.js";
 import { getCredentials, setCredentials } from "../credentials/memory/credentials.js";
 import { getMasterPassword, setMasterPassword } from "../credentials/memory/password.js";
 import { getUniqueID } from "../tools/encoding.js";
-import { ErrorCode } from "../tools/error.js";
+import { ErrorCode, getErrorCode } from "../tools/error.js";
 import {
     getSourceOfflineArchive,
     sourceHasOfflineCopy,
@@ -29,7 +29,26 @@ import {
 } from "../types.js";
 
 interface StateChangeEnqueuedFunction {
-    (): void | Promise<any>;
+    /**
+     * @param assertCurrent Throws if the source was force-locked since the
+     *  change was queued: call it after each wait, before touching the source
+     */
+    (assertCurrent: () => void): void | Promise<any>;
+}
+
+interface StateChangeAbort {
+    promise: Promise<never>;
+    reject: (err: Error) => void;
+}
+
+function createStateChangeAbort(): StateChangeAbort {
+    let reject: (err: Error) => void = () => {};
+    const promise = new Promise<never>((_, rej) => {
+        reject = rej;
+    });
+    // Rejected only for callers that are waiting; nobody else needs to see it
+    promise.catch(() => {});
+    return { promise, reject };
 }
 
 export interface VaultSourceConfig {
@@ -37,6 +56,17 @@ export interface VaultSourceConfig {
     id?: VaultSourceID;
     order?: number;
     meta?: VaultSourceMetadata;
+}
+
+export interface VaultSourceLockOptions {
+    /**
+     * Lock without waiting for a save, update or other change that is still
+     * running or queued, eg. when a stalled remote never answers. Those
+     * changes are dropped: their promises reject with `ErrorCode.SourceLocked`,
+     * and unsaved edits are lost. A request already sent can't be taken back
+     * and may still complete in the background
+     */
+    force?: boolean;
 }
 
 export interface VaultSourceSaveOptions {
@@ -127,6 +157,9 @@ export class VaultSource extends EventEmitter {
     _order: number;
     _queue: ChannelQueue;
     _shares: Array<any> = [];
+    // Bumped by a forced lock, which drops every state change queued before it
+    _stateGeneration: number = 0;
+    _stateAbort: StateChangeAbort = createStateChangeAbort();
     _status: VaultSourceStatus;
     _type: string;
     _vault: Vault | null = null;
@@ -391,6 +424,11 @@ export class VaultSource extends EventEmitter {
                 payload.credentials = await (<Credentials>this._credentials).toSecureString();
             }
             return JSON.stringify(payload);
+        }).catch((err) => {
+            // Queued behind a change that a forced lock dropped: it only
+            // reads the source, so it can run again in the new queue
+            if (getErrorCode(err) === ErrorCode.SourceLocked) return this.dehydrate();
+            throw err;
         });
     }
 
@@ -449,38 +487,42 @@ export class VaultSource extends EventEmitter {
                 )
             );
         }
-        if (typeof (<any>this._datasource).localDiffersFromRemote === "function") {
-            return (<any>this._datasource).localDiffersFromRemote(
-                prepareDatasourceCredentials(
-                    this._credentials as Credentials,
-                    this._datasource!.type
-                ),
-                this.vault.format.history
-            );
+        // Kept for after the request: the source may be locked by then
+        const datasource = this._datasource!;
+        const vault = this.vault;
+        const credentials = prepareDatasourceCredentials(
+            this._credentials as Credentials,
+            datasource.type
+        );
+        if (typeof (<any>datasource).localDiffersFromRemote === "function") {
+            return (<any>datasource).localDiffersFromRemote(credentials, vault.format.history);
         }
-        if (this._datasource!.type !== "text") {
+        if (datasource.type !== "text") {
             // Only clear if not a TextDatasource
-            this._datasource!.setContent("");
+            datasource.setContent("");
         }
-        return this._datasource!.load(
-            prepareDatasourceCredentials(this._credentials as Credentials, this._datasource!.type)
-        ).then(({ Format, history }) => {
-            if (Format !== this.vault.format.getFormat()) {
+        return datasource.load(credentials).then(({ Format, history }) => {
+            if (Format !== vault.format.getFormat()) {
                 throw new Error("Loaded format does not match that of current vault");
             }
-            return Format.historiesDiffer(this.vault.format.history, history);
+            return Format.historiesDiffer(vault.format.history, history);
         });
     }
 
     /**
-     * Lock the source
+     * Lock the source. Waits for saves and other changes that are running
+     * or queued first, unless `force` is set
+     * @param options Lock options
      * @memberof VaultSource
      */
-    async lock() {
+    async lock(options: VaultSourceLockOptions = {}) {
         if (this.status !== VaultSource.STATUS_UNLOCKED) {
             throw new Layerr(
                 `Failed locking source: Source in invalid state (${this.status}): ${this.id}`
             );
+        }
+        if (options.force) {
+            this._dropStateChanges();
         }
         await this._enqueueStateChange(async () => {
             // Another lock queued before this one already locked it: locking
@@ -520,19 +562,22 @@ export class VaultSource extends EventEmitter {
      * @memberof VaultSource
      */
     async mergeFromRemote(): Promise<Vault> {
-        if (this._datasource!.type !== "text") {
+        // Kept for after the request: the source may be locked by then
+        const datasource = this._datasource!;
+        const vault = this._vault!;
+        if (datasource.type !== "text") {
             // Only clear if not a TextDatasource
-            this._datasource!.setContent("");
+            datasource.setContent("");
         }
-        const { Format, history } = await this._datasource!.load(
-            prepareDatasourceCredentials(this._credentials as Credentials, this._datasource!.type)
+        const { Format, history } = await datasource.load(
+            prepareDatasourceCredentials(this._credentials as Credentials, datasource.type)
         );
-        if (Format !== this._vault!.format.getFormat()) {
+        if (Format !== vault.format.getFormat()) {
             throw new Error("Format loaded during merge did not match current");
         }
-        const newVault = Format.vaultFromMergedHistories(history, this._vault!.format.history);
-        this._vault!._updateFormat(newVault.format);
-        return this._vault!;
+        const newVault = Format.vaultFromMergedHistories(history, vault.format.history);
+        vault._updateFormat(newVault.format);
+        return vault;
     }
 
     /**
@@ -558,7 +603,7 @@ export class VaultSource extends EventEmitter {
                 `Failed merging into source: Source not unlocked (${this.status}): ${this.id}`
             );
         }
-        await this._enqueueStateChange(async () => {
+        await this._enqueueStateChange(async (assertCurrent) => {
             const masterPassword = getMasterPassword(credentials.id)!;
             const datasource = credentialsToDatasource(
                 Credentials.fromCredentials(credentials, masterPassword)
@@ -566,6 +611,7 @@ export class VaultSource extends EventEmitter {
             const { Format, history } = await datasource.load(
                 prepareDatasourceCredentials(credentials, datasource.type)
             );
+            assertCurrent();
             const currentFormat = this._vault!.format.getFormat();
             if (Format !== currentFormat) {
                 // Converting would give every value in the copy a new
@@ -642,33 +688,35 @@ export class VaultSource extends EventEmitter {
      */
     async save(config: VaultSourceSaveOptions = {}) {
         const { storeOfflineCopy = true } = config;
-        await this._enqueueStateChange(async () => {
+        await this._enqueueStateChange(async (assertCurrent) => {
             if (await this.localDiffersFromRemote()) {
+                assertCurrent();
                 await this.mergeFromRemote();
             }
+            assertCurrent();
+            const datasource = this._datasource!;
+            const vault = this._vault!;
             // Linked values may have changed since their copies were stored
-            this._vault!._updatePropertyLinkCopies();
+            vault._updatePropertyLinkCopies();
             // Capture encrypted content
             let encryptedContent: string | null = null;
             const encryptedCallback = ({ content }: { content: string }) => {
                 encryptedContent = content;
             };
-            this._datasource!.once("encryptedContent", encryptedCallback);
+            datasource.once("encryptedContent", encryptedCallback);
             // Save
             try {
-                await this._datasource!.save(
-                    this._vault!.format.history,
-                    prepareDatasourceCredentials(
-                        this._credentials as Credentials,
-                        this._datasource!.type
-                    )
+                await datasource.save(
+                    vault.format.history,
+                    prepareDatasourceCredentials(this._credentials as Credentials, datasource.type)
                 );
             } catch (err) {
-                this._datasource!.off("encryptedContent", encryptedCallback);
+                datasource.off("encryptedContent", encryptedCallback);
                 throw err;
             }
             // Clear state
-            this._vault!.format.dirty = false;
+            vault.format.dirty = false;
+            assertCurrent();
             // Handle offline state
             if (storeOfflineCopy && encryptedContent) {
                 // Store an offline copy for later use
@@ -697,26 +745,26 @@ export class VaultSource extends EventEmitter {
                 `Failed restoring offline copy: Source not unlocked from an offline copy: ${this.id}`
             );
         }
-        await this._enqueueStateChange(async () => {
+        await this._enqueueStateChange(async (assertCurrent) => {
+            const datasource = this._datasource!;
+            const vault = this._vault!;
             let encryptedContent: string | null = null;
             const encryptedCallback = ({ content }: { content: string }) => {
                 encryptedContent = content;
             };
-            this._datasource!.once("encryptedContent", encryptedCallback);
+            datasource.once("encryptedContent", encryptedCallback);
             try {
-                await this._datasource!.save(
-                    this._vault!.format.history,
-                    prepareDatasourceCredentials(
-                        this._credentials as Credentials,
-                        this._datasource!.type
-                    )
+                await datasource.save(
+                    vault.format.history,
+                    prepareDatasourceCredentials(this._credentials as Credentials, datasource.type)
                 );
             } catch (err) {
-                this._datasource!.off("encryptedContent", encryptedCallback);
+                datasource.off("encryptedContent", encryptedCallback);
                 throw err;
             }
-            this._vault!.format._readOnly = false;
-            this._vault!.format.dirty = false;
+            vault.format._readOnly = false;
+            vault.format.dirty = false;
+            assertCurrent();
             if (encryptedContent) {
                 await storeSourceOfflineCopy(
                     this._vaultManager!._cacheStorage,
@@ -854,10 +902,11 @@ export class VaultSource extends EventEmitter {
      */
     async update({ skipDiff = false } = {}) {
         const didUpdate = await this._enqueueStateChange(
-            () =>
+            (assertCurrent) =>
                 (skipDiff ? Promise.resolve(false) : this.localDiffersFromRemote()).then(
                     (differs) => {
                         if (differs) {
+                            assertCurrent();
                             return this.mergeFromRemote().then(() => true);
                         }
                         return false;
@@ -881,15 +930,15 @@ export class VaultSource extends EventEmitter {
      * @memberof VaultSource
      */
     async write() {
-        await this._enqueueStateChange(async () => {
-            await this._datasource!.save(
-                this._vault!.format.history,
-                prepareDatasourceCredentials(
-                    this._credentials as Credentials,
-                    this._datasource!.type
-                )
+        await this._enqueueStateChange(async (assertCurrent) => {
+            const datasource = this._datasource!;
+            const vault = this._vault!;
+            await datasource.save(
+                vault.format.history,
+                prepareDatasourceCredentials(this._credentials as Credentials, datasource.type)
             );
-            this._vault!.format.dirty = false;
+            vault.format.dirty = false;
+            assertCurrent();
             await this._updateInsights();
         }, /* stack */ "saving");
         this.emit("updated");
@@ -904,9 +953,42 @@ export class VaultSource extends EventEmitter {
         // });
     }
 
+    /**
+     * Drop every state change that is running or queued: their callers get
+     * an `ErrorCode.SourceLocked` error now, and new changes go into a new
+     * queue instead of waiting behind them. A change that is running
+     * carries on in the background, but stops at its next `assertCurrent()`
+     */
+    _dropStateChanges() {
+        this._stateGeneration += 1;
+        this._queue = new ChannelQueue();
+        const dropped = this._stateAbort;
+        this._stateAbort = createStateChangeAbort();
+        dropped.reject(
+            new Layerr(
+                { info: { code: ErrorCode.SourceLocked } },
+                `Vault source change dropped: Source was locked: ${this.id}`
+            )
+        );
+    }
+
     _enqueueStateChange(cb: StateChangeEnqueuedFunction, stack?: string): Promise<any> {
+        const generation = this._stateGeneration;
+        const assertCurrent = () => {
+            if (this._stateGeneration !== generation) {
+                throw new Layerr(
+                    { info: { code: ErrorCode.SourceLocked } },
+                    `Vault source change dropped: Source was locked: ${this.id}`
+                );
+            }
+        };
+        const task = () => {
+            assertCurrent();
+            return cb(assertCurrent);
+        };
         const channel = this._queue.channel("state");
-        return stack ? channel.enqueue(cb, undefined, stack) : channel.enqueue(cb);
+        const queued = stack ? channel.enqueue(task, undefined, stack) : channel.enqueue(task);
+        return Promise.race([queued, this._stateAbort.promise]);
     }
 
     _unloadShares() {

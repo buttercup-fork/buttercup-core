@@ -383,6 +383,14 @@ await source.lock(); // Discard the decrypted vault from memory
 
 `lock()` does **not** save. Save first if you have made changes.
 
+`lock()` waits for a save or update that is still running. If the remote stops answering (eg. a stalled WebDAV or cloud connection), that wait never ends. Lock anyway with `force`:
+
+```javascript
+await source.lock({ force: true }); // Don't wait for a stuck save: unsaved changes are lost
+```
+
+The save and anything queued behind it then reject with `ErrorCode.SourceLocked`. The vault can be unlocked again straight away.
+
 ## Merging conflict copies
 
 When two devices change a synced vault file at the same time, sync services keep both versions by saving one under a new name next to the original, eg. `vault (Jane's conflicted copy 2026-09-24).bcup`. `findConflictCopies()` picks these out of a directory listing (Dropbox, Nextcloud, ownCloud, Syncthing and Seafile naming is recognised). Merge each one into the unlocked vault, save, and only then remove the copy:
