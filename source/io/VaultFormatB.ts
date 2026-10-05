@@ -73,6 +73,9 @@ function setRawValue(values: FormatBKeyValueObject, key: string, value: string) 
         return;
     }
     const item = values[key];
+    // Writing the value it already has isn't a change, so it adds no history
+    // (a deleted value written again is restored below)
+    if (!item.deleted && item.value === value) return;
     item.history.unshift(valueToHistoryItem(item));
     item.value = value;
     item.updated = nextUpdateTimestamp(item);
