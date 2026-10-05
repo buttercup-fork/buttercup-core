@@ -4,7 +4,8 @@ import {
     cloneValue,
     mergeValues,
     nextDeleteTimestamp,
-    nextUpdateTimestamp
+    nextUpdateTimestamp,
+    valueToHistoryItem
 } from "../../../../dist/node/io/formatB/history.js";
 
 function value(overrides = {}) {
@@ -58,6 +59,45 @@ describe("io/formatB/history", function () {
 
         it("does not add `deleted` when neither side is deleted", function () {
             expect(mergeValues(value(), value(), "property")).to.not.have.property("deleted");
+        });
+
+        it("adds no history when both sides have the same value (B-456)", function () {
+            const same = () => value({ updated: 2000, history: [{ value: "old", updated: 1000 }] });
+            expect(mergeValues(same(), same(), "property").history).to.deep.equal([
+                { value: "old", updated: 1000 }
+            ]);
+        });
+
+        it("keeps the previous value of a value deleted on both sides (B-456)", function () {
+            const merged = mergeValues(value({ deleted: 2000 }), value(), "property");
+            expect(merged).to.have.property("deleted", 2000);
+            expect(merged.history).to.deep.equal([]);
+        });
+
+        it("keeps a deletion marker that only one side has (B-456)", function () {
+            const plain = value({ value: "one", updated: 1000 });
+            const rewritten = value({
+                value: "two",
+                updated: 3000,
+                history: [{ value: "one", updated: 1000, deleted: 2000 }]
+            });
+            expect(mergeValues(plain, rewritten, "property").history).to.deep.equal([
+                { value: "one", updated: 1000, deleted: 2000 }
+            ]);
+        });
+    });
+
+    describe("valueToHistoryItem", function () {
+        it("keeps the deletion time of a deleted value (B-456)", function () {
+            expect(valueToHistoryItem(value({ updated: 1000, deleted: 2000 }))).to.deep.equal({
+                value: "v",
+                updated: 1000,
+                deleted: 2000
+            });
+        });
+
+        it("has no deletion time for a live value", function () {
+            expect(valueToHistoryItem(value())).to.not.have.property("deleted");
         });
     });
     describe("nextUpdateTimestamp", function () {

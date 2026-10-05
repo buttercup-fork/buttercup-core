@@ -254,6 +254,11 @@ export interface FormatBValue {
 export interface FormatBValueHistoryItem {
     value: string | null;
     updated: UTCTimestamp | null;
+    /**
+     * When this value was deleted, if it was deleted before the property or
+     * attribute was written again
+     */
+    deleted?: UTCTimestamp;
 }
 
 export interface FormatBVault {

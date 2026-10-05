@@ -22,12 +22,18 @@ export function cloneValue(value: FormatBValue): FormatBValue {
 function filterDuplicateHistoryItems(
     items: Array<FormatBValueHistoryItem>
 ): Array<FormatBValueHistoryItem> {
-    return items.filter(
-        (thisItem, thisIndex, itemArr) =>
-            itemArr.findIndex(
-                (sub) => sub.value === thisItem.value && sub.updated === thisItem.updated
-            ) === thisIndex
-    );
+    return items.reduce((output: Array<FormatBValueHistoryItem>, item) => {
+        const existing = output.find(
+            (sub) => sub.value === item.value && sub.updated === item.updated
+        );
+        if (!existing) {
+            output.push(Object.assign({}, item));
+        } else if (typeof item.deleted === "number") {
+            // One side may know the value was deleted before it was rewritten
+            existing.deleted = Math.max(existing.deleted ?? 0, item.deleted);
+        }
+        return output;
+    }, []);
 }
 
 export function mergeValues(
@@ -43,7 +49,12 @@ export function mergeValues(
             valueToHistoryItem(olderValue),
             ...value1.history,
             ...value2.history
-        ])
+        ]).filter(
+            // History holds previous values only: when both sides have the
+            // same value, the older one isn't a previous value
+            (item) =>
+                item.value !== mostRecentValue.value || item.updated !== mostRecentValue.updated
+        )
     );
     const merged: FormatBValue = {
         value: mostRecentValue.value,
@@ -118,8 +129,13 @@ export function trimValueHistory(
 }
 
 export function valueToHistoryItem(value: FormatBValue): FormatBValueHistoryItem {
-    return {
+    const item: FormatBValueHistoryItem = {
         value: value.value,
         updated: value.updated
     };
+    if (typeof value.deleted === "number") {
+        // Written again after it was deleted: keep when (buttercup-core B-456)
+        item.deleted = value.deleted;
+    }
+    return item;
 }

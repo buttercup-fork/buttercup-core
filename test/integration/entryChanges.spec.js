@@ -54,7 +54,35 @@ function noteChanges(entry) {
             this.entry.setProperty("note", "one");
             expect(this.entry.getProperty("note")).to.equal("one");
             expect(this.entry.getProperties()).to.have.property("note", "one");
-            expect(noteChanges(this.entry)[0]).to.deep.equal([EntryChangeType.Created, "one"]);
+            expect(noteChanges(this.entry)).to.deep.equal([
+                [EntryChangeType.Created, "one"],
+                [EntryChangeType.Deleted, null]
+            ]);
+        });
+
+        it("keeps a deletion when the property is set again (B-456)", function () {
+            this.entry.setProperty("note", "one");
+            this.entry.deleteProperty("note");
+            this.entry.setProperty("note", "two");
+            this.entry.setProperty("note", "three");
+            expect(noteChanges(this.entry)).to.deep.equal([
+                [EntryChangeType.Created, "one"],
+                [EntryChangeType.Deleted, null],
+                [EntryChangeType.Created, "two"]
+            ]);
+        });
+
+        it("keeps every deletion (B-456)", function () {
+            this.entry.setProperty("note", "one");
+            this.entry.deleteProperty("note");
+            this.entry.setProperty("note", "two");
+            this.entry.deleteProperty("note");
+            expect(noteChanges(this.entry)).to.deep.equal([
+                [EntryChangeType.Created, "one"],
+                [EntryChangeType.Deleted, null],
+                [EntryChangeType.Created, "two"],
+                [EntryChangeType.Deleted, null]
+            ]);
         });
 
         it("keeps the last value of a deleted property, then the deletion", function () {
@@ -79,6 +107,17 @@ function noteChanges(entry) {
 
         it("survives a history round trip", function () {
             this.entry.setProperty("note", "one");
+            this.entry.deleteProperty("note");
+            this.entry.setProperty("note", "two");
+            this.entry.setProperty("note", "three");
+            const copy = Vault.createFromHistory(this.vault.format.getHistory(), Format);
+            expect(noteChanges(copy.findEntryByID(this.entry.id))).to.deep.equal(
+                noteChanges(this.entry)
+            );
+        });
+
+        it("survives a history round trip without deletions", function () {
+            this.entry.setProperty("note", "one");
             this.entry.setProperty("note", "two");
             const copy = Vault.createFromHistory(this.vault.format.getHistory(), Format);
             expect(noteChanges(copy.findEntryByID(this.entry.id))).to.deep.equal([
@@ -97,5 +136,46 @@ describe("Format B: unchanged writes", function () {
         expect(entry._source.a.colour.history).to.deep.equal([]);
         entry.setAttribute("colour", "blue");
         expect(entry._source.a.colour.history.map((item) => item.value)).to.deep.equal(["red"]);
+    });
+});
+
+describe("Format B: merged copies", function () {
+    function copyOf(vault) {
+        return Vault.createFromHistory(vault.format.getHistory(), VaultFormatB);
+    }
+
+    function merge(vaultA, vaultB) {
+        return VaultFormatB.vaultFromMergedHistories(
+            vaultA.format.getHistory(),
+            vaultB.format.getHistory()
+        );
+    }
+
+    beforeEach(function () {
+        this.vault = Vault.createWithDefaults(VaultFormatB);
+        this.entry = this.vault.getGroups()[0].createEntry("Test");
+    });
+
+    it("don't list the current value as a previous one (B-456)", function () {
+        this.entry.setProperty("note", "one");
+        this.entry.setProperty("note", "two");
+        const merged = merge(this.vault, copyOf(this.vault));
+        expect(noteChanges(merged.findEntryByID(this.entry.id))).to.deep.equal([
+            [EntryChangeType.Created, "one"]
+        ]);
+    });
+
+    it("keep a deletion that only one copy has seen (B-456)", function () {
+        this.entry.setProperty("note", "one");
+        const other = copyOf(this.vault);
+        const otherEntry = other.findEntryByID(this.entry.id);
+        otherEntry.deleteProperty("note");
+        otherEntry.setProperty("note", "two");
+        const merged = merge(this.vault, other).findEntryByID(this.entry.id);
+        expect(merged.getProperty("note")).to.equal("two");
+        expect(noteChanges(merged)).to.deep.equal([
+            [EntryChangeType.Created, "one"],
+            [EntryChangeType.Deleted, null]
+        ]);
     });
 });
