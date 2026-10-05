@@ -478,6 +478,12 @@ export class VaultFormatA extends VaultFormat {
 
     setEntryProperty(entryID: EntryID, property: string, value: string) {
         assertValidPropertyName(property);
+        // Writing the value a property already has isn't a change: a command
+        // here would show up as a "previous value" in the entry's history
+        const properties = this.findEntryByID(entryID)?.properties;
+        if (properties && hasOwn(properties, property) && properties[property] === value) {
+            return;
+        }
         this.execute(
             Inigo.create(Inigo.Command.SetEntryProperty)
                 .addArgument(entryID)
