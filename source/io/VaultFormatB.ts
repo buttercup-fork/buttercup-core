@@ -335,17 +335,30 @@ export class VaultFormatB extends VaultFormat {
             }
             return [
                 ...changes,
-                ...values.map((histItem) => {
+                ...values.flatMap((histItem, index) => {
                     const change: EntryChange = {
                         property,
                         type:
-                            histItem.updated === item.created
+                            histItem.updated === item.created ||
+                            // Written again after a deletion: added anew, as in Format A
+                            typeof values[index - 1]?.deleted === "number"
                                 ? EntryChangeType.Created
                                 : EntryChangeType.Modified,
                         ts: histItem.updated,
                         value: histItem.value
                     };
-                    return change;
+                    // Deleted, then written again later
+                    return typeof histItem.deleted === "number"
+                        ? [
+                              change,
+                              {
+                                  property,
+                                  type: EntryChangeType.Deleted,
+                                  ts: histItem.deleted,
+                                  value: null
+                              }
+                          ]
+                        : [change];
                 }),
                 ...(item.deleted
                     ? [
