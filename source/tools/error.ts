@@ -27,7 +27,12 @@ export enum ErrorCode {
     /**
      * A property or attribute name can't be stored (currently only `__proto__`)
      */
-    InvalidPropertyName = "INVALID_PROPERTY_NAME"
+    InvalidPropertyName = "INVALID_PROPERTY_NAME",
+    /**
+     * A save, update or other vault source change was dropped because the
+     * source was locked with `lock({ force: true })` while it waited or ran
+     */
+    SourceLocked = "SOURCE_LOCKED"
 }
 
 // What a wrong password looks like, per algorithm/environment:

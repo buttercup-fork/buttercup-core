@@ -1,6 +1,8 @@
 import { expect } from "chai";
 import {
     Credentials,
+    ErrorCode,
+    getErrorCode,
     MemoryDatasource,
     Vault,
     VaultFormatA,
@@ -11,6 +13,22 @@ import {
     setDefaultFormat,
     VaultSourceStatus
 } from "../../../dist/node/index.js";
+
+// A datasource request that only finishes when told to, like a stalled remote
+function stallSaves(source) {
+    const stalled = { finish: null };
+    source._datasource.save = () =>
+        new Promise((resolve) => {
+            stalled.finish = () => resolve("");
+        });
+    return stalled;
+}
+
+const tick = () => new Promise((resolve) => setTimeout(resolve, 20));
+
+async function untilRequestSent(stalled) {
+    while (!stalled.finish) await tick();
+}
 
 async function createTextSourceCredentials() {
     const memoryProperty = `test${Math.random()}`;
@@ -160,6 +178,68 @@ describe("VaultSource", function () {
                         await this.vaultSource.unlock(Credentials.fromPassword("test"));
                         expect(this.vaultSource.status).to.equal(VaultSourceStatus.Unlocked);
                         expect(this.vaultSource.vault).to.be.an.instanceOf(Vault);
+                    });
+
+                    it("waits for a running save, unless forced (B-359)", async function () {
+                        const stalled = stallSaves(this.vaultSource);
+                        const saving = this.vaultSource.save();
+                        await untilRequestSent(stalled);
+                        let locked = false;
+                        const lockAfterSave = this.vaultSource.lock().then(() => {
+                            locked = true;
+                        });
+                        const settled = Promise.allSettled([saving, lockAfterSave]);
+                        await tick();
+                        expect(locked).to.be.false;
+                        expect(this.vaultSource.status).to.equal(VaultSourceStatus.Unlocked);
+                        await this.vaultSource.lock({ force: true });
+                        expect(this.vaultSource.status).to.equal(VaultSourceStatus.Locked);
+                        const dropped = await settled;
+                        expect(dropped.map((result) => result.status)).to.deep.equal([
+                            "rejected",
+                            "rejected"
+                        ]);
+                        dropped.forEach((result) => {
+                            expect(getErrorCode(result.reason)).to.equal(ErrorCode.SourceLocked);
+                        });
+                    });
+
+                    it("unlocks again after a forced lock while a save is stuck (B-359)", async function () {
+                        const stalled = stallSaves(this.vaultSource);
+                        this.vaultSource.save().catch(() => {});
+                        await untilRequestSent(stalled);
+                        await this.vaultSource.lock({ force: true });
+                        await this.vaultSource.unlock(Credentials.fromPassword("test"));
+                        expect(this.vaultSource.status).to.equal(VaultSourceStatus.Unlocked);
+                        const [loginEntry] = this.vaultSource.vault.findEntriesByProperty(
+                            "title",
+                            "Login"
+                        );
+                        loginEntry.setProperty("username", "user2");
+                        const dirty = this.vaultSource.vault.format.dirty;
+                        // The old request finishes late: it must not touch the new session
+                        stalled.finish();
+                        await tick();
+                        expect(this.vaultSource.vault.format.dirty).to.equal(dirty);
+                        await this.vaultSource.save();
+                        await this.vaultSource.lock();
+                        await this.vaultSource.unlock(Credentials.fromPassword("test"));
+                        const [saved] = this.vaultSource.vault.findEntriesByProperty(
+                            "title",
+                            "Login"
+                        );
+                        expect(saved.getProperty("username")).to.equal("user2");
+                    });
+
+                    it("still stores the source after a forced lock (B-359)", async function () {
+                        const stalled = stallSaves(this.vaultSource);
+                        this.vaultSource.save().catch(() => {});
+                        const dehydrating = this.vaultSource.dehydrate();
+                        await untilRequestSent(stalled);
+                        await this.vaultSource.lock({ force: true });
+                        const stored = JSON.parse(await dehydrating);
+                        expect(stored.id).to.equal(this.vaultSource.id);
+                        expect(stored.credentials).to.be.a("string").that.is.not.empty;
                     });
 
                     it("still refuses to lock a locked source", async function () {

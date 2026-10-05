@@ -7,6 +7,7 @@ export {
 export {
     VaultSource,
     VaultSourceConfig,
+    VaultSourceLockOptions,
     VaultSourceMetadata,
     VaultSourceSaveOptions,
     VaultSourceUnlockOptions
