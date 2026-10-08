@@ -12,7 +12,7 @@ A NodeJS secrets vault.
 
 > This is [codekunde](https://github.com/codekunde)'s self-hosted fork of the archived [buttercup/buttercup-core](https://github.com/buttercup/buttercup-core), maintained after upstream's project closure (see below). Issues and PRs on the upstream repo are still ignored; this fork tracks and fixes them independently - see `CHANGELOG.md` for what's changed here.
 
-[![Buttercup](images/buttercup-slim.svg)](https://buttercup.pw) [![npm](https://img.shields.io/npm/dt/buttercup.svg)](https://www.npmjs.com/package/buttercup) [![npm version](https://badge.fury.io/js/buttercup.svg)](https://badge.fury.io/js/buttercup) ![node min version](https://img.shields.io/badge/node-%3E%3D%2014.x-lightgrey.svg) [![security](https://img.shields.io/badge/Security-As%20you%20wish-green.svg)](https://en.wikipedia.org/wiki/The_Princess_Bride_(film)) [![encryption](https://img.shields.io/badge/Encryption-AES%20256%20CBC%2FGCM-red.svg)](https://tools.ietf.org/html/rfc3602)
+[![Buttercup](images/buttercup-slim.svg)](https://buttercup.codekunde.net) [![npm](https://img.shields.io/npm/dt/buttercup.svg)](https://www.npmjs.com/package/buttercup) [![npm version](https://badge.fury.io/js/buttercup.svg)](https://badge.fury.io/js/buttercup) ![node min version](https://img.shields.io/badge/node-%3E%3D%2014.x-lightgrey.svg) [![security](https://img.shields.io/badge/Security-As%20you%20wish-green.svg)](https://en.wikipedia.org/wiki/The_Princess_Bride_(film)) [![encryption](https://img.shields.io/badge/Encryption-AES%20256%20CBC%2FGCM-red.svg)](https://tools.ietf.org/html/rfc3602)
 
 [![NPM](https://nodei.co/npm/buttercup.png)](https://www.npmjs.com/package/buttercup)
 
