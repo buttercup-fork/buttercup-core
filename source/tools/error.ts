@@ -36,7 +36,7 @@ export enum ErrorCode {
 }
 
 // What a wrong password looks like, per algorithm/environment:
-//  - AES-CBC (older vaults): iocane's own HMAC check failure
+//  - AES-CBC (older vaults): the HMAC check in source/crypto
 //  - AES-GCM on NodeJS: node's crypto auth tag failure
 //  - AES-GCM in the browser: WebCrypto rejects with an "OperationError"
 const AUTH_FAILURE_MESSAGES = [

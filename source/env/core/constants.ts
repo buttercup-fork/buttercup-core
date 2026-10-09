@@ -1,4 +1,4 @@
-// Matches iocane's own built-in default (`DERIVED_KEY_ITERATIONS`), within
+// Matches the default of the library this format came from (iocane), within
 // OWASP's 200-300k PBKDF2-HMAC-SHA256 compromise range. Rounds are stored
 // per-vault in the encrypted blob's own header and read back on decrypt, so
 // raising this is fully backwards compatible: existing vaults keep

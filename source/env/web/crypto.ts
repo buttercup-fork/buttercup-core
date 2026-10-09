@@ -1,4 +1,4 @@
-import { createAdapter, EncryptionAlgorithm } from "iocane/web";
+import { decryptBuffer, decryptText, encryptBuffer, encryptText } from "../../crypto/web.js";
 import { CRYPTO_PBKDF2_ROUNDS, CRYPTO_RANDOM_STRING_CHARS } from "../core/constants.js";
 
 const UINT16_MAX = 65535;
@@ -8,20 +8,18 @@ const RANDOM_CHUNK = 8192;
 let __derivationRoundsOverride = CRYPTO_PBKDF2_ROUNDS;
 
 function decryptData(data: string | ArrayBuffer, password: string): Promise<string | ArrayBuffer> {
-    return createAdapter().decrypt(data, password) as Promise<string | ArrayBuffer>;
+    return typeof data === "string" ? decryptText(data, password) : decryptBuffer(data, password);
 }
 
 function encryptData(data: string | ArrayBuffer, password: string): Promise<string | ArrayBuffer> {
-    const adapter = createAdapter();
-    if (__derivationRoundsOverride > 0) {
-        adapter.setDerivationRounds(__derivationRoundsOverride);
-    }
-    // GCM is authenticated encryption (vs. CBC + a separate HMAC), and the
-    // algorithm used is stored per-blob in the encrypted output's own
-    // header, so this only affects new encryptions - existing CBC-encrypted
-    // vaults keep decrypting exactly as before.
-    adapter.setAlgorithm(EncryptionAlgorithm.GCM);
-    return adapter.encrypt(data, password) as Promise<string | ArrayBuffer>;
+    // Always AES-GCM: authenticated encryption (vs. CBC + a separate HMAC). The algorithm used is
+    // stored per-blob in the encrypted output's own header, so this only affects new
+    // encryptions - existing CBC-encrypted vaults keep decrypting exactly as before.
+    const rounds =
+        __derivationRoundsOverride > 0 ? __derivationRoundsOverride : CRYPTO_PBKDF2_ROUNDS;
+    return typeof data === "string"
+        ? encryptText(data, password, rounds)
+        : encryptBuffer(data, password, rounds);
 }
 
 export function getCryptoResources() {
