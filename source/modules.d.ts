@@ -21,10 +21,6 @@ declare module "global" {
     export default globals;
 }
 
-declare module "iocane/web" {
-    export * from "iocane";
-}
-
 declare module "path-posix" {
     import { posix } from "path";
     export default posix;
