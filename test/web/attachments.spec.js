@@ -2,6 +2,7 @@ import {
     AttachmentManager,
     Credentials,
     MemoryStorageInterface,
+    Vault,
     VaultManager,
     VaultSource
 } from "../../source/index.web.js";
@@ -106,6 +107,14 @@ describe("AttachmentManager", function () {
                 "test.png",
                 "image/png"
             );
+        });
+
+        it("uses a random attachments key", function () {
+            // Regression: the browser build's random string used to be one repeated
+            // character, which made the key ("AAAA...") public knowledge
+            const key = this.source.vault.getAttribute(Vault.Attribute.AttachmentsKey);
+            expect(key).to.have.lengthOf(48);
+            expect(new Set(key).size).to.be.greaterThan(10);
         });
 
         it("supports removing attachments", async function () {
