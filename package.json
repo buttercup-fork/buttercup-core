@@ -62,7 +62,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/buttercup/buttercup-core"
+    "url": "git+https://github.com/buttercup-fork/buttercup-core.git"
   },
   "keywords": [
     "password",
@@ -75,14 +75,14 @@
   "author": "Perry Mitchell <perry@perrymitchell.net>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/buttercup/buttercup-core/issues"
+    "url": "https://github.com/buttercup-fork/buttercup-core/issues"
   },
-  "homepage": "https://github.com/buttercup/buttercup-core#readme",
+  "homepage": "https://github.com/buttercup-fork/buttercup-core#readme",
   "dependencies": {
     "@buttercup/channel-queue": "^1.4.0",
-    "@buttercup/dropbox-client": "git+http://192.168.168.6:3050/buttercup.codekunde/dropbox-client.git#master",
-    "@buttercup/googledrive-client": "git+http://192.168.168.6:3050/buttercup.codekunde/googledrive-client.git#master",
-    "@buttercup/onedrive-client": "git+http://192.168.168.6:3050/buttercup.codekunde/onedrive-client.git#master",
+    "@buttercup/dropbox-client": "git+https://github.com/buttercup-fork/dropbox-client.git#master",
+    "@buttercup/googledrive-client": "git+https://github.com/buttercup-fork/googledrive-client.git#master",
+    "@buttercup/onedrive-client": "git+https://github.com/buttercup-fork/onedrive-client.git#master",
     "crypto-random-string": "^6.0.0",
     "eventemitter3": "^5.0.0",
     "fast-levenshtein": "^3.0.0",
@@ -106,7 +106,7 @@
     "webdav": {
       "minimatch": "^10.2.6"
     },
-    "@buttercup/fetch": "git+http://192.168.168.6:3050/buttercup.codekunde/fetch.git#main"
+    "@buttercup/fetch": "git+https://github.com/buttercup-fork/fetch.git#master"
   },
   "devDependencies": {
     "@types/node": "^22.20.4",

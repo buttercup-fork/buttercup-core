@@ -12,11 +12,7 @@ A NodeJS secrets vault.
 
 > This is [codekunde](https://github.com/codekunde)'s self-hosted fork of the archived [buttercup/buttercup-core](https://github.com/buttercup/buttercup-core), maintained after upstream's project closure (see below). Issues and PRs on the upstream repo are still ignored; this fork tracks and fixes them independently - see `CHANGELOG.md` for what's changed here.
 
-[![Buttercup](images/buttercup-slim.svg)](https://buttercup.codekunde.net) [![npm](https://img.shields.io/npm/dt/buttercup.svg)](https://www.npmjs.com/package/buttercup) [![npm version](https://badge.fury.io/js/buttercup.svg)](https://badge.fury.io/js/buttercup) ![node min version](https://img.shields.io/badge/node-%3E%3D%2014.x-lightgrey.svg) [![security](https://img.shields.io/badge/Security-As%20you%20wish-green.svg)](https://en.wikipedia.org/wiki/The_Princess_Bride_(film)) [![encryption](https://img.shields.io/badge/Encryption-AES%20256%20CBC%2FGCM-red.svg)](https://tools.ietf.org/html/rfc3602)
-
-[![NPM](https://nodei.co/npm/buttercup.png)](https://www.npmjs.com/package/buttercup)
-
-_The npm/version badges above track the upstream `buttercup` package this fork is based on (this fork isn't published to npm separately). The upstream GitHub Actions test-status badge was removed since it reflected upstream's own CI runs, not this fork's - see `CHANGELOG.md` for this fork's test status/history._
+[![Buttercup](images/buttercup-slim.svg)](https://buttercup.codekunde.net) ![Tests status](https://github.com/buttercup-fork/buttercup-core/actions/workflows/test.yml/badge.svg) ![node min version](https://img.shields.io/badge/node-%3E%3D%2022-lightgrey.svg) [![security](https://img.shields.io/badge/Security-As%20you%20wish-green.svg)](https://en.wikipedia.org/wiki/The_Princess_Bride_(film)) [![encryption](https://img.shields.io/badge/Encryption-AES%20256%20CBC%2FGCM-red.svg)](https://tools.ietf.org/html/rfc3602)
 
 ## About
 
@@ -50,16 +46,16 @@ This library also supports a variety of datasources for loading from and saving 
  * Local files
  * In-memory (testing, prototyping)
 
-Check out the [changelog](https://github.com/buttercup/buttercup-core/blob/master/CHANGELOG.md).
+Check out the [changelog](https://github.com/buttercup-fork/buttercup-core/blob/master/CHANGELOG.md).
 
 ## Installation
 
-> ⚠️ **The `buttercup` package on npm is upstream's, not this fork's.** `npm install buttercup` installs upstream's last-published code and does **not** include this fork's fixes (security hardening, `#278`/`#326`/`#305` bugfixes - see `CHANGELOG.md`). This fork isn't published to npm. Until GitHub access is restored, install from source (clone this repo / the forgejo mirror) if you need this fork's fixes. Getting this fork properly installable (its own package name, or a git-based install) is high priority once GitHub is back.
+> This fork isn't published to npm: the `buttercup` package on npm is upstream's last release and does **not** include this fork's fixes (security hardening and bugfixes, see `CHANGELOG.md`). Install from GitHub instead.
 
 To use Buttercup in a NodeJS environment, you can simply install and require it:
 
 ```shell
-npm install buttercup --save
+npm install github:buttercup-fork/buttercup-core --save
 ```
 
 In a Node environment, for example:
@@ -159,7 +155,7 @@ Using just a datasource is not recommended as saving and loading is quite low-le
 
 ### Development
 
-To develop Buttercup Core, clone the repository on a Linux or Mac OS machine. Ensure that you're running NodeJS version 16/18. Install all dependencies by running `npm install` in the project directory. Run the tests to ensure everything is functioning correctly: `npm test`.
+To develop Buttercup Core, clone the repository on a Linux, Mac OS or Windows machine. Ensure that you're running NodeJS 22 or newer. Install all dependencies by running `npm install` in the project directory. Run the tests to ensure everything is functioning correctly: `npm test`.
 
 ## Vault Formats
 
