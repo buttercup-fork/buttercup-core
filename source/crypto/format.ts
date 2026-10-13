@@ -33,6 +33,10 @@ export const MAX_ROUNDS = 10_000_000;
 export const IV_BYTES = 16;
 export const SALT_LENGTH = 12;
 export const TAG_BYTES = 16;
+const HMAC_BYTES = 32;
+const HEX = /^[0-9a-fA-F]*$/;
+// Canonical base64 only: NodeJS's decoder skips invalid characters and the browser's throws
+const BASE64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}(?:==)?|[A-Za-z0-9+/]{3}=?)?$/;
 
 const SIGNATURE = "iocane/2";
 const BORDER = Uint8Array.of(1, 0, 0, 0, 0, 0, 0, 1);
@@ -102,6 +106,18 @@ function checkParts(parts: {
     ) {
         throw new Error("Decoding error: Encrypted content corrupt or incomplete");
     }
+    // Exact lengths, not just "is hex": NodeJS and WebCrypto treat a tag of another length
+    // differently (WebCrypto takes the last 16 bytes of content + tag as the tag, so a longer one
+    // that swallowed the end of the content would open there and not on NodeJS)
+    const authHexLength = (parts.method === "gcm" ? TAG_BYTES : HMAC_BYTES) * 2;
+    if (
+        parts.iv.length !== IV_BYTES * 2 ||
+        parts.auth.length !== authHexLength ||
+        !HEX.test(parts.iv) ||
+        !HEX.test(parts.auth)
+    ) {
+        throw new Error("Decoding error: Encrypted content corrupt or incomplete");
+    }
 }
 
 export function packText(parts: Parts<string>): string {
@@ -111,6 +127,9 @@ export function packText(parts: Parts<string>): string {
 export function unpackText(text: string): Parts<string> {
     const [content, iv, salt, auth, rounds, method] = text.split("$");
     if (content === undefined || iv === undefined || salt === undefined || auth === undefined) {
+        throw new Error("Decoding error: Encrypted content corrupt or incomplete");
+    }
+    if (!BASE64.test(content)) {
         throw new Error("Decoding error: Encrypted content corrupt or incomplete");
     }
     const parts = {

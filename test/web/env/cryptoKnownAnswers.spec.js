@@ -4,7 +4,8 @@ import {
     BINARY_VECTORS,
     PASSWORD,
     TEXT,
-    VECTORS
+    VECTORS,
+    malformedVariants
 } from "../../resources/cryptoVectors.js";
 
 // The same vectors as the NodeJS specs (test/unit/env/crypto.spec.js): what was
@@ -27,6 +28,22 @@ describe("appEnv crypto (known answers)", function () {
                 }
                 expect(failed).to.equal(true);
             });
+        });
+    }
+
+    for (const name of ["AES-GCM, 5,000 rounds", "AES-CBC, 5,000 rounds"]) {
+        describe(`malformed ${name}`, function () {
+            for (const [what, variant] of Object.entries(malformedVariants(VECTORS[name]))) {
+                it(`is refused with ${what}`, async function () {
+                    let failed = false;
+                    try {
+                        await decryptText(variant, PASSWORD);
+                    } catch (err) {
+                        failed = true;
+                    }
+                    expect(failed).to.equal(true);
+                });
+            }
         });
     }
 

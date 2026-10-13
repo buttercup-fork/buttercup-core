@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import crypto from "node:crypto";
 import { getSharedAppEnv } from "../../../dist/node/index.js";
-import { PASSWORD, TEXT, VECTORS } from "../../resources/cryptoVectors.js";
+import { PASSWORD, TEXT, VECTORS, malformedVariants } from "../../resources/cryptoVectors.js";
 
 // Known-answer tests for the vault encryption format (iocane's text format).
 //
@@ -103,6 +103,16 @@ describe("vault encryption (known answers)", function () {
         parts[2] = "kat-salt-gcm2";
         expect(await fails(decryptText(parts.join("$"), PASSWORD))).to.equal(true);
     });
+
+    for (const name of ["AES-GCM, 5,000 rounds", "AES-CBC, 5,000 rounds"]) {
+        describe(`malformed ${name}`, function () {
+            for (const [what, variant] of Object.entries(malformedVariants(VECTORS[name]))) {
+                it(`is refused with ${what}`, async function () {
+                    expect(await fails(decryptText(variant, PASSWORD))).to.equal(true);
+                });
+            }
+        });
+    }
 
     describe("new encryption", function () {
         before(function () {
