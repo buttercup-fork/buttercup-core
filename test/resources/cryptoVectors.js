@@ -27,3 +27,50 @@ export const BINARY_VECTORS = {
     "AES-CBC, 5,000 rounds":
         "aW9jYW5lLzIAAABdeyJpdiI6IjIxMjIyMzI0MjUyNjI3MjgyOTJhMmIyYzJkMmUyZjMwIiwic2FsdCI6ImthdC1zYWx0LWJjYmMiLCJyb3VuZHMiOjUwMDAsIm1ldGhvZCI6ImNiYyJ9AAAACAEAAAAAAAABx/bNZ4COaVUYslbkYtGoNQwwSbkCyl3Vj5CTm1LGYCIwFJ32rzYtfgiREvD3bNGPv68i6/+RevNq8WEJrgxOR44HMpv6Ptwqos5N6d9L9R61jcsWlJFwXTBfpLdJouLC5Qh25DI5+NDl8+LUQWnO5mHFZltrQ6EsV3mf8PpJstuN3HnmoaMbAwd0Q9ZJethOS+9neSfSV0ArqC5x42uJj0Zv4QpLmY4qIzCo0N/QXxgRL6/phJM8iw7vf0ryEVtyXFTWZG30AYBBsMXhIqscIPHYOzX/oB3WgTB/Zp5ZSEUT/GkZIKy03A0XCMIp4h9faLHcOCIUH+11AHPfeoeHz3XRaLPchMCZAPhYK+3MCk8v2YgBcSnAlU7JFlZKg+2Uk5HsCc7GNeLq90wIiC0yhAUll07Ab8/7ytoEgwT1YopmGJv0esj0lyKvVcuPPyqTwdZQuoMdEoSk+x7IkrG8FoNIT1rYBrRUFkcwdtEgw+gaW5babZMzV/hMbQWiq60X5M7RofjqRsnAupSYDol6dtEPix55p69XYHHFfqn1dv5owba7M7UBOcZS0dRVqxG7Q1DpUV1lnPiDdYATUuuS0Bd6XwdDHVnoimmY4FjJDXzHf8xsa3WIyoLrZpUcQLWnumxlFi1u/DOKAQDHc4O4q+gVHr1sfyM5sYQufc4pt/E1P9BQnnnbVNI87v7VEOkXAQAAAAAAAAEAAABLeyJhdXRoIjoiZjAzM2M2YmRhMzVmYzc1ZmZjYzEzNjNkNDEzMGNlNGE5NjQ4OWVmYmFlMTBhZWE1YmQzM2NkYWY5YjY5MGVhZiJ9"
 };
+
+// Malformed variants of a text vector. NodeJS and WebCrypto used to disagree about some of these
+// (a longer tag that swallowed the end of the content opened in the browser only, an invalid
+// base64 character opened on NodeJS only), so every one must be refused on both.
+export function malformedVariants(vector) {
+    const [content, iv, salt, auth, rounds, method] = vector.split("$");
+    // atob and btoa, not Buffer: this file is bundled for the browser specs too
+    const binary = atob(content);
+    const join = (parts) => parts.join("$");
+    const variants = {
+        "a tag that is shorter": join([content, iv, salt, auth.slice(0, 24), rounds, method]),
+        "an empty tag": join([content, iv, salt, "", rounds, method]),
+        "a tag that is not hex": join([content, iv, salt, `${auth.slice(2)}zz`, rounds, method]),
+        "an IV that is shorter": join([content, iv.slice(0, 24), salt, auth, rounds, method]),
+        "an IV that is longer": join([content, `${iv}${iv}`, salt, auth, rounds, method]),
+        "an empty IV": join([content, "", salt, auth, rounds, method]),
+        "an IV that is not hex": join([content, `${iv.slice(2)}zz`, salt, auth, rounds, method]),
+        "an invalid base64 character in the content": join([
+            `${content.slice(0, 8)}!${content.slice(8)}`,
+            iv,
+            salt,
+            auth,
+            rounds,
+            method
+        ]),
+        "a line break in the content": join([
+            `${content.slice(0, 8)}\n${content.slice(8)}`,
+            iv,
+            salt,
+            auth,
+            rounds,
+            method
+        ])
+    };
+    if (method === "gcm") {
+        // The same sealed bytes (content + tag), cut at another place
+        variants["a longer tag that took the end of the content"] = join([
+            btoa(binary.slice(0, -4)),
+            iv,
+            salt,
+            `${[...binary.slice(-4)].map((c) => c.charCodeAt(0).toString(16).padStart(2, "0")).join("")}${auth}`,
+            rounds,
+            method
+        ]);
+    }
+    return variants;
+}
