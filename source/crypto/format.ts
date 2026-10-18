@@ -35,8 +35,8 @@ export const SALT_LENGTH = 12;
 export const TAG_BYTES = 16;
 const HMAC_BYTES = 32;
 const HEX = /^[0-9a-fA-F]*$/;
-// Canonical base64 only: NodeJS's decoder skips invalid characters and the browser's throws
-const BASE64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}(?:==)?|[A-Za-z0-9+/]{3}=?)?$/;
+/** A real footer is `{"auth":"<64 hex>"}`; this keeps the scan for it from doing unbounded work */
+const MAX_FOOTER_BYTES = 1024;
 
 const SIGNATURE = "iocane/2";
 const BORDER = Uint8Array.of(1, 0, 0, 0, 0, 0, 0, 1);
@@ -45,6 +45,8 @@ const METHODS: Array<string> = ["cbc", "gcm"];
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
+// Decrypted text is the caller's own string: a leading U+FEFF belongs to it and is not a BOM
+const plainDecoder = new TextDecoder("utf-8", { ignoreBOM: true });
 
 export function bytesToHex(bytes: Uint8Array): string {
     let output = "";
@@ -77,8 +79,62 @@ export function textToBytes(text: string): Uint8Array<ArrayBuffer> {
     return encoder.encode(text);
 }
 
+/** For the JSON of headers and footers */
 export function bytesToText(bytes: Uint8Array): string {
     return decoder.decode(bytes);
+}
+
+/** For decrypted text, byte for byte what was encrypted (a leading U+FEFF is kept) */
+export function bytesToPlainText(bytes: Uint8Array): string {
+    return plainDecoder.decode(bytes);
+}
+
+/**
+ * Canonical alphabet and padding only (NodeJS's decoder skips invalid characters and the
+ * browser's throws): groups of four, a last group of two characters (optionally "==") or three
+ * (optionally "="). A loop, not a regular expression: a repeated group in one overflows the
+ * stack on strings of a few MiB.
+ */
+export function isBase64(text: string): boolean {
+    let end = text.length;
+    while (end > 0 && text.charCodeAt(end - 1) === 61 && text.length - end < 2) end -= 1;
+    const padding = text.length - end;
+    for (let i = 0; i < end; i += 1) {
+        const code = text.charCodeAt(i);
+        const valid =
+            (code >= 65 && code <= 90) ||
+            (code >= 97 && code <= 122) ||
+            (code >= 48 && code <= 57) ||
+            code === 43 ||
+            code === 47;
+        if (!valid) return false;
+    }
+    switch (end % 4) {
+        case 0:
+            return padding === 0;
+        case 1:
+            return false;
+        case 2:
+            return padding === 0 || padding === 2;
+        default:
+            return padding === 0 || padding === 1;
+    }
+}
+
+/** The one check for the rounds of every write and every read */
+export function isValidRounds(rounds: unknown): rounds is number {
+    return (
+        typeof rounds === "number" &&
+        Number.isInteger(rounds) &&
+        rounds >= 1 &&
+        rounds <= MAX_ROUNDS
+    );
+}
+
+export function checkRounds(rounds: unknown) {
+    if (!isValidRounds(rounds)) {
+        throw new Error("Failed deriving key: Invalid number of derivation rounds");
+    }
 }
 
 /** Bytes that are authenticated (CBC) or bound to the encryption (GCM) next to the content */
@@ -96,7 +152,7 @@ function checkParts(parts: {
     if (!METHODS.includes(parts.method)) {
         throw new Error(`Invalid algorithm: ${parts.method}`);
     }
-    if (!Number.isInteger(parts.rounds) || parts.rounds < 1 || parts.rounds > MAX_ROUNDS) {
+    if (!isValidRounds(parts.rounds)) {
         throw new Error("Decoding error: Invalid number of derivation rounds");
     }
     if (
@@ -129,7 +185,7 @@ export function unpackText(text: string): Parts<string> {
     if (content === undefined || iv === undefined || salt === undefined || auth === undefined) {
         throw new Error("Decoding error: Encrypted content corrupt or incomplete");
     }
-    if (!BASE64.test(content)) {
+    if (!isBase64(content)) {
         throw new Error("Decoding error: Encrypted content corrupt or incomplete");
     }
     const parts = {
@@ -202,30 +258,33 @@ export function unpackData(data: Uint8Array): Parts<Uint8Array> {
         throw new Error("Decoding error: Encrypted content length is corrupt");
     }
     offset += borderLength;
-    // The content has no stored length: it ends at a border that is followed by the footer and
-    // nothing else. (Random bytes can look like a border now and then, so keep looking until
-    // the footer fits exactly.)
+    // The content has no stored length: it ends at a border that is followed by a footer and
+    // nothing else. Random bytes can look like a border, and an encrypted file can be made to
+    // hold one followed by a length that reaches the end, so a candidate only counts when what
+    // follows it parses as the footer; otherwise keep looking.
+    let header: any;
+    try {
+        header = JSON.parse(bytesToText(headerBytes));
+    } catch (err) {
+        throw new Error("Decoding error: Encrypted content corrupt or incomplete");
+    }
     let end = -1;
-    let footerLength = 0;
+    let footer: any;
     for (let at = offset; at <= data.length - BORDER.length - LENGTH_BYTES; at += 1) {
         if (data[at] !== BORDER[0] || !startsWith(data, BORDER, at)) continue;
         const length = view.getUint32(at + BORDER.length, false);
-        if (at + BORDER.length + LENGTH_BYTES + length === data.length) {
-            end = at;
-            footerLength = length;
-            break;
+        if (at + BORDER.length + LENGTH_BYTES + length !== data.length) continue;
+        if (length > MAX_FOOTER_BYTES) continue;
+        try {
+            const footerStart = at + BORDER.length + LENGTH_BYTES;
+            footer = JSON.parse(bytesToText(data.subarray(footerStart, footerStart + length)));
+        } catch (err) {
+            continue;
         }
+        end = at;
+        break;
     }
     if (end === -1) {
-        throw new Error("Decoding error: Encrypted content corrupt or incomplete");
-    }
-    const footerStart = end + BORDER.length + LENGTH_BYTES;
-    let header: any;
-    let footer: any;
-    try {
-        header = JSON.parse(bytesToText(headerBytes));
-        footer = JSON.parse(bytesToText(data.subarray(footerStart, footerStart + footerLength)));
-    } catch (err) {
         throw new Error("Decoding error: Encrypted content corrupt or incomplete");
     }
     const parts = {
