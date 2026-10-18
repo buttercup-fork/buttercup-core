@@ -7,7 +7,8 @@ import {
     TAG_BYTES,
     additionalData,
     bytesToHex,
-    bytesToText,
+    bytesToPlainText,
+    checkRounds,
     concatBytes,
     hexToBytes,
     packData,
@@ -43,6 +44,7 @@ function encryptBytes(
     rounds: number
 ): Promise<Parts<Uint8Array>> {
     checkPassword(password);
+    checkRounds(rounds);
     const salt = generateSalt();
     const iv = crypto.randomBytes(IV_BYTES);
     const ivHex = bytesToHex(iv);
@@ -104,7 +106,7 @@ export async function decryptText(encrypted: string, password: string): Promise<
     const parts = unpackText(encrypted);
     const content = new Uint8Array(Buffer.from(parts.content, "base64"));
     const plain = await decryptBytes({ ...parts, content }, password, textToBytes(parts.content));
-    return bytesToText(plain);
+    return bytesToPlainText(plain);
 }
 
 export async function encryptBuffer(
