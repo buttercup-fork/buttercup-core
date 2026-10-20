@@ -47,15 +47,54 @@ interface SearchScores {
     };
 }
 
-function domainsRelated(domain1: string, domain2: string): boolean {
-    if (domain1 === domain2) return true;
-    if (domain1.length > domain2.length) {
-        const ind = domain1.indexOf(domain2);
-        return ind === domain1.length - domain2.length;
-    } else {
-        const ind = domain2.indexOf(domain1);
-        return ind === domain2.length - domain1.length;
+interface ParsedHost {
+    exact: boolean;
+    labels: Array<string>;
+    port: string;
+}
+
+/**
+ * Parse the host part of a URL, as returned by `extractDomain` (it can hold
+ * user info and a port). Lowercases, drops the trailing dot and converts a
+ * non-ASCII name to punycode where the platform can (otherwise the name is kept
+ * as it is, which can only fail to match, never match wrongly).
+ */
+function parseHost(authority: string): ParsedHost | null {
+    const hostPort = authority.slice(authority.lastIndexOf("@") + 1);
+    const portMatch = /:(\d+)$/.exec(hostPort);
+    let host = (portMatch ? hostPort.slice(0, portMatch.index) : hostPort).toLowerCase();
+    if (/[^\x00-\x7f]/.test(host)) {
+        try {
+            host = new URL(`http://${host}`).hostname;
+        } catch (err) {}
     }
+    host = host.replace(/\.$/, "");
+    if (!host) return null;
+    return {
+        // IP addresses and localhost have no parent domain
+        exact: host === "localhost" || /^\[.*\]$/.test(host) || /^\d+(\.\d+){3}$/.test(host),
+        labels: host.split("."),
+        port: portMatch ? portMatch[1] : ""
+    };
+}
+
+/**
+ * Whether an entry's host and a page's host are related: the same host, or one is a
+ * subdomain of the other, compared label by label (so `example.com` is not related
+ * to `evilexample.com`). IP addresses and localhost must match exactly. The port
+ * must be the same.
+ */
+function domainsRelated(domain1: string, domain2: string): boolean {
+    const host1 = parseHost(domain1);
+    const host2 = parseHost(domain2);
+    if (!host1 || !host2 || host1.port !== host2.port) return false;
+    const [shorter, longer] =
+        host1.labels.length <= host2.labels.length ? [host1, host2] : [host2, host1];
+    if (shorter.exact || longer.exact) {
+        return shorter.labels.join(".") === longer.labels.join(".");
+    }
+    const offset = longer.labels.length - shorter.labels.length;
+    return shorter.labels.every((label, index) => label === longer.labels[offset + index]);
 }
 
 function extractDomain(str: string): string {
