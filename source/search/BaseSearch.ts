@@ -59,7 +59,7 @@ interface ParsedHost {
  * non-ASCII name to punycode where the platform can (otherwise the name is kept
  * as it is, which can only fail to match, never match wrongly).
  */
-function parseHost(authority: string): ParsedHost | null {
+export function parseHost(authority: string): ParsedHost | null {
     const hostPort = authority.slice(authority.lastIndexOf("@") + 1);
     const portMatch = /:(\d+)$/.exec(hostPort);
     let host = (portMatch ? hostPort.slice(0, portMatch.index) : hostPort).toLowerCase();
@@ -97,9 +97,15 @@ function domainsRelated(domain1: string, domain2: string): boolean {
     return shorter.labels.every((label, index) => label === longer.labels[offset + index]);
 }
 
-function extractDomain(str: string): string {
-    const match = /^((https?|ftp):\/\/)?([^\/]+)/i.exec(str);
-    return (match && match[3]) || "";
+/**
+ * The authority of a URL (user info, host and port) as a browser reads it: it ends at
+ * the first `/`, `?`, `#` or `\` (a backslash counts as a slash), so what follows can
+ * never be taken for part of the host. `parseHost` takes the host after the last `@`.
+ * Empty if there is no host.
+ */
+export function extractDomain(str: string): string {
+    const match = /^(?:(?:https?|ftp):[\/\\]*)?([^\/\\?#]*)/i.exec(str);
+    return (match && match[1]) || "";
 }
 
 export class BaseSearch<T extends Vault | VaultFacade = Vault | VaultFacade> {
