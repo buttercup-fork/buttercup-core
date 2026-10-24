@@ -7,6 +7,7 @@ import {
     VaultManager,
     VaultSource
 } from "../../../dist/node/index.js";
+import { OneDriveClient } from "@buttercup/onedrive-client";
 import { getCredentials } from "../../../dist/node/credentials/memory/credentials.js";
 import { createOneDriveServer } from "../../resources/oneDriveServer.js";
 
@@ -28,6 +29,16 @@ describe("OneDriveDatasource", function () {
     beforeEach(async function () {
         this.server = createOneDriveServer();
         await this.server.start();
+        // The mock server is plain http on localhost, which the client refuses
+        // unless the caller opts in. The app environment's client factory can't
+        // be replaced, so swap the datasource's factory for these tests only.
+        this.originalCreateClient = OneDriveDatasource.prototype._createClient;
+        OneDriveDatasource.prototype._createClient = function (token) {
+            return new OneDriveClient(token, {
+                allowCustomEndpoint: true,
+                endpoint: this.endpoint
+            });
+        };
         this.createDatasource = (config = {}) =>
             new OneDriveDatasource(
                 Credentials.fromDatasource(
@@ -43,6 +54,7 @@ describe("OneDriveDatasource", function () {
     });
 
     afterEach(async function () {
+        OneDriveDatasource.prototype._createClient = this.originalCreateClient;
         delete DatasourceAuthManager.getSharedManager()._handlers.onedrive;
         await this.server.stop();
     });
