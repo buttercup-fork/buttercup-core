@@ -236,12 +236,16 @@ export function consumeVaultFacade(
         return false; // done - remove
     });
     // Check attributes
-    Object.keys(currentAttributes)
-        .filter((attr) => !hasOwn(attributes, attr))
-        .forEach((attr) => {
-            // Remove missing
-            vault.deleteAttribute(attr);
-        });
+    if (!mergeMode) {
+        // Remove missing. Not when merging: the incoming vault (an import) has none
+        // of this vault's attributes, and deleting the attachments key would leave
+        // every existing attachment undecryptable (B-672)
+        Object.keys(currentAttributes)
+            .filter((attr) => !hasOwn(attributes, attr))
+            .forEach((attr) => {
+                vault.deleteAttribute(attr);
+            });
+    }
     Object.keys(attributes).forEach((attr) => {
         // Skip this attribute if it's the attachments key
         if (attr === Vault.Attribute.AttachmentsKey && mergeMode) return;

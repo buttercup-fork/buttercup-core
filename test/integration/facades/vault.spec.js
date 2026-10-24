@@ -189,6 +189,52 @@ describe("Vault facades", function () {
                         );
                         expect(existingEntry).to.be.an.instanceOf(Entry);
                     });
+
+                    // B-672: the merged-in vault (an import) has no attributes, and
+                    // removing the vault's own ones lost its attachments key
+                    it("keeps the vault's own attributes", function () {
+                        expect(this.vault.getAttribute("ATTR_1")).to.equal("one");
+                        expect(this.vault.getAttribute("ATTR_2")).to.equal("two");
+                    });
+                });
+
+                describe("in merge mode, with an attachments key", function () {
+                    beforeEach(function () {
+                        this.vault.setAttribute(Vault.Attribute.AttachmentsKey, "the-vault-key");
+                    });
+
+                    it("keeps the attachments key when the merged vault has none", function () {
+                        const newVault = new Vault();
+                        newVault.createGroup("merged").createEntry("merged");
+                        consumeVaultFacade(this.vault, createVaultFacade(newVault), {
+                            mergeMode: true
+                        });
+                        expect(this.vault.getAttribute(Vault.Attribute.AttachmentsKey)).to.equal(
+                            "the-vault-key"
+                        );
+                    });
+
+                    it("keeps the attachments key when the merged vault has another", function () {
+                        const newVault = new Vault();
+                        newVault.setAttribute(Vault.Attribute.AttachmentsKey, "another-key");
+                        newVault.createGroup("merged").createEntry("merged");
+                        consumeVaultFacade(this.vault, createVaultFacade(newVault), {
+                            mergeMode: true
+                        });
+                        expect(this.vault.getAttribute(Vault.Attribute.AttachmentsKey)).to.equal(
+                            "the-vault-key"
+                        );
+                    });
+                });
+
+                describe("not in merge mode", function () {
+                    it("removes attributes the facade no longer has", function () {
+                        const facade = createVaultFacade(this.vault);
+                        delete facade.attributes.ATTR_2;
+                        consumeVaultFacade(this.vault, facade);
+                        expect(this.vault.getAttribute("ATTR_1")).to.equal("one");
+                        expect(this.vault.getAttribute("ATTR_2")).to.be.undefined;
+                    });
                 });
 
                 describe("in merge mode, with attachments", function () {
