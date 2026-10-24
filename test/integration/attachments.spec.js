@@ -13,6 +13,8 @@ import {
     VaultFormatB,
     VaultManager,
     VaultSource,
+    consumeVaultFacade,
+    createVaultFacade,
     setDefaultFormat
 } from "../../dist/node/index.js";
 import { registerDatasourcePostProcessor } from "../../dist/node/datasources/register.js";
@@ -227,6 +229,25 @@ describe("AttachmentManager", function () {
                             } catch (err) {
                                 expect(err).to.match(/Attachment not available/i);
                             }
+                        });
+
+                        it("can still read attachments after a merge-mode import (B-672)", async function () {
+                            // Desktop's import: merge an importer's vault, then save
+                            const imported = new Vault();
+                            imported
+                                .createGroup("Imported")
+                                .createEntry("Imported entry")
+                                .setProperty("password", "pw");
+                            consumeVaultFacade(this.source.vault, createVaultFacade(imported), {
+                                mergeMode: true
+                            });
+                            await this.source.save();
+                            const attachmentDataRead =
+                                await this.source.attachmentManager.getAttachment(
+                                    this.entry,
+                                    this.attachmentID
+                                );
+                            expect(this.attachmentData.equals(attachmentDataRead)).to.be.true;
                         });
 
                         it("supports listing attachments", async function () {
