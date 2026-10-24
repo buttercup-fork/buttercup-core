@@ -32,7 +32,11 @@ export enum ErrorCode {
      * A save, update or other vault source change was dropped because the
      * source was locked with `lock({ force: true })` while it waited or ran
      */
-    SourceLocked = "SOURCE_LOCKED"
+    SourceLocked = "SOURCE_LOCKED",
+    /**
+     * A file to download or upload is larger than the datasource allows
+     */
+    DataTooLarge = "DATA_TOO_LARGE"
 }
 
 // What a wrong password looks like, per algorithm/environment:

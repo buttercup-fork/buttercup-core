@@ -7,6 +7,7 @@ import { getSharedAppEnv } from "../env/appEnv.js";
 import { Credentials } from "../credentials/Credentials.js";
 import { getCredentials } from "../credentials/memory/credentials.js";
 import { ATTACHMENT_EXT } from "../tools/attachments.js";
+import { assertDataSize, readResponseWithLimit } from "../tools/size.js";
 import {
     AttachmentDetails,
     BufferLike,
@@ -26,6 +27,12 @@ const MAX_DATA_SIZE = 200 * 1024 * 1024; // 200 MB
 export default class WebDAVDatasource extends TextDatasource {
     protected _client: WebDAVClient;
     private _config: DatasourceConfigurationWebDAV;
+    /**
+     * Largest vault or attachment, in bytes, that is downloaded or uploaded.
+     * The webdav client ignores its own maxBodyLength and maxContentLength
+     * options (webdav 5.11), so the datasource enforces the limit itself.
+     */
+    protected _maxDataSize: number = MAX_DATA_SIZE;
     protected _path: string;
 
     /**
@@ -96,6 +103,35 @@ export default class WebDAVDatasource extends TextDatasource {
     }
 
     /**
+     * Download a file, refusing it once it passes the size limit. Made with
+     * the client's customRequest, which builds the URL, authentication and
+     * status check the same way as its getFileContents.
+     * @param path The remote path
+     * @param description What is downloaded, for the error message
+     * @param headers Extra request headers
+     * @memberof WebDAVDatasource
+     * @protected
+     */
+    async _getFileContentsLimited(
+        path: string,
+        description: string,
+        headers: Record<string, string> = {}
+    ): Promise<ArrayBuffer> {
+        const controller = new AbortController();
+        const response = await this.client.customRequest(path, {
+            method: "GET",
+            headers,
+            signal: controller.signal
+        });
+        return readResponseWithLimit(
+            response,
+            this._maxDataSize,
+            () => controller.abort(),
+            description
+        );
+    }
+
+    /**
      * Get encrypted attachment
      * - Loads the attachment contents from a file into a buffer
      * @param vaultID The ID of the vault
@@ -110,7 +146,9 @@ export default class WebDAVDatasource extends TextDatasource {
             vaultID,
             `${attachmentID}.${ATTACHMENT_EXT}`
         );
-        return this.client.getFileContents(attachmentPath) as Promise<BufferLike>;
+        const data = await this._getFileContentsLimited(attachmentPath, "WebDAV attachment");
+        const convert = getSharedAppEnv().getProperty("encoding/v1/arrayBufferToBufferLike");
+        return convert(data);
     }
 
     /**
@@ -130,8 +168,11 @@ export default class WebDAVDatasource extends TextDatasource {
     load(credentials: Credentials): Promise<DatasourceLoadedData> {
         return this.hasContent
             ? super.load(credentials)
-            : this.client.getFileContents(this.path, { format: "text" }).then((content) => {
-                  this.setContent(content as string);
+            : this._getFileContentsLimited(this.path, "WebDAV vault", {
+                  // As the client's getFileContents sends for text
+                  Accept: "text/plain"
+              }).then((data) => {
+                  this.setContent(new TextDecoder().decode(data));
                   return super.load(credentials);
               });
     }
@@ -157,6 +198,7 @@ export default class WebDAVDatasource extends TextDatasource {
             vaultID,
             `${attachmentID}.${ATTACHMENT_EXT}`
         );
+        assertDataSize(buffer, this._maxDataSize, "WebDAV attachment");
         await this.client.putFileContents(attachmentPath, buffer);
     }
 
@@ -186,6 +228,7 @@ export default class WebDAVDatasource extends TextDatasource {
      */
     async save(history: History, credentials: Credentials): Promise<any> {
         const content = await super.save(history, credentials);
+        assertDataSize(content, this._maxDataSize, "WebDAV vault");
         await this.client.putFileContents(this.path, content);
     }
 
