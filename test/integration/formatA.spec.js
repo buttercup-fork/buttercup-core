@@ -129,5 +129,54 @@ describe("Format A", function () {
                 groups.flatMap((group) => [group.id, ...reachable(group.getGroups())]);
             expect(reachable(vault.getGroups())).to.include.members([this.group1ID, this.group2ID]);
         });
+
+        it("saves after an entry is moved into a group deleted on another device (B-690)", async function () {
+            // One device deletes G2, the other moves the entry in G1 into G2
+            this.stagedVault.findGroupByID(this.group2ID).delete(/* skip trash: */ true);
+            const entry = this.vault.findGroupByID(this.group1ID).getEntries()[0];
+            entry.moveToGroup(this.vault.findGroupByID(this.group2ID));
+            await this.saveAll();
+            const vault = this.source.vault;
+            expect(vault.findGroupByID(this.group2ID)).to.equal(null);
+            // The move is dropped: the entry stays where it was
+            const moved = vault.findEntryByID(entry.id);
+            expect(moved).to.not.equal(null);
+            expect(moved.getGroup().id).to.equal(this.group1ID);
+            // A second save works too (before the fix every save failed)
+            vault.findGroupByID(this.group1ID).createEntry("after");
+            await this.source.save();
+            expect(this.source.vault.findEntriesByProperty("title", "after")).to.have.lengthOf(1);
+        });
+
+        it("saves after a group is moved into a group deleted on another device (B-690)", async function () {
+            // One device deletes G2, the other moves a new group into G2
+            const subID = this.vault.createGroup("Sub").id;
+            await this.source.save();
+            const { history, Format } = await this.source._datasource.load(
+                Credentials.fromPassword("test")
+            );
+            this.stagedVault = Vault.createFromHistory(history, Format);
+            this.stagedVault.findGroupByID(this.group2ID).delete(/* skip trash: */ true);
+            this.vault.findGroupByID(subID).moveTo(this.vault.findGroupByID(this.group2ID));
+            await this.saveAll();
+            const vault = this.source.vault;
+            expect(vault.findGroupByID(this.group2ID)).to.equal(null);
+            const sub = vault.findGroupByID(subID);
+            expect(sub).to.not.equal(null);
+            expect(vault.getGroups().map((group) => group.id)).to.include(subID);
+            await this.source.save();
+        });
+
+        it("still applies a move into a group that was not deleted (B-690 control)", async function () {
+            this.stagedVault.findGroupByID(this.group1ID).createEntry("staged edit");
+            const entry = this.vault.findGroupByID(this.group1ID).getEntries()[0];
+            entry.moveToGroup(this.vault.findGroupByID(this.group2ID));
+            await this.saveAll();
+            const moved = this.source.vault.findEntryByID(entry.id);
+            expect(moved.getGroup().id).to.equal(this.group2ID);
+            expect(
+                this.source.vault.findEntriesByProperty("title", "staged edit")
+            ).to.have.lengthOf(1);
+        });
     });
 });

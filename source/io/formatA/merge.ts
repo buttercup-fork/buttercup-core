@@ -51,7 +51,8 @@ export function smartStripRemovedAssets(history: History): History {
             const [groupID] = args;
             deletedGroups.add(groupID);
         } else if (command === "men" || command === "mgr") {
-            const [targetGroupID] = args;
+            // men <entry ID> <group ID>, mgr <group ID> <target group ID>
+            const targetGroupID = args[1];
             if (deletedGroups.has(targetGroupID)) return false;
         } else if (command === "cen" || command === "cgr") {
             const [targetGroupID] = args;
