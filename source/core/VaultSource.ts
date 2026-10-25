@@ -556,7 +556,8 @@ export class VaultSource extends EventEmitter {
     /**
      * Merge remote contents
      * Detects differences between a local and a remote item, and merges the
-     * two copies together.
+     * two copies together. Throws with `ErrorCode.VaultMismatch` if the
+     * remote holds a different vault (another vault ID).
      * @returns A promise that resolves with the newly merged archive -
      *      This archive is automatically saved over the original local copy.
      * @memberof VaultSource
@@ -574,6 +575,15 @@ export class VaultSource extends EventEmitter {
         );
         if (Format !== vault.format.getFormat()) {
             throw new Error("Format loaded during merge did not match current");
+        }
+        // The remote may hold another vault that opens with the same password:
+        // merging would turn the two into one and write it back (B-683)
+        const remote = Vault.createFromHistory(history, Format);
+        if (remote.id !== vault.id) {
+            throw new Layerr(
+                { info: { code: ErrorCode.VaultMismatch } },
+                `Failed merging remote: Remote holds another vault (${remote.id}): ${this.id}`
+            );
         }
         const newVault = Format.vaultFromMergedHistories(history, vault.format.history);
         vault._updateFormat(newVault.format);
