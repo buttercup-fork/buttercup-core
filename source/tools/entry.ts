@@ -14,14 +14,13 @@ const URL_PROP = /(^|[a-zA-Z0-9_-]|\b)(ur[li]|UR[LI]|Ur[li])(\b|$|[_-])/;
 const URL_PROP_ICON = /icon[\s_-]*ur[li]/i;
 
 export function getEntryPath(entry: Entry): Array<GroupID> {
-    let lastParent: Group | null = null;
+    let lastParent: Group | null = entry.getGroup();
     const path: Array<GroupID> = [];
-    do {
-        lastParent = lastParent ? lastParent.getParentGroup() : entry.getGroup();
-        if (lastParent) {
-            path.unshift(lastParent.id);
-        }
-    } while (lastParent);
+    // Stop at a group seen before: a parent loop never reaches the root (B-692)
+    while (lastParent && !path.includes(lastParent.id)) {
+        path.unshift(lastParent.id);
+        lastParent = lastParent.getParentGroup();
+    }
     return path;
 }
 

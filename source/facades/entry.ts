@@ -362,16 +362,14 @@ export function getEntryFacadePath(entryID: EntryID, facade: VaultFacade): Array
     if (!entry) {
         throw new Error(`No entry facade found for ID: ${entryID}`);
     }
-    let targetGroupID: GroupID | null = null;
+    let targetGroupID: GroupID | null = entry.parentID;
     const path: Array<GroupID> = [];
-    do {
-        targetGroupID = targetGroupID
-            ? facade.groups.find((g) => g.id === targetGroupID)!.parentID
-            : entry.parentID;
-        if (targetGroupID && targetGroupID != "0") {
-            path.unshift(targetGroupID);
-        }
-    } while (targetGroupID && targetGroupID != "0");
+    // Stop at a group seen before: a parent loop never reaches the root (B-692)
+    while (targetGroupID && targetGroupID != "0" && !path.includes(targetGroupID)) {
+        path.unshift(targetGroupID);
+        const groupID: GroupID = targetGroupID;
+        targetGroupID = facade.groups.find((g) => g.id === groupID)!.parentID;
+    }
     return path;
 }
 

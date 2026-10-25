@@ -306,6 +306,10 @@ export class Group extends VaultItem {
         if (targetVault.readOnly) {
             throw new Error("Cannot move group: target archive is read-only");
         }
+        if (target instanceof Group && target.vault.id === this.vault.id && target.id === this.id) {
+            // Format B would store the group as its own parent: a loop (B-692)
+            throw new Error("Cannot move group: target group is the group itself");
+        }
         if (target instanceof Group && !!this.findGroupByID(target.id)) {
             // Target is a child of this group, so we can't move to it as
             // it'd become circular.
