@@ -8,6 +8,8 @@ import { Credentials } from "../credentials/Credentials.js";
 import { getCredentials } from "../credentials/memory/credentials.js";
 import { ATTACHMENT_EXT } from "../tools/attachments.js";
 import { assertDataSize, readResponseWithLimit } from "../tools/size.js";
+import { ErrorCode } from "../tools/error.js";
+import { Layerr } from "layerr";
 import {
     AttachmentDetails,
     BufferLike,
@@ -18,6 +20,27 @@ import {
 } from "../types.js";
 
 const MAX_DATA_SIZE = 200 * 1024 * 1024; // 200 MB
+// Hosts where plain http stays on this computer
+const LOOPBACK_HOST = /^(localhost|127(\.\d{1,3}){3}|\[::1\])$/i;
+
+/**
+ * Check whether a WebDAV endpoint would send the account password
+ * unencrypted: plain `http` to a host other than this computer (B-684)
+ * @param endpoint The endpoint URL
+ * @returns True if insecure
+ * @private
+ */
+function isInsecureEndpoint(endpoint: string): boolean {
+    try {
+        const url = new URL(endpoint);
+        return url.protocol === "http:" && !LOOPBACK_HOST.test(url.hostname);
+    } catch (err) {
+        // Not a URL (the client can't connect to it either), or a platform
+        // whose URL lacks these properties (React Native without a polyfill:
+        // not checked, B-684)
+        return false;
+    }
+}
 
 /**
  * WebDAV datasource for reading and writing remote archives
@@ -45,7 +68,20 @@ export default class WebDAVDatasource extends TextDatasource {
         const { datasource: datasourceConfig } = credentialData as {
             datasource: DatasourceConfigurationWebDAV;
         };
-        const { endpoint, password, path, username } = (this._config = datasourceConfig);
+        const {
+            allowInsecure = false,
+            endpoint,
+            password,
+            path,
+            username
+        } = (this._config = datasourceConfig);
+        if (isInsecureEndpoint(endpoint) && allowInsecure !== true) {
+            // Refused before a client exists, so nothing is sent
+            throw new Layerr(
+                { info: { code: ErrorCode.InsecureEndpoint } },
+                "WebDAV endpoint uses unencrypted http: the password would be sent in clear text (allow it with allowInsecure)"
+            );
+        }
         this._path = path;
         const createClient = getSharedAppEnv().getProperty(
             "net/webdav/v1/newClient"
