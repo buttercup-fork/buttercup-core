@@ -40,6 +40,11 @@ function ownValue(props: FormatBKeyValueObject, key: string): FormatBValue {
     return (hasOwn(props, key) ? props[key] : undefined) as FormatBValue;
 }
 
+// A missing deletion time and a non-number one both mean "not deleted"
+function deletedTime(deleted: unknown): number | null {
+    return typeof deleted === "number" ? deleted : null;
+}
+
 function inflateHistory(history: History): FormatBVault {
     return JSON.parse(history[0]) as FormatBVault;
 }
@@ -58,12 +63,19 @@ export function valuesDiffer(value1: FormatBValue, value2: FormatBValue): boolea
     for (const prop of ["value", "created", "updated"]) {
         if (value1[prop as keyof FormatBValue] !== value2[prop as keyof FormatBValue]) return true;
     }
+    // Deleting a value sets only `deleted`, so it must count as a change, or
+    // a save on another device writes the value back (B-691)
+    if (deletedTime(value1.deleted) !== deletedTime(value2.deleted)) return true;
     if (value1.history.length !== value2.history.length) return true;
     if (value1.history.length === 0) return false;
     const hist1 = sortValueHistory([...value1.history]);
     const hist2 = sortValueHistory([...value2.history]);
     for (const ind in hist1) {
-        if (hist1[ind].value !== hist2[ind].value || hist1[ind].updated !== hist2[ind].updated)
+        if (
+            hist1[ind].value !== hist2[ind].value ||
+            hist1[ind].updated !== hist2[ind].updated ||
+            deletedTime(hist1[ind].deleted) !== deletedTime(hist2[ind].deleted)
+        )
             return true;
     }
     return false;
