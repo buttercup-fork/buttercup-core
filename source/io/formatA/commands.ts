@@ -230,6 +230,15 @@ export function executeMoveGroup(
     if (!targetGroup) {
         throw new Error(`Invalid target group ID: ${targetGroupID}`);
     }
+    // A group can't go into itself or one of its own subgroups: both would
+    // leave it and everything in it outside the vault's tree. A merge can
+    // replay such a move when two devices moved groups into each other
+    // (B-689), so it is skipped (the other device's move stands) rather
+    // than refused, which would make the vault impossible to save
+    const movingGroup = originGroup.groups![originIndex!];
+    if (groupID === targetGroupID || findGroupByID(movingGroup.groups || [], targetGroupID)) {
+        return;
+    }
     const [movedGroup] = originGroup.groups!.splice(originIndex!, 1);
     targetGroup.groups = targetGroup.groups || [];
     targetGroup.groups.push(movedGroup);
