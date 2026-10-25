@@ -462,6 +462,27 @@ export class VaultFormatB extends VaultFormat {
             }
         }
         {
+            // Groups in a parent loop (a group that is its own parent, or
+            // A -> B -> A) never reach the root and are hidden: re-attach one
+            // group of each loop (B-692)
+            for (const group of this.getAllGroups()) {
+                const seen: Set<GroupID> = new Set();
+                let current: FormatBGroup | null | undefined = group;
+                while (current && current.g !== "0") {
+                    if (seen.has(current.id)) {
+                        const orphansGroup = this.prepareOrphansGroup();
+                        // The orphans group itself may sit in the loop
+                        const target = seen.has(orphansGroup.id) ? "0" : orphansGroup.id;
+                        this.moveGroup(current.id, target);
+                        break;
+                    }
+                    seen.add(current.id);
+                    const parentID: GroupID = current.g;
+                    current = this.getAllGroups().find((g) => g.id === parentID);
+                }
+            }
+        }
+        {
             // Entries
             const groups = this.getAllGroups();
             const groupIDs = ["0", ...groups.map((g) => g.id)];

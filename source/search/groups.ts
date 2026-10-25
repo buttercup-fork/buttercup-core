@@ -23,12 +23,14 @@ export function getAllChildGroups(groups: Array<Group>, parentID: GroupID): Arra
     return groups.filter((group) => {
         const thisParentID = getParentID(group);
         if (thisParentID === parentID) return true;
-        let nextParent: Group | null = null;
-        while (
-            (nextParent = nextParent ? nextParent.getParentGroup() : group.getParentGroup()) !==
-            null
-        ) {
+        // A broken or crafted vault can hold a parent loop: stop at a group
+        // seen before, or the walk never ends (B-692)
+        const seen: Set<GroupID> = new Set([group.id]);
+        let nextParent = group.getParentGroup();
+        while (nextParent !== null && !seen.has(nextParent.id)) {
             if (nextParent.id === parentID) return true;
+            seen.add(nextParent.id);
+            nextParent = nextParent.getParentGroup();
         }
         return false;
     });

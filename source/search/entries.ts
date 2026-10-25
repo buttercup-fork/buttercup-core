@@ -28,13 +28,15 @@ export function getAllChildEntries(entries: Array<Entry>, parentGroupID: GroupID
     return entries.filter((entry) => {
         const parentID = entry.vault.format.getItemParentID(entry._source);
         if (parentID === parentGroupID) return true;
-        let nextParent: Group | null = null;
-        while (
-            (nextParent = nextParent ? nextParent.getParentGroup() : entry.getGroup()) !== null
-        ) {
+        // Stop at a group seen before: a parent loop never reaches the root (B-692)
+        const seen: Set<GroupID> = new Set();
+        let nextParent: Group | null = entry.getGroup();
+        while (nextParent !== null && !seen.has(nextParent.id)) {
             if (nextParent.id === parentGroupID) {
                 return true;
             }
+            seen.add(nextParent.id);
+            nextParent = nextParent.getParentGroup();
         }
         return false;
     });
