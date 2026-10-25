@@ -71,6 +71,46 @@ export function consumeGroupFacade(group: Group, facade: GroupFacade) {
 }
 
 /**
+ * Point the links of merged-in entries (linked properties, login entries)
+ * at the entries' new IDs, and drop links to anything else
+ * Every merged-in entry gets a new ID, so a link in the incoming vault can
+ * only mean one of its own entries. A link to an entry already in the
+ * vault would show that entry's values on the new entry, and a hostile
+ * import file could use it to copy another entry's password (B-681).
+ * @param vault The vault merged into
+ * @param newEntryIDs Incoming entry IDs mapped to the new entries' IDs
+ */
+function remapMergedEntryLinks(vault: Vault, newEntryIDs: { [facadeID: string]: string }) {
+    const { LoginEntry, PropertyLinkPrefix } = Entry.Attributes;
+    const newID = (incomingID: string): string | null =>
+        hasOwn(newEntryIDs, incomingID) ? newEntryIDs[incomingID] : null;
+    Object.values(newEntryIDs).forEach((entryID) => {
+        const entry = vault.findEntryByID(entryID);
+        if (!entry) return;
+        const attributes = entry.getAttribute() as PropertyKeyValueObject;
+        Object.keys(attributes).forEach((attr) => {
+            if (attr.indexOf(PropertyLinkPrefix) === 0) {
+                const link = entry.getPropertyLink(attr.slice(PropertyLinkPrefix.length));
+                const targetID = link ? newID(link.entryID) : null;
+                if (link && targetID) {
+                    entry.setAttribute(attr, `${targetID}:${link.property}`);
+                } else {
+                    entry.deleteAttribute(attr);
+                }
+            } else if (attr === LoginEntry) {
+                const link = entry.getLoginEntryLink();
+                const targetID = link ? newID(link.entryID) : null;
+                if (link && targetID && targetID !== entry.id) {
+                    entry.setAttribute(attr, `${targetID}:${link.title}`);
+                } else {
+                    entry.deleteAttribute(attr);
+                }
+            }
+        });
+    });
+}
+
+/**
  * Consume a vault facade and apply the differences to the vault
  * instance
  * @param vault The vault instance to apply to
@@ -102,6 +142,7 @@ export function consumeVaultFacade(
         );
     }
     const newIDLookup: { [facadeID: string]: string } = {};
+    const newEntryIDLookup: { [facadeID: string]: string } = {};
     // Create comparison facade
     let {
         groups: currentGroups,
@@ -210,9 +251,8 @@ export function consumeVaultFacade(
             const targetGroup = vault.findGroupByID(targetGroupID)!;
             const newEntry = targetGroup.createEntry();
             if (entryIDTargetedNew) {
-                // Not used at the moment, but if references towards
-                // entries are needed later, this provides the lookup
                 newIDLookup[`${entryFacade.id}`] = newEntry.id;
+                newEntryIDLookup[`${entryFacade.id}`] = newEntry.id;
             }
             entryFacade.id = newEntry.id;
             if (entryFacade.type) {
@@ -235,6 +275,9 @@ export function consumeVaultFacade(
         consumeEntryFacade(entryToUpdate, entryFacade, { mergeMode });
         return false; // done - remove
     });
+    if (mergeMode) {
+        remapMergedEntryLinks(vault, newEntryIDLookup);
+    }
     // Check attributes
     if (!mergeMode) {
         // Remove missing. Not when merging: the incoming vault (an import) has none

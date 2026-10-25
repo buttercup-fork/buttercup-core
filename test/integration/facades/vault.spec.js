@@ -281,6 +281,116 @@ describe("Vault facades", function () {
                         );
                     });
                 });
+
+                describe("in merge mode, with links", function () {
+                    // B-681: merged-in entries get new IDs, so a link in the
+                    // incoming vault can only mean one of its own entries. A
+                    // link to an ID in this vault came from a hostile file
+                    // and would show that entry's values on the new entry
+                    const passwordLink = `${Entry.Attributes.PropertyLinkPrefix}password`;
+                    const loginLink = Entry.Attributes.LoginEntry;
+
+                    function mergeIn(target, setup) {
+                        const newVault = new Vault();
+                        const group = newVault.createGroup("merged");
+                        setup(group);
+                        consumeVaultFacade(target, createVaultFacade(newVault), {
+                            mergeMode: true
+                        });
+                    }
+
+                    function findMerged(vault, title) {
+                        const [entry] = vault.findEntriesByProperty("title", title);
+                        expect(entry).to.be.an.instanceOf(Entry);
+                        return entry;
+                    }
+
+                    it("drops a property link to an entry already in the vault", function () {
+                        const targetID = this.entryA.id;
+                        mergeIn(this.vault, (group) => {
+                            group
+                                .createEntry("hostile")
+                                .setProperty("password", "own value")
+                                .setAttribute(passwordLink, `${targetID}:password`);
+                        });
+                        const merged = findMerged(this.vault, "hostile");
+                        expect(merged.getAttribute(passwordLink)).to.be.undefined;
+                        expect(merged.getProperty("password")).to.equal("own value");
+                        // A save refreshes link copies: still nothing copied
+                        this.vault._updatePropertyLinkCopies();
+                        expect(merged.getProperty("password")).to.equal("own value");
+                    });
+
+                    it("drops a login entry link to an entry already in the vault", function () {
+                        const targetID = this.entryA.id;
+                        mergeIn(this.vault, (group) => {
+                            group
+                                .createEntry("hostile")
+                                .setAttribute(loginLink, `${targetID}:Entry A`);
+                        });
+                        const merged = findMerged(this.vault, "hostile");
+                        expect(merged.getAttribute(loginLink)).to.be.undefined;
+                        expect(merged.getLoginEntry()).to.be.null;
+                    });
+
+                    it("drops link values that name no entry", function () {
+                        mergeIn(this.vault, (group) => {
+                            group
+                                .createEntry("odd")
+                                .setProperty("password", "own value")
+                                .setAttribute(passwordLink, "not-a-link")
+                                .setAttribute(loginLink, ":no id");
+                        });
+                        const merged = findMerged(this.vault, "odd");
+                        expect(merged.getAttribute(passwordLink)).to.be.undefined;
+                        expect(merged.getAttribute(loginLink)).to.be.undefined;
+                    });
+
+                    it("keeps links between merged-in entries, at their new IDs", function () {
+                        mergeIn(this.vault, (group) => {
+                            const account = group
+                                .createEntry("account")
+                                .setProperty("password", "shared secret");
+                            group
+                                .createEntry("linked")
+                                .linkProperty("password", account)
+                                .setLoginEntry(account);
+                        });
+                        const account = findMerged(this.vault, "account");
+                        const linked = findMerged(this.vault, "linked");
+                        expect(linked.getPropertyLink("password")).to.deep.equal({
+                            entryID: account.id,
+                            property: "password"
+                        });
+                        expect(linked.getLoginEntry()).to.equal(account);
+                        account.setProperty("password", "changed");
+                        expect(linked.getProperty("password")).to.equal("changed");
+                    });
+
+                    it("leaves the vault's existing links alone", function () {
+                        this.entryB.linkProperty("password", this.entryA);
+                        this.entryB.setLoginEntry(this.entryA);
+                        mergeIn(this.vault, (group) => {
+                            group.createEntry("merged");
+                        });
+                        expect(this.entryB.getPropertyLink("password").entryID).to.equal(
+                            this.entryA.id
+                        );
+                        expect(this.entryB.getLoginEntry()).to.equal(this.entryA);
+                    });
+                });
+
+                describe("not in merge mode, with links", function () {
+                    it("keeps links to the vault's own entries", function () {
+                        this.entryB.linkProperty("password", this.entryA);
+                        this.entryB.setLoginEntry(this.entryA);
+                        consumeVaultFacade(this.vault, createVaultFacade(this.vault));
+                        expect(this.entryB.getPropertyLink("password").entryID).to.equal(
+                            this.entryA.id
+                        );
+                        expect(this.entryB.getLoginEntry()).to.equal(this.entryA);
+                    });
+                });
             });
 
             describe("createVaultFacade", function () {
