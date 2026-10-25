@@ -75,6 +75,14 @@ export interface VaultSourceSaveOptions {
 
 export interface VaultSourceUnlockOptions {
     /**
+     * Allow this source's plain `http` WebDAV endpoint (refused by default
+     * with `ErrorCode.InsecureEndpoint`, since it sends the account password
+     * unencrypted). Sets `allowInsecure` in the source's credentials, so it
+     * is kept when the source is stored again (eg. `VaultManager#dehydrateSource`).
+     * Apps should set it only after the user has agreed (B-684)
+     */
+    allowInsecureEndpoint?: boolean;
+    /**
      * Titles for the default groups when creating a new vault with
      * `initialiseRemote`, eg. translated for the user's language
      */
@@ -101,6 +109,24 @@ function processDehydratedCredentials(
         return Credentials.fromSecureString(sourceCredStr, masterPassword);
     }
     return Credentials.fromSecureString(credentialsString, masterPassword);
+}
+
+/**
+ * Mark a WebDAV source's credentials as allowing a plain `http` endpoint
+ * (B-684). Other datasource types are left alone.
+ * @param credentials The source's unlocked credentials
+ */
+function allowInsecureWebDAV(credentials: Credentials) {
+    const payload = getCredentials(credentials.id);
+    const datasource = payload?.data?.datasource;
+    if (!payload || !datasource || datasource.type !== "webdav") return;
+    setCredentials(credentials.id, {
+        ...payload,
+        data: {
+            ...payload.data,
+            datasource: { ...datasource, allowInsecure: true }
+        }
+    });
 }
 
 /**
@@ -818,6 +844,7 @@ export class VaultSource extends EventEmitter {
             );
         }
         const {
+            allowInsecureEndpoint = false,
             defaultGroupTitles = {},
             initialiseRemote = false,
             loadOfflineCopy = false,
@@ -836,6 +863,9 @@ export class VaultSource extends EventEmitter {
             const offlineContent = loadOfflineCopy ? await this.getOfflineContent() : null;
             const credentials: Credentials = (this._credentials =
                 await processDehydratedCredentials(this._credentials as string, masterPassword));
+            if (allowInsecureEndpoint) {
+                allowInsecureWebDAV(credentials);
+            }
             // Initialise datasource
             const datasource = (this._datasource = credentialsToDatasource(
                 Credentials.fromCredentials(credentials, masterPassword)

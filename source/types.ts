@@ -92,6 +92,13 @@ export interface DatasourceConfigurationMemory extends DatasourceConfiguration {
 
 export interface DatasourceConfigurationWebDAV extends DatasourceConfiguration {
     type: "webdav";
+    /**
+     * Allow a plain `http` endpoint on another host, which sends the
+     * username and password unencrypted. Without it such endpoints are
+     * refused (`ErrorCode.InsecureEndpoint`); `http` to this computer
+     * (`localhost`, `127.x.x.x`, `[::1]`) is always allowed
+     */
+    allowInsecure?: boolean;
     endpoint: string;
     password: string;
     path: string;

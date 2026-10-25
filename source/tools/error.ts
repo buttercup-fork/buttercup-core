@@ -36,7 +36,14 @@ export enum ErrorCode {
     /**
      * A file to download or upload is larger than the datasource allows
      */
-    DataTooLarge = "DATA_TOO_LARGE"
+    DataTooLarge = "DATA_TOO_LARGE",
+    /**
+     * A datasource endpoint would send the account password unencrypted
+     * (plain `http` to a host other than this computer) and the user has
+     * not allowed it (WebDAV `allowInsecure`, or the unlock option
+     * `allowInsecureEndpoint`)
+     */
+    InsecureEndpoint = "INSECURE_ENDPOINT"
 }
 
 // What a wrong password looks like, per algorithm/environment:
