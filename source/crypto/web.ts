@@ -57,7 +57,7 @@ function checkPassword(password: string) {
 }
 
 function generateSalt(): string {
-    // 9 random bytes are exactly 12 base64 characters
+    // 18 random bytes are exactly 24 base64 characters
     return bytesToBase64(randomBytes((SALT_LENGTH / 4) * 3));
 }
 
