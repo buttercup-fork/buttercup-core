@@ -147,8 +147,9 @@ describe("AttachmentManager", function () {
                             sizeOriginal: 439968,
                             // GCM's auth tag (16 bytes) is smaller than CBC's
                             // HMAC-SHA256 (32 bytes), so the packed blob is
-                            // correspondingly smaller than under CBC.
-                            sizeEncrypted: 440141,
+                            // correspondingly smaller than under CBC. The header's
+                            // salt is 24 characters (12 before 8.0.0, B-605).
+                            sizeEncrypted: 440153,
                             created: nowDate.toUTCString(),
                             updated: nowDate.toUTCString()
                         });
@@ -278,7 +279,7 @@ describe("AttachmentManager", function () {
                                 );
                             } catch (err) {
                                 expect(err).to.match(/Not enough space/i);
-                                expect(err).to.match(/needed = 440141 B/i);
+                                expect(err).to.match(/needed = 440153 B/i);
                                 expect(err).to.match(/available = 1000 B/i);
                             }
                             expect(getAvailableStorage.callCount).to.equal(1);

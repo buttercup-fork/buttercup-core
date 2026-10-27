@@ -81,8 +81,9 @@ describe("AttachmentManager", function () {
             type: "image/png",
             sizeOriginal: 439968,
             // Differs from the Node specs: the PBKDF2 round count is stored as text in
-            // the header, and test/web/index.js uses 10 rounds rather than the default
-            sizeEncrypted: 440137,
+            // the header, and test/web/index.js uses 10 rounds rather than the default.
+            // The header's salt is 24 characters (12 before 8.0.0, B-605).
+            sizeEncrypted: 440149,
             created: nowDate.toUTCString(),
             updated: nowDate.toUTCString()
         });
@@ -150,7 +151,7 @@ describe("AttachmentManager", function () {
                 );
             } catch (err) {
                 expect(err).to.match(/Not enough space/i);
-                expect(err).to.match(/needed = 440137 B/i);
+                expect(err).to.match(/needed = 440149 B/i);
                 expect(err).to.match(/available = 1000 B/i);
             }
             expect(getAvailableStorage.callCount).to.equal(1);
