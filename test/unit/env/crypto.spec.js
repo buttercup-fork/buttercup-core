@@ -52,6 +52,13 @@ function referenceDecrypt(encrypted, password) {
     throw new Error(`Unknown method: ${method}`);
 }
 
+// New salts: 18 random bytes (144 bits; NIST SP 800-132 section 5.1 asks for at least 128) as
+// 24 base64 characters without padding (C-049, B-605)
+function expectNewSalt(salt) {
+    expect(salt).to.match(/^[A-Za-z0-9+/]{24}$/);
+    expect(Buffer.from(salt, "base64")).to.have.lengthOf(18);
+}
+
 async function fails(promise) {
     try {
         await promise;
@@ -124,10 +131,21 @@ describe("vault encryption (known answers)", function () {
             const encrypted = await encryptText(TEXT, PASSWORD);
             const [, iv, salt, auth, rounds, method] = encrypted.split("$");
             expect(method).to.equal("gcm");
-            expect(rounds).to.equal("250000");
+            expect(rounds).to.equal("600000");
             expect(iv).to.match(/^[0-9a-f]{32}$/);
-            expect(salt.length).to.be.greaterThan(8);
+            expectNewSalt(salt);
             expect(auth).to.match(/^[0-9a-f]{32}$/);
+        });
+
+        it("writes binary data (attachments) with the same rounds and salt size", async function () {
+            const encryptBuffer = getSharedAppEnv().getProperty("crypto/v2/encryptBuffer");
+            const encrypted = await encryptBuffer(Buffer.from(TEXT), PASSWORD);
+            // "iocane/2", then a 4-byte big-endian length, then the header JSON
+            const headerLength = encrypted.readUInt32BE(8);
+            const header = JSON.parse(encrypted.subarray(12, 12 + headerLength).toString("utf8"));
+            expect(header.method).to.equal("gcm");
+            expect(header.rounds).to.equal(600000);
+            expectNewSalt(header.salt);
         });
 
         it("is readable by the reference decryptor", async function () {

@@ -27,11 +27,16 @@ export const DEFAULT_ROUNDS = 1000;
 /**
  * The most rounds a vault may ask for. The count is read from the (unauthenticated) header, so
  * without a limit a hostile file could keep a device busy for hours before the password check
- * fails. Vaults use 250,000 today.
+ * fails. New vaults use 600,000 (`CRYPTO_PBKDF2_ROUNDS`).
  */
 export const MAX_ROUNDS = 10_000_000;
 export const IV_BYTES = 16;
-export const SALT_LENGTH = 12;
+/**
+ * Characters of base64 in a new salt: 24 = 18 random bytes, 144 bits, no padding (NIST SP 800-132
+ * section 5.1 asks for at least 128; was 12 = 72 bits). Must be a multiple of 4. Readers take a
+ * salt of any length, so earlier vaults and earlier readers are unaffected.
+ */
+export const SALT_LENGTH = 24;
 export const TAG_BYTES = 16;
 const HMAC_BYTES = 32;
 const HEX = /^[0-9a-fA-F]*$/;

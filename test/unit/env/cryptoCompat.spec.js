@@ -97,3 +97,30 @@ describe("vault encryption compared with iocane", function () {
         });
     });
 });
+
+// What a release writes by default (600,000 rounds, 24-character salts) must still open in
+// iocane, so apps and versions that still use it can read vaults saved by this one (C-049, C-050)
+describe("vault encryption with the default settings, read by iocane", function () {
+    this.timeout(60000);
+
+    before(function () {
+        getSharedAppEnv().getProperty("crypto/v1/setDerivationRounds")(null);
+    });
+
+    it("text", async function () {
+        const encryptText = getSharedAppEnv().getProperty("crypto/v1/encryptText");
+        const text = randomText(200);
+        const ours = await encryptText(text, PASSWORDS[2]);
+        expect(ours.split("$")[4]).to.equal("600000");
+        expect(ours.split("$")[2]).to.have.lengthOf(24);
+        expect(await createAdapter().decrypt(ours, PASSWORDS[2])).to.equal(text);
+    });
+
+    it("binary", async function () {
+        const encryptBuffer = getSharedAppEnv().getProperty("crypto/v2/encryptBuffer");
+        const data = crypto.randomBytes(1000);
+        const ours = await encryptBuffer(data, PASSWORDS[1]);
+        const readByIocane = await createAdapter().decrypt(ours, PASSWORDS[1]);
+        expect(Buffer.compare(Buffer.from(readByIocane), data)).to.equal(0);
+    });
+});
