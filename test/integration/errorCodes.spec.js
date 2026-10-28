@@ -1,5 +1,6 @@
 import { expect } from "chai";
-import { readdirSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -10,6 +11,8 @@ import {
     Vault,
     VaultFormatA,
     VaultFormatB,
+    VaultManager,
+    VaultSource,
     getErrorCode
 } from "../../dist/node/index.js";
 
@@ -85,5 +88,63 @@ describe("error codes", function () {
         }
         expect(err).to.be.an("error");
         expect(getErrorCode(err)).to.equal(ErrorCode.DecryptionFailed);
+    });
+
+    // B-117: a wrong master password fails first while the source's stored
+    // credentials are decrypted, before the vault file is read
+    describe("a wrong master password on stored credentials", function () {
+        it("tags Credentials.fromSecureString with DecryptionFailed", async function () {
+            const secure = await Credentials.fromDatasource(
+                { type: "file", path: "/vaults/x.bcup" },
+                "correct"
+            ).toSecureString();
+            let err = null;
+            try {
+                await Credentials.fromSecureString(secure, "wrong");
+            } catch (e) {
+                err = e;
+            }
+            expect(err).to.be.an("error");
+            expect(getErrorCode(err)).to.equal(ErrorCode.DecryptionFailed);
+            expect(err.message).to.contain("Failed decrypting credentials");
+            // Control: the right password still opens them
+            const opened = await Credentials.fromSecureString(secure, "correct");
+            expect(Credentials.isCredentials(opened)).to.be.true;
+        });
+
+        it("tags VaultSource.unlock with DecryptionFailed", async function () {
+            const dir = mkdtempSync(join(tmpdir(), "bcup-b117-"));
+            try {
+                const path = join(dir, "vault.bcup");
+                const vault = Vault.createWithDefaults();
+                await new FileDatasource(
+                    Credentials.fromDatasource({ type: "file", path }, "correct")
+                ).save(vault.format.history, Credentials.fromPassword("correct"));
+                const source = new VaultSource(
+                    "B-117",
+                    "file",
+                    await Credentials.fromDatasource(
+                        { type: "file", path },
+                        "correct"
+                    ).toSecureString()
+                );
+                const manager = new VaultManager();
+                await manager.addSource(source);
+                let err = null;
+                try {
+                    await source.unlock(Credentials.fromPassword("wrong"));
+                } catch (e) {
+                    err = e;
+                }
+                expect(err).to.be.an("error");
+                expect(getErrorCode(err)).to.equal(ErrorCode.DecryptionFailed);
+                // Control: the right password unlocks after the failure
+                await source.unlock(Credentials.fromPassword("correct"));
+                expect(source.status).to.equal(VaultSource.STATUS_UNLOCKED);
+                await source.lock();
+            } finally {
+                rmSync(dir, { recursive: true, force: true });
+            }
+        });
     });
 });

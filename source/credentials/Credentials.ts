@@ -3,6 +3,7 @@ import { credentialsAllowsPurpose, getCredentials, setCredentials } from "./memo
 import { getSharedAppEnv } from "../env/appEnv.js";
 import { getMasterPassword, setMasterPassword } from "./memory/password.js";
 import { CredentialsData, CredentialsPayload, DatasourceConfiguration } from "../types.js";
+import { withDecryptionErrorCode } from "../tools/error.js";
 
 /**
  * The signature of legacy encrypted credentials
@@ -138,7 +139,12 @@ export class Credentials {
      */
     static async fromSecureString(content: string, masterPassword: string): Promise<Credentials> {
         const decrypt = getSharedAppEnv().getProperty("crypto/v1/decryptText");
-        const decryptedContent = await decrypt(unsignEncryptedContent(content), masterPassword);
+        // A wrong master password fails here first when a vault source is
+        // unlocked: tag it like a wrong vault password (B-117)
+        const decryptedContent = await withDecryptionErrorCode<string>(
+            decrypt(unsignEncryptedContent(content), masterPassword),
+            "credentials"
+        );
         const credentialsData = JSON.parse(decryptedContent);
         // Handle compatibility updates for legacy credentials
         if (credentialsData.datasource) {
