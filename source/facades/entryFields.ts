@@ -17,6 +17,9 @@ function createCreditCardFields(entry: Entry | null): Array<EntryFacadeField> {
     return [
         ...createBaseFields(entry),
         createFieldDescriptor(entry, "Card Holder", EntryPropertyType.Property, "username"),
+        // Hidden like the CVV (B-715). Up to 19 digits in groups of 4, so
+        // 14, 15 and 19-digit cards fit; a formatter stops at the end of its
+        // format, so 4-4-4-4 cut longer numbers off at 16 digits (B-716)
         createFieldDescriptor(entry, "Card Number", EntryPropertyType.Property, "password", {
             formatting: {
                 format: [
@@ -26,10 +29,13 @@ function createCreditCardFields(entry: Entry | null): Array<EntryFacadeField> {
                     { exactly: "-" },
                     { char: DIGIT, repeat: 4 },
                     { exactly: "-" },
-                    { char: DIGIT, repeat: 4 }
+                    { char: DIGIT, repeat: 4 },
+                    { exactly: "-" },
+                    { char: DIGIT, repeat: 3 }
                 ],
                 placeholder: "DDDD-DDDD-DDDD-DDDD"
-            }
+            },
+            valueType: EntryPropertyValueType.Password
         }),
         createFieldDescriptor(entry, "Card Type", EntryPropertyType.Property, "type", {
             formatting: {
