@@ -2,9 +2,11 @@ import { expect } from "chai";
 import {
     Entry,
     EntryPropertyType,
+    EntryPropertyValueType,
     EntryType,
     Vault,
     VaultFormatB,
+    consumeEntryFacade,
     createEntryFacade,
     createEntryFromFacade,
     createFieldDescriptor,
@@ -75,6 +77,57 @@ describe("facades/entry", function () {
             this.entry.setProperty("username", "second");
             const { _changes } = createEntryFacade(this.entry);
             expect(_changes).to.have.length.above(0);
+        });
+    });
+
+    describe("credit card: Card Number", function () {
+        beforeEach(function () {
+            const vault = new Vault();
+            this.card = vault
+                .createGroup("cards")
+                .createEntry("Visa")
+                .setAttribute(Entry.Attributes.FacadeType, EntryType.CreditCard)
+                .setProperty("password", "4111111111111111");
+        });
+
+        const cardNumberField = (entry) =>
+            createEntryFacade(entry).fields.find(
+                (field) => field.propertyType === "property" && field.property === "password"
+            );
+
+        it("is a hidden (password) field, like the CVV (B-715)", function () {
+            expect(cardNumberField(this.card)).to.have.property(
+                "valueType",
+                EntryPropertyValueType.Password
+            );
+        });
+
+        it("is hidden for a card saved with the Text type before (B-715)", function () {
+            this.card.setAttribute(
+                `${Entry.Attributes.FieldTypePrefix}password`,
+                EntryPropertyValueType.Text
+            );
+            expect(cardNumberField(this.card)).to.have.property(
+                "valueType",
+                EntryPropertyValueType.Password
+            );
+        });
+
+        it("keeps the hidden type when the facade is saved back", function () {
+            const facade = createEntryFacade(this.card);
+            consumeEntryFacade(this.card, facade);
+            expect(this.card.getAttribute(`${Entry.Attributes.FieldTypePrefix}password`)).to.equal(
+                EntryPropertyValueType.Password
+            );
+            expect(this.card.getProperty("password")).to.equal("4111111111111111");
+        });
+
+        it("has room for 19 digits (B-716)", function () {
+            const { format } = cardNumberField(this.card).formatting;
+            const digits = format
+                .filter((part) => part.char === "\\d")
+                .reduce((sum, part) => sum + (part.repeat || 1), 0);
+            expect(digits).to.equal(19);
         });
     });
 
