@@ -1,7 +1,9 @@
 /**
  * [entry URL, page URL, should the entry be offered on the page]
  * Hosts are compared label by label, never as string suffixes. Today's subdomain
- * behaviour (in both directions), the scheme and the port are unchanged (B-621).
+ * behaviour (in both directions) and the port are unchanged. Scheme (B-621): a page
+ * must be http or https (or carry no scheme); an entry saved as https is offered only
+ * on https pages. The public suffix boundary is not checked yet (B-621, after 8.0.0).
  * Shared by the Node spec (test/integration/search/urlMatching.spec.js) and the
  * browser spec (test/web/urlMatching.spec.js): Node and browsers parse URLs
  * differently, so the same table runs in both.
@@ -83,6 +85,33 @@ export const URL_MATCHING_CASES = [
     ["example.com?x=1", "https://example.com/", true],
     ["example.com", "https://example.com?x=1", true],
     ["example.com", "https://example.com#frag", true],
+    // Scheme (B-621): an https entry is never offered on a page that is not https, and
+    // only http and https pages are offered anything
+    ["https://bank.example/login", "http://bank.example/login", false],
+    ["HTTPS://bank.example/", "http://bank.example/", false],
+    ["https://bank.example/", "http://www.bank.example/", false],
+    ["https://localhost:3000/", "http://localhost:3000/", false],
+    ["https://bank.example/", "ftp://bank.example/", false],
+    ["bank.example", "ftp://bank.example/", false],
+    ["http://bank.example/", "ftp://bank.example/", false],
+    ["https://bank.example/login", "https://bank.example/", true],
+    ["https://bank.example/", "HTTPS://bank.example/", true],
+    ["bank.example", "http://bank.example/", true],
+    ["bank.example", "https://bank.example/", true],
+    ["http://router.lan/", "http://router.lan/", true],
+    ["http://router.lan/", "https://router.lan/", true],
+    ["ftp://files.example/", "https://files.example/", true],
+    ["https://bank.example/", "bank.example", false],
+    ["bank.example", "bank.example", true],
+    // Scheme spellings: read the same way as the host is read
+    ["https:1.2.3.4", "http://1.2.3.4/", false],
+    ["https:1.2.3.4", "https://1.2.3.4/", true],
+    ["https:bank.example", "http://bank.example/", false],
+    ["https:/bank.example/", "http://bank.example/", false],
+    ["https:\\\\bank.example\\", "http://bank.example/", false],
+    ["https://bank.example/", "http:bank.example", false],
+    ["https://bank.example/", "HTTP://bank.example/", false],
+    ["https://[::1]:3000/", "http://[::1]:3000/", false],
     // No host at all: nothing to compare, nothing is offered
     ["https://?@example.com", "https://example.com/", false],
     ["https://example.com/", "https://?@example.com", false]

@@ -108,6 +108,27 @@ export function extractDomain(str: string): string {
     return (match && match[1]) || "";
 }
 
+/**
+ * The scheme of a URL in lower case, or "" if it has none. The schemes
+ * `extractDomain` strips (http, https, ftp) are always read as schemes, so both
+ * agree on `https:1.2.3.4`; for any other name, `host:port` (a digit after the
+ * colon) is not read as a scheme.
+ */
+export function extractScheme(str: string): string {
+    const match = /^(https?|ftp):/i.exec(str) || /^([a-z][a-z0-9+.-]*):(?!\d)/i.exec(str);
+    return match ? match[1].toLowerCase() : "";
+}
+
+/**
+ * Whether an entry URL may be offered on a page with this scheme (B-621): only
+ * http and https pages (or a page given without a scheme) are offered anything, and
+ * an entry saved as https only on an https page, so a plain-http page for the same
+ * host cannot receive it. Entries without a scheme or with http keep matching both.
+ */
+function schemeAllowed(entryURL: string, pageScheme: string): boolean {
+    return extractScheme(entryURL) !== "https" || pageScheme === "https";
+}
+
 export class BaseSearch<T extends Vault | VaultFacade = Vault | VaultFacade> {
     _entries: Array<ProcessedSearchEntry> = [];
     _entryFetcher: EntryFetcher<T>;
@@ -239,7 +260,8 @@ export class BaseSearch<T extends Vault | VaultFacade = Vault | VaultFacade> {
      */
     searchByURL(url: string): Array<SearchResult> {
         const incomingDomain = extractDomain(url);
-        if (!incomingDomain) {
+        const pageScheme = extractScheme(url);
+        if (!incomingDomain || !["", "http", "https"].includes(pageScheme)) {
             this._results = [];
             return this._results;
         }
@@ -248,6 +270,7 @@ export class BaseSearch<T extends Vault | VaultFacade = Vault | VaultFacade> {
             const bestURL = entryItem.urls.reduce((best: string | null, next) => {
                 const thisDomain = extractDomain(next);
                 if (!thisDomain) return best;
+                if (!schemeAllowed(next, pageScheme)) return best;
                 if (!domainsRelated(thisDomain, incomingDomain)) return best;
                 const score = levenshtein.get(next, url);
                 if (score < bestScore) {
