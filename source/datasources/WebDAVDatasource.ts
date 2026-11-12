@@ -22,6 +22,11 @@ import {
 const MAX_DATA_SIZE = 200 * 1024 * 1024; // 200 MB
 // Hosts where plain http stays on this computer
 const LOOPBACK_HOST = /^(localhost|127(\.\d{1,3}){3}|\[::1\])$/i;
+// Without a working URL parser: the only endpoints taken as safe are https,
+// and http whose whole host part is this computer (optional user info and
+// port), followed by the end, a path or a query
+const SECURE_ENDPOINT_TEXT =
+    /^(?:https:\/\/|http:\/\/(?:[^@/?#\\]*@)?(?:localhost|127(?:\.\d{1,3}){3}|\[::1\])(?::\d*)?(?:[/?#]|$))/i;
 
 /**
  * Check whether a WebDAV endpoint would send the account password
@@ -31,15 +36,19 @@ const LOOPBACK_HOST = /^(localhost|127(\.\d{1,3}){3}|\[::1\])$/i;
  * @private
  */
 function isInsecureEndpoint(endpoint: string): boolean {
+    let protocol: unknown, hostname: unknown;
     try {
-        const url = new URL(endpoint);
-        return url.protocol === "http:" && !LOOPBACK_HOST.test(url.hostname);
+        ({ protocol, hostname } = new URL(endpoint));
     } catch (err) {
-        // Not a URL (the client can't connect to it either), or a platform
-        // whose URL lacks these properties (React Native without a polyfill:
-        // not checked, B-684)
-        return false;
+        // Not a URL, or a platform whose URL does not work (React Native
+        // 0.72 without a polyfill): read the text below
     }
+    if (typeof protocol !== "string" || typeof hostname !== "string") {
+        // Fails closed: anything not clearly https or http to this computer
+        // is insecure (B-754; it used to be let through)
+        return typeof endpoint !== "string" || !SECURE_ENDPOINT_TEXT.test(endpoint);
+    }
+    return protocol === "http:" && !LOOPBACK_HOST.test(hostname);
 }
 
 /**

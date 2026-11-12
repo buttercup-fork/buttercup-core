@@ -91,6 +91,77 @@ describe("WebDAVDatasource over http (B-684)", function () {
         });
     });
 
+    describe("when the platform's URL does not work (B-754)", function () {
+        // React Native 0.72 has no working URL without a polyfill: the check
+        // must then read the text, and refuse what it can't place
+        const brokenURLs = {
+            "throws when constructed": class {
+                constructor() {
+                    throw new Error("URL is not implemented");
+                }
+            },
+            "throws from its getters": class {
+                get protocol() {
+                    throw new Error("URL.protocol is not implemented");
+                }
+                get hostname() {
+                    throw new Error("URL.hostname is not implemented");
+                }
+            },
+            "has no properties": class {}
+        };
+
+        Object.entries(brokenURLs).forEach(([description, BrokenURL]) => {
+            describe(`a URL that ${description}`, function () {
+                beforeEach(function () {
+                    this.originalURL = globalThis.URL;
+                    globalThis.URL = BrokenURL;
+                });
+
+                afterEach(function () {
+                    globalThis.URL = this.originalURL;
+                });
+
+                [
+                    "http://example.com/dav",
+                    "http://192.168.1.10/remote.php/dav",
+                    "HTTP://EXAMPLE.COM/dav",
+                    "http://localhost.example.com/dav",
+                    "http://127.0.0.1.example.com/dav",
+                    "http://localhost@evil.example/dav",
+                    "http://localhost\\@evil.example/dav",
+                    "http://[::ffff:127.0.0.1]/dav",
+                    "not a url"
+                ].forEach((endpoint) => {
+                    it(`refuses ${endpoint}`, function () {
+                        expectInsecure(() => createDatasource(endpoint));
+                    });
+                });
+
+                [
+                    "https://example.com/dav",
+                    "HTTPS://EXAMPLE.COM/dav",
+                    "http://localhost:9989/dav",
+                    "http://LOCALHOST/dav",
+                    "http://127.0.0.1:8080/dav",
+                    "http://[::1]:8080/dav",
+                    "http://user@localhost:8080/dav",
+                    "http://localhost"
+                ].forEach((endpoint) => {
+                    it(`allows ${endpoint}`, function () {
+                        expect(() => createDatasource(endpoint)).to.not.throw();
+                    });
+                });
+
+                it("allows an http endpoint on another host with allowInsecure", function () {
+                    expect(() =>
+                        createDatasource("http://example.com/dav", { allowInsecure: true })
+                    ).to.not.throw();
+                });
+            });
+        });
+    });
+
     describe("unlocking a source", function () {
         // An IPv4-mapped address reaches the local test server but is not on
         // the list of names treated as this computer, so it counts as insecure
