@@ -6,6 +6,7 @@ import {
     executeRequest,
     responseToBufferLike
 } from "./shared.js";
+import { assertAttachmentStorageIDs } from "../../tools/attachments.js";
 import { BufferLike, VaultID } from "../../types.js";
 
 const DOWNLOAD_URL = "https://content.dropboxapi.com/2/files/download";
@@ -33,6 +34,7 @@ export function getDropboxAttachmentPath(
     vaultID: VaultID,
     attachmentID: string
 ): string {
+    assertAttachmentStorageIDs(vaultID, attachmentID);
     return pathPosix.join(
         pathPosix.dirname(vaultPath),
         ".buttercup",

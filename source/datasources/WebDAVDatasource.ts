@@ -6,7 +6,7 @@ import { fireInstantiationHandlers, registerDatasource } from "./register.js";
 import { getSharedAppEnv } from "../env/appEnv.js";
 import { Credentials } from "../credentials/Credentials.js";
 import { getCredentials } from "../credentials/memory/credentials.js";
-import { ATTACHMENT_EXT } from "../tools/attachments.js";
+import { ATTACHMENT_EXT, assertAttachmentStorageIDs } from "../tools/attachments.js";
 import { assertDataSize, readResponseWithLimit } from "../tools/size.js";
 import { ErrorCode } from "../tools/error.js";
 import { Layerr } from "layerr";
@@ -134,6 +134,7 @@ export default class WebDAVDatasource extends TextDatasource {
      * @protected
      */
     async _ensureAttachmentsPaths(vaultID: VaultID): Promise<void> {
+        assertAttachmentStorageIDs(vaultID);
         const attachmentsDir = pathPosix.join(this.baseDir, ".buttercup", vaultID);
         await this.client.createDirectory(attachmentsDir, { recursive: true });
     }
@@ -175,6 +176,7 @@ export default class WebDAVDatasource extends TextDatasource {
      * @memberof WebDAVDatasource
      */
     async getAttachment(vaultID: VaultID, attachmentID: string): Promise<BufferLike> {
+        assertAttachmentStorageIDs(vaultID, attachmentID);
         await this._ensureAttachmentsPaths(vaultID);
         const attachmentPath = pathPosix.join(
             this.baseDir,
@@ -227,6 +229,7 @@ export default class WebDAVDatasource extends TextDatasource {
         buffer: BufferLike,
         details: AttachmentDetails
     ): Promise<void> {
+        assertAttachmentStorageIDs(vaultID, attachmentID);
         await this._ensureAttachmentsPaths(vaultID);
         const attachmentPath = pathPosix.join(
             this.baseDir,
@@ -245,6 +248,7 @@ export default class WebDAVDatasource extends TextDatasource {
      * @memberof WebDAVDatasource
      */
     async removeAttachment(vaultID: VaultID, attachmentID: string): Promise<void> {
+        assertAttachmentStorageIDs(vaultID, attachmentID);
         await this._ensureAttachmentsPaths(vaultID);
         const attachmentPath = pathPosix.join(
             this.baseDir,
