@@ -4,7 +4,12 @@ import { Vault } from "../core/Vault.js";
 import { VaultSource } from "../core/VaultSource.js";
 import { getSharedAppEnv } from "../env/appEnv.js";
 import { generateUUID } from "../tools/uuid.js";
-import { decryptAttachment, encryptAttachment, getBufferSize } from "../tools/attachments.js";
+import {
+    assertAttachmentStorageIDs,
+    decryptAttachment,
+    encryptAttachment,
+    getBufferSize
+} from "../tools/attachments.js";
 import { AttachmentDetails } from "../types.js";
 
 const ATTACHMENTS_KEY_LENGTH = 48;
@@ -37,6 +42,7 @@ export class AttachmentManager {
      */
     async getAttachment(entry: Entry, attachmentID: string): Promise<Buffer | ArrayBuffer> {
         this._checkAttachmentSupport();
+        this._checkStorageIDs(attachmentID);
         const details = await this.getAttachmentDetails(entry, attachmentID);
         if (!details) {
             throw new Error(`Attachment not available: ${attachmentID}`);
@@ -86,7 +92,13 @@ export class AttachmentManager {
      */
     async removeAttachment(entry: Entry, attachmentID: string) {
         this._checkAttachmentSupport();
+        this._checkStorageIDs(attachmentID);
         const attributeKey = `${Entry.Attributes.AttachmentPrefix}${attachmentID}`;
+        // Only an attachment of this entry is deleted from storage: an ID
+        // from elsewhere would delete a file another entry still uses
+        if (!(await this.getAttachmentDetails(entry, attachmentID))) {
+            throw new Error(`Attachment not available: ${attachmentID}`);
+        }
         // Remove data
         await this._source._datasource!.removeAttachment(this._source.vault.id, attachmentID);
         // Remove in entry
@@ -113,6 +125,7 @@ export class AttachmentManager {
         timestamp = new Date()
     ) {
         this._checkAttachmentSupport();
+        this._checkStorageIDs(attachmentID);
         if (!name || !type) {
             throw new Error(`Attachment properties required: name/type => ${name}/${type}`);
         }
@@ -161,6 +174,14 @@ export class AttachmentManager {
         if (!this._source.supportsAttachments()) {
             throw new Error(`Attachments not supported on source: ${this._source.id}`);
         }
+    }
+
+    /**
+     * Refuse a vault or attachment ID that is not a UUID, before it reaches
+     * a datasource's storage path (B-685)
+     */
+    _checkStorageIDs(attachmentID: string) {
+        assertAttachmentStorageIDs(this._source.vault.id, attachmentID);
     }
 
     async _getAttachmentsCredentials() {

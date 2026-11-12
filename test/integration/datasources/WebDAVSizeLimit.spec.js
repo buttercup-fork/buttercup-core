@@ -13,8 +13,9 @@ import {
 import { PASSWORD, PATH, PORT, USERNAME, createServer } from "../../resources/webdavServer.js";
 import { assertDataSize, readResponseWithLimit } from "../../../dist/node/tools/size.js";
 
-const VAULT_ID = "vault-id";
-const ATTACHMENT_ID = "attachment-id";
+// Attachment paths take UUIDs only (B-685)
+const VAULT_ID = "6f1c2a40-8f0e-4d5b-9a51-2f6d3c1e7b90";
+const ATTACHMENT_ID = "0b7e9d2c-3a14-4f6b-8c2d-9e1f5a7b3c40";
 
 async function captureError(callback) {
     try {

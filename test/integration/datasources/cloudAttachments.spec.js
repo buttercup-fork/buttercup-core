@@ -3,12 +3,17 @@ import {
     Credentials,
     DatasourceAuthManager,
     DropboxDatasource,
-    GoogleDriveDatasource
+    ErrorCode,
+    GoogleDriveDatasource,
+    getErrorCode
 } from "../../../dist/node/index.js";
 import { createFakeDropbox, createFakeGoogleDrive } from "../../resources/fakeCloudStorage.js";
 
 // Every byte value, so encoding mistakes (eg. treating data as text) show up
 const BINARY = Buffer.from(Array.from({ length: 256 }, (_, i) => i));
+// Dropbox paths take UUIDs only (B-685)
+const VAULT_ID = "6f1c2a40-8f0e-4d5b-9a51-2f6d3c1e7b90";
+const ATT_ID = "0b7e9d2c-3a14-4f6b-8c2d-9e1f5a7b3c40";
 
 describe("cloud datasource attachments", function () {
     describe("DropboxDatasource", function () {
@@ -24,15 +29,41 @@ describe("cloud datasource attachments", function () {
         });
 
         it("stores attachments next to the vault, like file/WebDAV vaults", async function () {
-            await this.datasource.putAttachment("vault-id", "att-id", BINARY, {});
+            await this.datasource.putAttachment(VAULT_ID, ATT_ID, BINARY, {});
             expect([...this.fake.files.keys()]).to.deep.equal([
-                "/vaults/mein tresor/.buttercup/vault-id/att-id.bcatt"
+                `/vaults/mein tresor/.buttercup/${VAULT_ID}/${ATT_ID}.bcatt`
             ]);
         });
 
+        it("refuses vault and attachment IDs that are not UUIDs (B-685)", async function () {
+            const attempts = [
+                ["../escaped", ATT_ID],
+                [VAULT_ID, "../../other/x"],
+                [VAULT_ID, "a/b"]
+            ];
+            for (const [vaultID, attachmentID] of attempts) {
+                for (const call of [
+                    () => this.datasource.putAttachment(vaultID, attachmentID, BINARY, {}),
+                    () => this.datasource.getAttachment(vaultID, attachmentID),
+                    () => this.datasource.removeAttachment(vaultID, attachmentID)
+                ]) {
+                    let error = null;
+                    try {
+                        await call();
+                    } catch (err) {
+                        error = err;
+                    }
+                    expect(error).to.be.an("error");
+                    expect(getErrorCode(error)).to.equal(ErrorCode.InvalidStorageID);
+                }
+            }
+            expect(this.fake.requests).to.have.lengthOf(0);
+            expect(this.fake.files.size).to.equal(0);
+        });
+
         it("round-trips binary data as a Buffer", async function () {
-            await this.datasource.putAttachment("vault-id", "att-id", BINARY, {});
-            const data = await this.datasource.getAttachment("vault-id", "att-id");
+            await this.datasource.putAttachment(VAULT_ID, ATT_ID, BINARY, {});
+            const data = await this.datasource.getAttachment(VAULT_ID, ATT_ID);
             expect(Buffer.isBuffer(data)).to.be.true;
             expect(data.equals(BINARY)).to.be.true;
         });
@@ -45,8 +76,8 @@ describe("cloud datasource attachments", function () {
                 )
             );
             datasource.client.patcher.patch("request", this.fake.request);
-            await datasource.putAttachment("v", "a", BINARY, {});
-            await datasource.getAttachment("v", "a");
+            await datasource.putAttachment(VAULT_ID, ATT_ID, BINARY, {});
+            await datasource.getAttachment(VAULT_ID, ATT_ID);
             const download = this.fake.requests.find((req) => /download$/.test(req.url));
             expect(download.headers["Dropbox-API-Arg"]).to.match(/^[\x20-\x7e]+$/);
             expect(download.headers.Authorization).to.equal("Bearer tkn");
@@ -54,8 +85,8 @@ describe("cloud datasource attachments", function () {
 
         it("passes the token in the query in compat (browser) mode", async function () {
             this.datasource.client._config = { compat: true };
-            await this.datasource.putAttachment("vault-id", "att-id", BINARY, {});
-            await this.datasource.getAttachment("vault-id", "att-id");
+            await this.datasource.putAttachment(VAULT_ID, ATT_ID, BINARY, {});
+            await this.datasource.getAttachment(VAULT_ID, ATT_ID);
             const download = this.fake.requests.find((req) => /download$/.test(req.url));
             expect(download.query).to.include({
                 authorization: "Bearer tkn",
@@ -65,8 +96,8 @@ describe("cloud datasource attachments", function () {
         });
 
         it("removes attachments", async function () {
-            await this.datasource.putAttachment("vault-id", "att-id", BINARY, {});
-            await this.datasource.removeAttachment("vault-id", "att-id");
+            await this.datasource.putAttachment(VAULT_ID, ATT_ID, BINARY, {});
+            await this.datasource.removeAttachment(VAULT_ID, ATT_ID);
             expect(this.fake.files.size).to.equal(0);
         });
     });

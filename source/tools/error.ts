@@ -43,7 +43,12 @@ export enum ErrorCode {
      * not allowed it (WebDAV `allowInsecure`, or the unlock option
      * `allowInsecureEndpoint`)
      */
-    InsecureEndpoint = "INSECURE_ENDPOINT"
+    InsecureEndpoint = "INSECURE_ENDPOINT",
+    /**
+     * A vault ID or attachment ID can't name attachment storage: it is not
+     * a UUID, so it could point outside the vault's attachments folder
+     */
+    InvalidStorageID = "INVALID_STORAGE_ID"
 }
 
 // What a wrong password looks like, per algorithm/environment:

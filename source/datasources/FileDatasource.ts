@@ -5,7 +5,7 @@ import { TextDatasource } from "./TextDatasource.js";
 import { fireInstantiationHandlers, registerDatasource } from "./register.js";
 import { Credentials } from "../credentials/Credentials.js";
 import { getCredentials } from "../credentials/memory/credentials.js";
-import { ATTACHMENT_EXT } from "../tools/attachments.js";
+import { ATTACHMENT_EXT, assertAttachmentStorageIDs } from "../tools/attachments.js";
 import {
     AttachmentDetails,
     BufferLike,
@@ -94,6 +94,7 @@ export class FileDatasource extends TextDatasource {
      * @protected
      */
     async _ensureAttachmentsPaths(vaultID: VaultID): Promise<void> {
+        assertAttachmentStorageIDs(vaultID);
         const attachmentsDir = path.join(this.baseDir, ".buttercup", vaultID);
         await this.mkdir(attachmentsDir, { recursive: true });
     }
@@ -106,6 +107,7 @@ export class FileDatasource extends TextDatasource {
      * @memberof FileDatasource
      */
     async getAttachment(vaultID: VaultID, attachmentID: string): Promise<BufferLike> {
+        assertAttachmentStorageIDs(vaultID, attachmentID);
         await this._ensureAttachmentsPaths(vaultID);
         const attachmentPath = path.join(
             this.baseDir,
@@ -156,6 +158,7 @@ export class FileDatasource extends TextDatasource {
         buffer: BufferLike,
         details: AttachmentDetails
     ): Promise<void> {
+        assertAttachmentStorageIDs(vaultID, attachmentID);
         await this._ensureAttachmentsPaths(vaultID);
         const attachmentPath = path.join(
             this.baseDir,
@@ -173,6 +176,7 @@ export class FileDatasource extends TextDatasource {
      * @memberof FileDatasource
      */
     async removeAttachment(vaultID: VaultID, attachmentID: string): Promise<void> {
+        assertAttachmentStorageIDs(vaultID, attachmentID);
         await this._ensureAttachmentsPaths(vaultID);
         const attachmentPath = path.join(
             this.baseDir,

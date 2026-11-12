@@ -7,6 +7,7 @@ import { dirSync } from "tmp";
 import {
     AttachmentManager,
     Credentials,
+    ErrorCode,
     MemoryStorageInterface,
     Vault,
     VaultFormatA,
@@ -15,6 +16,7 @@ import {
     VaultSource,
     consumeVaultFacade,
     createVaultFacade,
+    getErrorCode,
     setDefaultFormat
 } from "../../dist/node/index.js";
 import { registerDatasourcePostProcessor } from "../../dist/node/datasources/register.js";
@@ -259,6 +261,98 @@ describe("AttachmentManager", function () {
                             expect(files).to.have.a.lengthOf(2);
                             expect(files).to.contain("image.png");
                             expect(files).to.contain("test.png");
+                        });
+
+                        describe("storage IDs (B-685)", function () {
+                            beforeEach(function () {
+                                const datasource = this.source._datasource;
+                                this.storageSpies = [
+                                    "getAttachment",
+                                    "putAttachment",
+                                    "removeAttachment"
+                                ].map((method) => sinon.spy(datasource, method));
+                                this.expectInvalidID = async (call) => {
+                                    let error = null;
+                                    try {
+                                        await call();
+                                    } catch (err) {
+                                        error = err;
+                                    }
+                                    expect(error).to.be.an("error");
+                                    expect(getErrorCode(error)).to.equal(
+                                        ErrorCode.InvalidStorageID
+                                    );
+                                };
+                            });
+
+                            afterEach(function () {
+                                this.storageSpies.forEach((spy) => spy.restore());
+                            });
+
+                            it("refuses a vault ID from vault content that is not a UUID", async function () {
+                                // As a shared vault could carry: run-1 C-3 wrote outside the vault folder
+                                this.source.vault.format.source.id = "../../../escaped-B";
+                                const manager = this.source.attachmentManager;
+                                await this.expectInvalidID(() =>
+                                    manager.setAttachment(
+                                        this.entry,
+                                        AttachmentManager.newAttachmentID(),
+                                        Buffer.from("x"),
+                                        "x.txt",
+                                        "text/plain"
+                                    )
+                                );
+                                await this.expectInvalidID(() =>
+                                    manager.getAttachment(this.entry, this.attachmentID)
+                                );
+                                await this.expectInvalidID(() =>
+                                    manager.removeAttachment(this.entry, this.attachmentID)
+                                );
+                                this.storageSpies.forEach(
+                                    (spy) => expect(spy.notCalled).to.be.true
+                                );
+                            });
+
+                            it("refuses an attachment ID that is not a UUID", async function () {
+                                const manager = this.source.attachmentManager;
+                                await this.expectInvalidID(() =>
+                                    manager.setAttachment(
+                                        this.entry,
+                                        "../other-vault/x",
+                                        Buffer.from("x"),
+                                        "x.txt",
+                                        "text/plain"
+                                    )
+                                );
+                                await this.expectInvalidID(() =>
+                                    manager.removeAttachment(this.entry, "../other-vault/x")
+                                );
+                                this.storageSpies.forEach(
+                                    (spy) => expect(spy.notCalled).to.be.true
+                                );
+                            });
+
+                            it("deletes only an attachment the entry holds", async function () {
+                                const other = this.group.createEntry("Other");
+                                let error = null;
+                                try {
+                                    await this.source.attachmentManager.removeAttachment(
+                                        other,
+                                        this.attachmentID
+                                    );
+                                } catch (err) {
+                                    error = err;
+                                }
+                                expect(error).to.match(/Attachment not available/i);
+                                this.storageSpies.forEach(
+                                    (spy) => expect(spy.notCalled).to.be.true
+                                );
+                                const data = await this.source.attachmentManager.getAttachment(
+                                    this.entry,
+                                    this.attachmentID
+                                );
+                                expect(this.attachmentData.equals(data)).to.be.true;
+                            });
                         });
 
                         it("fails to add an attachment if there's not enough free space", async function () {
