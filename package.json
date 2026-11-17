@@ -103,7 +103,7 @@
     "sha.js": "^2.4.12",
     "min-document": "^2.19.2",
     "webdav": {
-      "minimatch": "^10.2.6"
+      "minimatch": "^11.0.9"
     },
     "@buttercup/fetch": "git+https://github.com/buttercup-fork/fetch.git#master"
   },
