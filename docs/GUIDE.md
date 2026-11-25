@@ -210,6 +210,8 @@ entry.setAttribute(Entry.Attributes.FacadeType, EntryType.Note);
 await source.save();
 ```
 
+A login's entry facade has a URL field (optional) next to its username and password. It uses the `url` property, or an existing `URL` property in another case such as the one above. `EntryType.Website`, a login with a URL from earlier versions, is still read: it gets the same fields and keeps its type. Create new logins as `EntryType.Login`.
+
 Groups work the same way: `vault.createGroup("Websites")`, or `group.createGroup("Sub-group")` for nesting.
 
 ### Updating an entry
