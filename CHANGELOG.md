@@ -1,6 +1,6 @@
 # Core library changelog
 
-## Unreleased
+## v8.1.0 (CodeKunde fork, 2026-11-26)
 
  * **Changed**:
    * Login entries have a built-in **URL** field (optional), so apps no longer need a separate Website type: the only difference was that field. A Login with an address is matched to its site by the browser extension, which reads URL fields by name. A stored Website entry gets the same fields as a Login and keeps its stored type, so vaults opened by older apps are unchanged. A Login that already has a custom field named `URL` (any case other than `url`) shows it as the URL field, without copying or renaming the property. `EntryType.Website` and its `ENTRY_TYPES` entry stay for reading old vaults.
