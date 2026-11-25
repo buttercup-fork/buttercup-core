@@ -80,6 +80,92 @@ describe("facades/entry", function () {
         });
     });
 
+    describe("login: URL field (B-811)", function () {
+        beforeEach(function () {
+            setDefaultFormat(VaultFormatB);
+            this.group = new Vault().createGroup("test");
+        });
+
+        const propertyFields = (facade) =>
+            facade.fields.filter((field) => field.propertyType === EntryPropertyType.Property);
+        const urlFields = (facade) =>
+            propertyFields(facade).filter((field) => field.property.toLowerCase() === "url");
+
+        it("is a built-in field of a new login", function () {
+            const facade = createEntryFacade(null, { type: EntryType.Login });
+            expect(propertyFields(facade).map((field) => field.property)).to.deep.equal([
+                "title",
+                "username",
+                "password",
+                "url"
+            ]);
+            const url = urlFields(facade)[0];
+            expect(url.title).to.equal("URL");
+            expect(url.removeable).to.equal(false);
+        });
+
+        it("shows a login's stored url property", function () {
+            const entry = this.group.createEntry("Bank").setProperty("url", "https://bank.com");
+            const url = urlFields(createEntryFacade(entry));
+            expect(url).to.have.length(1);
+            expect(url[0]).to.include({
+                property: "url",
+                value: "https://bank.com",
+                removeable: false
+            });
+        });
+
+        it("uses a custom URL field in another case instead of adding a second one", function () {
+            const entry = this.group.createEntry("Bank").setProperty("URL", "https://bank.com");
+            const url = urlFields(createEntryFacade(entry));
+            expect(url).to.have.length(1);
+            expect(url[0]).to.include({
+                property: "URL",
+                title: "URL",
+                value: "https://bank.com",
+                removeable: false
+            });
+        });
+
+        it("saves an edited URL back to the property it came from, without adding url", function () {
+            const entry = this.group.createEntry("Bank").setProperty("URL", "https://bank.com");
+            const facade = createEntryFacade(entry);
+            urlFields(facade)[0].value = "https://bank.example";
+            consumeEntryFacade(entry, facade);
+            expect(entry.getProperty("URL")).to.equal("https://bank.example");
+            expect(entry.getProperty("url")).to.equal(undefined);
+        });
+
+        it("prefers url when both url and URL exist, and keeps URL as a custom field", function () {
+            const entry = this.group
+                .createEntry("Bank")
+                .setProperty("url", "https://a.example")
+                .setProperty("URL", "https://b.example");
+            const fields = urlFields(createEntryFacade(entry));
+            expect(fields.map((field) => [field.property, field.removeable])).to.deep.equal([
+                ["url", false],
+                ["URL", true]
+            ]);
+        });
+
+        it("gives a stored website entry the same fields, and keeps its type", function () {
+            const login = createEntryFacade(null, { type: EntryType.Login });
+            const website = createEntryFacade(null, { type: EntryType.Website });
+            expect(
+                propertyFields(website).map((field) => [field.property, field.title])
+            ).to.deep.equal(propertyFields(login).map((field) => [field.property, field.title]));
+            const entry = this.group
+                .createEntry("Shop")
+                .setAttribute(Entry.Attributes.FacadeType, EntryType.Website)
+                .setProperty("url", "https://shop.example");
+            const facade = createEntryFacade(entry);
+            consumeEntryFacade(entry, facade);
+            expect(facade.type).to.equal(EntryType.Website);
+            expect(entry.getType()).to.equal(EntryType.Website);
+            expect(entry.getProperty("url")).to.equal("https://shop.example");
+        });
+    });
+
     describe("credit card: Card Number", function () {
         beforeEach(function () {
             const vault = new Vault();
