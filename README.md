@@ -10,7 +10,9 @@
 
 A NodeJS secrets vault.
 
-> This is [codekunde](https://github.com/codekunde)'s self-hosted fork of the archived [buttercup/buttercup-core](https://github.com/buttercup/buttercup-core), maintained after upstream's project closure (see below). Issues and PRs on the upstream repo are still ignored; this fork tracks and fixes them independently - see `CHANGELOG.md` for what's changed here.
+**3.0.0 / 4.0.0 (2026-11-24) fix security problems in the original Buttercup apps; this library's part is 8.0.0 ([advisories](https://github.com/buttercup-fork/buttercup-core/security/advisories)).** What to do: [release notes](https://github.com/buttercup-fork/buttercup-desktop/releases/tag/v3.0.0).
+
+> This is [CodeKunde](https://github.com/codekunde)'s fork of the archived [buttercup/buttercup-core](https://github.com/buttercup/buttercup-core), maintained after upstream's project closure (see below). Issues and PRs on the upstream repo are still ignored; this fork tracks and fixes them independently - see `CHANGELOG.md` for what's changed here.
 
 [![Buttercup](images/buttercup-slim.svg)](https://buttercup.codekunde.net) ![Tests status](https://github.com/buttercup-fork/buttercup-core/actions/workflows/test.yml/badge.svg) ![node min version](https://img.shields.io/badge/node-%3E%3D%2022-lightgrey.svg) [![security](https://img.shields.io/badge/Security-As%20you%20wish-green.svg)](https://en.wikipedia.org/wiki/The_Princess_Bride_(film)) [![encryption](https://img.shields.io/badge/Encryption-AES%20256%20CBC%2FGCM-red.svg)](https://tools.ietf.org/html/rfc3602)
 
