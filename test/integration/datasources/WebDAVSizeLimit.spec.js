@@ -1,7 +1,11 @@
 import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
+import { Readable } from "node:stream";
 import { expect } from "chai";
+// webdav's own dependency: what webdav uses on NodeJS when it gets upstream's
+// @buttercup/fetch 0.2.1 (an npm user's tree without core's overrides, B-831)
+import nodeFetch from "node-fetch";
 import { dirSync } from "tmp";
 import {
     Credentials,
@@ -186,6 +190,23 @@ describe("WebDAVDatasource size limit (B-629)", function () {
             // The server keeps writing until it sees the close: bounded, not the whole stream
             expect(this.sent).to.be.below(5 * 1024 * 1024);
         });
+
+        it("stops reading a node-fetch response (a NodeJS stream body) once the limit is passed", async function () {
+            const controller = new AbortController();
+            const response = await nodeFetch(`http://127.0.0.1:${this.server.address().port}/`, {
+                signal: controller.signal
+            });
+            expect(typeof response.body.getReader, "node-fetch body has no getReader").to.equal(
+                "undefined"
+            );
+            const error = await captureError(() =>
+                readResponseWithLimit(response, 64 * 1024, () => controller.abort(), "test")
+            );
+            expectTooLarge(error);
+            await new Promise((resolve) => setTimeout(resolve, 200));
+            expect(this.closed, "server saw the connection close").to.equal(true);
+            expect(this.sent).to.be.below(5 * 1024 * 1024);
+        });
     });
 
     describe("tools", function () {
@@ -232,6 +253,52 @@ describe("WebDAVDatasource size limit (B-629)", function () {
             const small = { ...response, arrayBuffer: async () => new ArrayBuffer(10) };
             const data = await readResponseWithLimit(small, 1000, () => {}, "test");
             expect(data.byteLength).to.equal(10);
+        });
+
+        // Like node-fetch: the body is a NodeJS stream, and arrayBuffer() reads all of it
+        function nodeStreamResponse(chunkCount, chunkSize) {
+            const state = { pulled: 0 };
+            const body = Readable.from(
+                (function* () {
+                    for (let i = 0; i < chunkCount; i += 1) {
+                        state.pulled += 1;
+                        yield Buffer.alloc(chunkSize, i % 256);
+                    }
+                })(),
+                { highWaterMark: 1 }
+            );
+            state.response = {
+                headers: { get: () => null },
+                body,
+                arrayBuffer: async () => {
+                    const chunks = [];
+                    for await (const chunk of body) chunks.push(chunk);
+                    const all = Buffer.concat(chunks);
+                    return all.buffer.slice(all.byteOffset, all.byteOffset + all.byteLength);
+                }
+            };
+            return state;
+        }
+
+        it("stops reading a NodeJS stream body once the limit is passed (B-831)", async function () {
+            const state = nodeStreamResponse(1000, 1024);
+            let aborted = false;
+            const error = await captureError(() =>
+                readResponseWithLimit(state.response, 4 * 1024, () => (aborted = true), "test")
+            );
+            expectTooLarge(error);
+            expect(aborted).to.equal(true);
+            // 5 chunks pass the limit; a stream may read a few ahead, not the rest
+            expect(state.pulled).to.be.below(20);
+            expect(state.response.body.destroyed).to.equal(true);
+        });
+
+        it("reads a NodeJS stream body under the limit (B-831)", async function () {
+            const state = nodeStreamResponse(4, 1000);
+            const data = await readResponseWithLimit(state.response, 4000, () => {}, "test");
+            const bytes = new Uint8Array(data);
+            expect(bytes.byteLength).to.equal(4000);
+            expect([bytes[0], bytes[1000], bytes[2000], bytes[3999]]).to.deep.equal([0, 1, 2, 3]);
         });
     });
 });

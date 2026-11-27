@@ -1,5 +1,10 @@
 # Core library changelog
 
+## v8.1.1 (CodeKunde fork, unreleased)
+
+ * **Security**:
+   * The WebDAV datasource's 200 MB size limit now also holds when the `webdav` client runs on `node-fetch`, which it does on NodeJS when it gets upstream's `@buttercup/fetch` 0.2.1 (a project that installs this library without copying its `overrides`). A `node-fetch` body is a NodeJS stream, not a web stream, so the download was read in full before its size was checked; it is now read with a byte count and stopped once it passes the limit, like a web stream. Desktop and the cli were not affected (their own overrides give `webdav` the fork's fetch, which uses NodeJS' built-in `fetch`), and neither were browsers (B-831)
+
 ## v8.1.0 (CodeKunde fork, 2026-11-26)
 
  * **Changed**:
