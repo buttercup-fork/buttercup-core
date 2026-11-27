@@ -52,13 +52,28 @@ Check out the [changelog](https://github.com/buttercup-fork/buttercup-core/blob/
 
 ## Installation
 
-> This fork isn't published to npm: the `buttercup` package on npm is upstream's last release and does **not** include this fork's fixes (security hardening and bugfixes, see `CHANGELOG.md`). Install from GitHub instead.
+> This fork is published on npm as **`@buttercup-fork/core`**. The `buttercup` package on npm is upstream's last release (7.7.1) and does **not** include this fork's fixes (security hardening and bugfixes, see `CHANGELOG.md`).
 
-To use Buttercup in a NodeJS environment, you can simply install and require it:
+Install it under the name `buttercup`, so that imports stay `buttercup` and libraries that expect `buttercup` as a peer dependency (such as `@buttercup-fork/importer` and `@buttercup-fork/exporter`) find it:
 
 ```shell
-npm install github:buttercup-fork/buttercup-core --save
+npm install buttercup@npm:@buttercup-fork/core --save
 ```
+
+(`npm install @buttercup-fork/core` works too; then import from `@buttercup-fork/core` and `@buttercup-fork/core/web`.)
+
+**Dependency overrides:** this library raises two packages below `webdav` through `overrides` in its `package.json`, and npm applies `overrides` only from the project you run `npm install` in, never from a dependency. To get the same versions, add them to your own `package.json`, then delete `node_modules` and `package-lock.json` and install again:
+
+```json
+"overrides": {
+  "webdav": {
+    "minimatch": "^11.0.9"
+  },
+  "@buttercup/fetch": "npm:@buttercup-fork/fetch@^0.4.0"
+}
+```
+
+Without them, `webdav` installs `minimatch` 9 (GHSA-g3hv-75wg-m249, moderate: denial of service through glob patterns, reached only through `webdav`'s `glob` option, which this library does not pass) and upstream's `@buttercup/fetch` 0.2.1, which uses `node-fetch`, instead of the fork's, which uses NodeJS' built-in `fetch`.
 
 In a Node environment, for example:
 
@@ -80,7 +95,7 @@ import { Vault } from "buttercup/web";
 
 Buttercup core is ESM - you must either import it in a project that is also ESM, or use a build tool like Webpack.
 
-_Buttercup core supports Node version 14 and up. For older Node versions use v6 and earlier._
+_Buttercup core 8 needs NodeJS 22 or newer._
 
 ## Usage
 
