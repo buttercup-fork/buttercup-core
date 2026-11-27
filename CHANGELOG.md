@@ -1,7 +1,11 @@
 # Core library changelog
 
-## v8.1.1 (CodeKunde fork, unreleased)
+## v8.1.1 (CodeKunde fork, 2026-11-27)
 
+ * **Changed**:
+   * Published on npm as `@buttercup-fork/core`, staged from GitHub Actions through trusted publishing with provenance (`publish.yml`, started by hand); the package name `buttercup` on npm stays upstream's. Install it as `npm install buttercup@npm:@buttercup-fork/core` so imports stay `buttercup` (see the README, which also lists the `overrides` to copy into your own project)
+   * The four forked libraries now come from npm instead of git: `@buttercup-fork/channel-queue` 2.0.0, `@buttercup-fork/dropbox-client` 3.0.0, `@buttercup-fork/googledrive-client` 3.0.0 and `@buttercup-fork/onedrive-client` 0.1.0, installed under their old `@buttercup/...` names, so the source is unchanged. Their code is the same as the git commits 8.1.0 used (only their package names and publishing changed), and the built `dist/` differs from 8.1.0's only by the size-limit fix below. The `@buttercup/fetch` override points at `@buttercup-fork/fetch` 0.4.0 on npm. The lockfile has no git dependencies left, so npm 12 installs it without `--allow-git`
+   * The TypeScript configs name NodeJS' types (`"types": ["node"]`). TypeScript 6 includes no `@types` packages by default, and the build had found NodeJS' types only through the old git copy of onedrive-client, whose typings imported `node-fetch`
  * **Security**:
    * The WebDAV datasource's 200 MB size limit now also holds when the `webdav` client runs on `node-fetch`, which it does on NodeJS when it gets upstream's `@buttercup/fetch` 0.2.1 (a project that installs this library without copying its `overrides`). A `node-fetch` body is a NodeJS stream, not a web stream, so the download was read in full before its size was checked; it is now read with a byte count and stopped once it passes the limit, like a web stream. Desktop and the cli were not affected (their own overrides give `webdav` the fork's fetch, which uses NodeJS' built-in `fetch`), and neither were browsers (B-831)
 

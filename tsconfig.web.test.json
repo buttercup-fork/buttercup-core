@@ -5,7 +5,8 @@
         "outDir": "./web",
         "module": "CommonJS",
         "declaration": false,
-        "target": "es6"
+        "target": "es6",
+        "types": ["node"]
     },
     "files": [
       "./source/modules.d.ts"

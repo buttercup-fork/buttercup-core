@@ -1,6 +1,6 @@
 {
-  "name": "buttercup",
-  "version": "8.1.0",
+  "name": "@buttercup-fork/core",
+  "version": "8.1.1",
   "description": "A NodeJS password vault.",
   "type": "module",
   "exports": {
@@ -78,11 +78,14 @@
     "url": "https://github.com/buttercup-fork/buttercup-core/issues"
   },
   "homepage": "https://github.com/buttercup-fork/buttercup-core#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
-    "@buttercup/channel-queue": "git+https://github.com/buttercup-fork/channel-queue.git#master",
-    "@buttercup/dropbox-client": "git+https://github.com/buttercup-fork/dropbox-client.git#master",
-    "@buttercup/googledrive-client": "git+https://github.com/buttercup-fork/googledrive-client.git#master",
-    "@buttercup/onedrive-client": "git+https://github.com/buttercup-fork/onedrive-client.git#master",
+    "@buttercup/channel-queue": "npm:@buttercup-fork/channel-queue@^2.0.0",
+    "@buttercup/dropbox-client": "npm:@buttercup-fork/dropbox-client@^3.0.0",
+    "@buttercup/googledrive-client": "npm:@buttercup-fork/googledrive-client@^3.0.0",
+    "@buttercup/onedrive-client": "npm:@buttercup-fork/onedrive-client@^0.1.0",
     "crypto-random-string": "^6.0.0",
     "eventemitter3": "^5.0.0",
     "fast-levenshtein": "^3.0.0",
@@ -105,7 +108,7 @@
     "webdav": {
       "minimatch": "^11.0.9"
     },
-    "@buttercup/fetch": "git+https://github.com/buttercup-fork/fetch.git#master"
+    "@buttercup/fetch": "npm:@buttercup-fork/fetch@^0.4.0"
   },
   "devDependencies": {
     "@types/node": "^22.20.4",
